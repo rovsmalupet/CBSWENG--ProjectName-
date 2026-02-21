@@ -1,5 +1,20 @@
 import mongoose from "mongoose";
 
+const causeOptions = [
+  "educationAndChildren",
+  "healthAndMedical",
+  "disasterRelief",
+  "environmentAndClimate",
+  "povertyAndHunger",
+  "communityDevelopment",
+  "livelihoodAndSkillsTraining",
+  "animalWelfare",
+  "technologyAccess",
+  "personsWithDisabilities",
+  "seniorCitizens",
+  "others"
+];
+
 const inKindItemSchema = new mongoose.Schema({
   itemName: String,
   targetQuantity: Number,
@@ -22,7 +37,13 @@ const postSchema = new mongoose.Schema({
   projectName: { type: String, required: true },
   description: String,
   category: String,
-  cause: String,
+
+  cause: {
+    type: String,
+    enum: causeOptions,
+    required: true
+  },
+
   location: String,
   impactGoals: String,
 
