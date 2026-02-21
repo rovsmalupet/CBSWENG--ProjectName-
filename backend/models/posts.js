@@ -9,9 +9,6 @@ const causeOptions = [
   "communityDevelopment",
   "livelihoodAndSkillsTraining",
   "animalWelfare",
-  "technologyAccess",
-  "personsWithDisabilities",
-  "seniorCitizens",
   "others"
 ];
 
