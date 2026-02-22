@@ -1,0 +1,200 @@
+.postProjectPage {
+  min-height: 100vh;
+  background-color: #f0f4f8;
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.postProjectCard {
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 32px 36px;
+  width: 100%;
+  max-width: 960px;
+  height: fit-content;
+}
+
+.postProjectHeading {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+  color: #1a202c;
+}
+
+/* Alerts */
+.postProjectAlertSuccess {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.postProjectAlertError {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* Two-column layout */
+.postProjectForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.postProjectCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Labels */
+.postProjectLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #4a5568;
+  margin-bottom: 6px;
+}
+
+.postProjectRequired {
+  color: #e53e3e;
+}
+
+/* Inputs */
+.postProjectInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1.5px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2d3748;
+  font-family: inherit;
+  background-color: #fff;
+}
+
+.postProjectTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1.5px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2d3748;
+  font-family: inherit;
+  background-color: #fff;
+  height: 90px;
+  resize: vertical;
+}
+
+/* Monetary input with PHP suffix */
+.postProjectInputWrapper {
+  position: relative;
+}
+
+.postProjectInputWrapper .postProjectInput {
+  padding-right: 50px;
+}
+
+.postProjectInputSuffix {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  font-weight: 600;
+  color: #718096;
+}
+
+/* Support type checkboxes */
+.postProjectSectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #4a5568;
+  margin: 0 0 8px 0;
+}
+
+.postProjectCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #2d3748;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+/* In-kind section */
+.postProjectInKindHeader {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.postProjectInKindList {
+  border: 1.5px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 70px;
+  background-color: #f9fafb;
+}
+
+.postProjectInKindRow {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.postProjectInKindEmpty {
+  font-size: 13px;
+  color: #a0aec0;
+  text-align: center;
+  margin: 8px 0;
+}
+
+.postProjectAddBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #cbd5e0;
+  background-color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  color: #4a5568;
+}
+
+/* Submit button */
+.postProjectSubmitBtn {
+  padding: 14px;
+  background-color: #38a169;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  font-family: inherit;
+  margin-top: auto;
+}
+
+.postProjectSubmitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

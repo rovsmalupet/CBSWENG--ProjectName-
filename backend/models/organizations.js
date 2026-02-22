@@ -12,4 +12,9 @@ const organizationSchema = new mongoose.Schema({
   }
 });
 
+/*
+TO DO:
+add password soon
+*/
+
 export default mongoose.model("Organization", organizationSchema);
