@@ -1,7 +1,11 @@
 import express from "express";
 
 // posting routes
-import { createPost, getOrgPosts } from "../controllers/postController.js";
+import {
+  createPost,
+  getOrgPosts,
+  deletePost,
+} from "../controllers/postController.js";
 
 const router = express.Router();
 
@@ -10,5 +14,8 @@ router.post("/", createPost);
 
 // GET /posts/:orgId - get all posts for a specific organization
 router.get("/:orgId", getOrgPosts);
+
+// DELETE /posts/:postId - delete a project
+router.delete("/:postId", deletePost);
 
 export default router;

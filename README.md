@@ -22,10 +22,12 @@ A Full-Stack Web Application with React Frontend and Express.js Backend
 ```bash
 cd backend
 npm install
-node index.js
+npm run dev
 ```
 
 Server runs on `http://localhost:3000`
+
+**For production:** Use `npm start` instead
 
 ### Frontend Setup
 
@@ -44,7 +46,7 @@ Open two terminal windows:
 **Terminal 1 - Backend:**
 
 ```bash
-cd backend && npm install && node index.js
+cd backend && npm install && npm run dev
 ```
 
 **Terminal 2 - Frontend:**

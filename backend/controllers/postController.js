@@ -10,11 +10,13 @@ export const createPost = async (req, res) => {
       cause,
       location,
       impactGoals,
-      supportTypes
+      supportTypes,
     } = req.body;
 
     if (!projectName || !cause) {
-      return res.status(400).json({ error: "projectName and cause are required" });
+      return res
+        .status(400)
+        .json({ error: "projectName and cause are required" });
     }
 
     const orgId = req.user?._id || "tempID";
@@ -31,31 +33,33 @@ export const createPost = async (req, res) => {
         monetary: supportTypes?.monetary?.enabled
           ? {
               enabled: true,
-              targetAmount: supportTypes.monetary.targetAmount || 0
+              targetAmount: supportTypes.monetary.targetAmount || 0,
             }
           : { enabled: false },
 
         inKind: supportTypes?.inKind?.length
-          ? supportTypes.inKind.map(item => ({
+          ? supportTypes.inKind.map((item) => ({
               itemName: item.itemName,
               targetQuantity: item.targetQuantity,
-              unit: item.unit
+              unit: item.unit,
             }))
           : [],
 
         volunteer: supportTypes?.volunteer?.enabled
           ? {
               enabled: true,
-              targetVolunteers: supportTypes.volunteer.targetVolunteers || 0
+              targetVolunteers: supportTypes.volunteer.targetVolunteers || 0,
             }
-          : { enabled: false }
+          : { enabled: false },
       },
 
-      overallStatus: "Published" // default to published on creation
+      overallStatus: "Published", // default to published on creation
     });
 
     await newPost.save();
-    res.status(201).json({ message: "Project posted successfully", post: newPost });
+    res
+      .status(201)
+      .json({ message: "Project posted successfully", post: newPost });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -64,12 +68,27 @@ export const createPost = async (req, res) => {
 
 // Get all posts for an organization
 export const getOrgPosts = async (req, res) => {
-    try {
-        const { orgId } = req.params;
-        const posts = await Post.find({ orgId });
-        res.json(posts);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
+  try {
+    const { orgId } = req.params;
+    const posts = await Post.find({ orgId });
+    res.json(posts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Delete a post
+export const deletePost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const deletedPost = await Post.findByIdAndDelete(postId);
+    if (!deletedPost) {
+      return res.status(404).json({ error: "Post not found" });
     }
+    res.json({ message: "Post deleted successfully", post: deletedPost });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 };

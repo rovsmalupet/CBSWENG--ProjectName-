@@ -9,7 +9,7 @@ const causeOptions = [
   "communityDevelopment",
   "livelihoodAndSkillsTraining",
   "animalWelfare",
-  "others"
+  "others",
 ];
 
 const inKindItemSchema = new mongoose.Schema({
@@ -20,15 +20,14 @@ const inKindItemSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ["Open", "Closed"],
-    default: "Open"
-  }
+    default: "Open",
+  },
 });
 
 const postSchema = new mongoose.Schema({
   orgId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Organization",
-    required: true
+    type: String,
+    default: "tempID",
   },
 
   projectName: { type: String, required: true },
@@ -38,7 +37,7 @@ const postSchema = new mongoose.Schema({
   cause: {
     type: String,
     enum: causeOptions,
-    required: true
+    required: true,
   },
 
   location: String,
@@ -52,8 +51,8 @@ const postSchema = new mongoose.Schema({
       status: {
         type: String,
         enum: ["Open", "Closed"],
-        default: "Open"
-      }
+        default: "Open",
+      },
     },
 
     inKind: [inKindItemSchema],
@@ -65,21 +64,21 @@ const postSchema = new mongoose.Schema({
       status: {
         type: String,
         enum: ["Open", "Closed"],
-        default: "Open"
-      }
-    }
+        default: "Open",
+      },
+    },
   },
 
   overallStatus: {
     type: String,
     enum: ["Draft", "Published"],
-    default: "Draft"
+    default: "Draft",
   },
 
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 export default mongoose.model("Post", postSchema);
