@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const CAUSES = [
   "Education and Children",
@@ -28,7 +29,9 @@ function getCause(cause) {
 
 const newRow = () => ({ id: Date.now(), itemName: "", targetQuantity: "", unit: "" });
 
-export default function PostNewProject() {
+export default function PostNewProject({ onProjectCreated }) {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     campaignTitle: "",
     location: "",
@@ -62,7 +65,7 @@ export default function PostNewProject() {
     );
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!form.campaignTitle || !form.cause) {
@@ -73,10 +76,11 @@ export default function PostNewProject() {
 
     const validInKind = inKindItems.filter((i) => i.itemName.trim());
 
-    const payload = {
+    const project = {
       projectName: form.campaignTitle,
       location: form.location,
-      cause: getCause(form.cause),
+      cause: form.cause,
+      causeKey: getCause(form.cause),
       impactGoals: form.impactGoals,
       supportTypes: {
         monetary: {
@@ -95,28 +99,19 @@ export default function PostNewProject() {
           targetVolunteers: supportTypes.volunteer ? Number(form.volunteerQuantity) || 0 : 0,
         },
       },
+      createdAt: new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
     };
 
-    setStatus("loading");
-    try {
-      const res = await fetch("/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus("success");
-        setForm({ campaignTitle: "", location: "", cause: "", impactGoals: "", monetarySupport: "", volunteerQuantity: "" });
-        setInKindItems([newRow()]);
-      } else {
-        setErrorMsg(data.error || "Failed to create project.");
-        setStatus("error");
-      }
-    } catch {
-      setErrorMsg("Network error. Please try again.");
-      setStatus("error");
-    }
+    if (onProjectCreated) onProjectCreated(project);
+    setStatus("success");
+
+    setTimeout(() => {
+      navigate("/project-ledger");
+    }, 1200);
   };
 
   return (
@@ -125,7 +120,7 @@ export default function PostNewProject() {
         <h2 className="postProjectHeading">Post New Project</h2>
 
         {status === "success" && (
-          <div className="postProjectAlertSuccess">✅ Project posted successfully!</div>
+          <div className="postProjectAlertSuccess">✅ Project posted successfully! Redirecting...</div>
         )}
         {status === "error" && (
           <div className="postProjectAlertError">⚠️ {errorMsg}</div>
@@ -265,6 +260,15 @@ export default function PostNewProject() {
                         value={item.unit}
                         onChange={(e) => handleInKindChange(item.id, "unit", e.target.value)}
                       />
+                      <button
+                        type="button"
+                        className="postProjectDeleteRowBtn"
+                        onClick={() => setInKindItems((prev) => prev.filter((i) => i.id !== item.id))}
+                        title="Remove item"
+                        disabled={inKindItems.length === 1}
+                      >
+                        ✕
+                      </button>
                     </div>
                   ))}
                   {inKindItems.filter((i) => i.itemName).length === 0 && (
