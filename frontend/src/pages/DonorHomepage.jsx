@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../css/DonorHomepage.css";
 
 export default function DonorHomepage() {
+  const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState([]);
   const [filteredCampaigns, setFilteredCampaigns] = useState([]);
   const [filters, setFilters] = useState({
@@ -169,7 +171,12 @@ export default function DonorHomepage() {
                 campaign.target,
               );
               return (
-                <div key={campaign.id} className="campaign-card">
+                <div
+                  key={campaign.id}
+                  className="campaign-card"
+                  onClick={() => navigate(`/project/${campaign.id}`)}
+                  style={{ cursor: "pointer" }}
+                >
                   <div className="card-header">
                     <span
                       className="category-badge"

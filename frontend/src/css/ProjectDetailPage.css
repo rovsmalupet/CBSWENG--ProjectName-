@@ -1,0 +1,143 @@
+/* ProjectDetailPage.css */
+
+.project-detail-page {
+  min-height: 100vh;
+  background: #f8f9fa;
+  font-family: "Inter", sans-serif;
+}
+
+.detail-header {
+  background: #ffffff;
+  padding: 24px 32px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.greeting {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.detail-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 36px 32px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 32px;
+  transition: color 0.2s;
+  font-family: inherit;
+}
+
+.back-btn:hover {
+  color: #1d4ed8;
+}
+
+.project-info {
+  margin-bottom: 48px;
+}
+
+.project-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+.project-meta {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.project-meta strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.inventory-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px;
+  border: 1px solid #e5e7eb;
+}
+
+.inventory-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 24px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+}
+
+.inventory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inventory-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.inventory-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.inventory-name {
+  font-size: 0.95rem;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.inventory-status {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 768px) {
+  .detail-main {
+    padding: 24px 16px;
+  }
+
+  .project-title {
+    font-size: 1.5rem;
+  }
+
+  .inventory-section {
+    padding: 20px;
+  }
+
+  .inventory-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .inventory-status {
+    align-self: flex-start;
+  }
+}
