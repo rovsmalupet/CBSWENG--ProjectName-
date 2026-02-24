@@ -70,7 +70,7 @@ export default function PostNewProject({ onProjectCreated }) {
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.campaignTitle || !form.cause) {
@@ -115,12 +115,47 @@ export default function PostNewProject({ onProjectCreated }) {
       }),
     };
 
+    // Call the callback if provided
     if (onProjectCreated) onProjectCreated(project);
-    setStatus("success");
 
-    setTimeout(() => {
-      navigate("/project-ledger");
-    }, 1200);
+    setStatus("loading");
+    try {
+      const res = await fetch("/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectName: project.projectName,
+          location: project.location,
+          cause: getCause(form.cause),
+          impactGoals: project.impactGoals,
+          supportTypes: project.supportTypes,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus("success");
+        setForm({
+          campaignTitle: "",
+          location: "",
+          cause: "",
+          impactGoals: "",
+          monetarySupport: "",
+          volunteerQuantity: "",
+        });
+        setInKindItems([newRow()]);
+
+        setTimeout(() => {
+          navigate("/project-ledger");
+        }, 1200);
+      } else {
+        setErrorMsg(data.error || "Failed to create project.");
+        setStatus("error");
+      }
+    } catch (err) {
+      setErrorMsg("Network error. Please try again.");
+      setStatus("error");
+      console.error(err);
+    }
   };
 
   return (
