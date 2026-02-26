@@ -30,7 +30,11 @@ const postSchema = new mongoose.Schema({
     default: "tempID",
   },
 
-  projectName: { type: String, required: true },
+  projectName: {
+    type: String,
+    required: true,
+  },
+
   description: String,
   category: String,
 
@@ -42,6 +46,12 @@ const postSchema = new mongoose.Schema({
 
   location: String,
   impactGoals: String,
+
+  priority: {
+    type: String,
+    enum: ["High", "Medium", "Low"],
+    default: "Medium",
+  },
 
   supportTypes: {
     monetary: {

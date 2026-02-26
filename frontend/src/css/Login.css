@@ -3,10 +3,11 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #d3d3d3;
+  background: linear-gradient(135deg, #a0e7e5, #b4f8c8);
 }
 
 .login-box {
+  font-family: "Inter", sans-serif;
   background: white;
   padding: 60px 40px;
   border-radius: 10px;

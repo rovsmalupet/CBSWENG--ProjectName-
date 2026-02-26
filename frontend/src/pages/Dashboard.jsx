@@ -19,27 +19,7 @@ const cards = [
       </svg>
     ),
     style: "card active",
-  },
-  {
-    key: "partnership-management",
-    label: "Partnership Management",
-    route: "/partnership-management",
-    icon: <Handshake size={52} stroke="#4b5563" strokeWidth={1.4} />,
-    style: "card active",
-  },
-  {
-    key: "trust-documents",
-    label: "Trust & Documents",
-    route: "/trust-documents",
-    icon: (
-      <svg width="52" height="52" fill="none" stroke="#4b5563" strokeWidth="1.4" viewBox="0 0 24 24">
-        <polyline points="16 16 12 12 8 16" />
-        <line x1="12" y1="12" x2="12" y2="21" />
-        <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" />
-      </svg>
-    ),
-    style: "card blue-outline",
-  },
+  }
 ];
 
 export default function Dashboard() {

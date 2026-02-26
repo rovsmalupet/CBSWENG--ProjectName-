@@ -12,8 +12,6 @@
   padding: 36px 32px 80px;
 }
 
-/* Back link removed - no longer used in new layout */
-
 /* ── Title ── */
 .ledger-title {
   font-size: 1.75rem;
@@ -176,6 +174,46 @@
 
 .ledger-add-btn:active {
   transform: translateY(0);
+}
+
+/* ── Edit and Delete buttons ── */
+.edit-btn, .delete-btn {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: auto;
+  margin-right: 8px; /* ensures buttons are not touching */
+}
+
+/* Edit button styling (yellow) */
+.edit-btn {
+  background: #f7eaa6;
+  color: #b45309;
+  border: 1px solid #f59e0b;
+}
+
+.edit-btn:hover {
+  background: #fde047;
+  border-color: #f59e0b;
+  transform: translateY(-1px);
+}
+
+/* Delete button styling (red) */
+.delete-btn {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.delete-btn:hover {
+  background: #fecaca;
+  border-color: #dc2626;
+  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {

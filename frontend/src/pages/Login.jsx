@@ -7,7 +7,7 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>Welcome to CBSWENG</h1>
+        <h1>Welcome to Bayanihub 🛖</h1>
         <p>Select your role to continue</p>
 
         <div className="button-group">

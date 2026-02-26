@@ -20,26 +20,25 @@ export default function ProjectLedger() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/posts"); // fetch all projects for tempID
+        const data = await res.json();
+        setProjects(data);
+      } catch (err) {
+        console.error("Failed to fetch projects:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchProjects();
   }, []);
 
-  const fetchProjects = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/posts/tempID");
-      const data = await res.json();
-      setProjects(data);
-    } catch (err) {
-      console.error("Failed to fetch projects:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = async (projectId) => {
-    if (!window.confirm("Are you sure you want to delete this project?")) {
-      return;
-    }
+    if (!window.confirm("Are you sure you want to delete this project?")) return;
+
     try {
       const res = await fetch(`/posts/${projectId}`, { method: "DELETE" });
       if (res.ok) {
@@ -79,15 +78,13 @@ export default function ProjectLedger() {
               <line x1="8" y1="17" x2="20" y2="17" />
             </svg>
             <p>
-              No projects yet. Click <strong>Add New Project</strong> to get
-              started.
+              No projects yet. Click <strong>Add New Project</strong> to get started.
             </p>
           </div>
         ) : (
           <div className="ledger-grid">
             {projects.map((project) => {
-              const causeStyle =
-                CAUSE_STYLES[project.cause] || CAUSE_STYLES.other;
+              const causeStyle = CAUSE_STYLES[project.cause] || CAUSE_STYLES.other;
 
               return (
                 <div key={project._id} className="pcard">
@@ -98,6 +95,8 @@ export default function ProjectLedger() {
                     >
                       {causeStyle.label}
                     </span>
+
+                    {/* Verified badge */}
                     <span className="pcard-verified">
                       <svg
                         width="12"
@@ -136,13 +135,22 @@ export default function ProjectLedger() {
                     <p className="pcard-desc">{project.impactGoals}</p>
                   )}
 
-                  <button
-                    className="delete-btn"
-                    onClick={() => handleDelete(project._id)}
-                    title="Delete project"
-                  >
-                    🗑️ Delete
-                  </button>
+                  <div className="pcard-actions">
+                    <button
+                      className="edit-btn"
+                      onClick={() => navigate(`/edit-project/${project._id}`)}
+                      title="Edit project"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDelete(project._id)}
+                      title="Delete project"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
                 </div>
               );
             })}

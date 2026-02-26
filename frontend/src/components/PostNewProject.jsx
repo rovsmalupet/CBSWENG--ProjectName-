@@ -44,6 +44,7 @@ export default function PostNewProject({ onProjectCreated }) {
     impactGoals: "",
     monetarySupport: "",
     volunteerQuantity: "",
+    priority: "",
   });
 
   const [supportTypes, setSupportTypes] = useState({
@@ -66,46 +67,70 @@ export default function PostNewProject({ onProjectCreated }) {
 
   const handleInKindChange = (id, field, value) => {
     setInKindItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.campaignTitle || !form.cause) {
-      setErrorMsg("Campaign title and cause are required.");
+    // ======= FORM VALIDATION =======
+    if (!form.campaignTitle.trim() || !form.cause || !form.priority) {
+      setErrorMsg("Campaign title, cause, and priority are required.");
       setStatus("error");
       return;
     }
 
-    const validInKind = inKindItems.filter((i) => i.itemName.trim());
+    if (!supportTypes.monetary && !supportTypes.inKind && !supportTypes.volunteer) {
+      setErrorMsg("At least one support type must be selected.");
+      setStatus("error");
+      return;
+    }
+
+    if (supportTypes.monetary && (!form.monetarySupport || Number(form.monetarySupport) <= 0)) {
+      setErrorMsg("Monetary support must be greater than 0.");
+      setStatus("error");
+      return;
+    }
+
+    if (supportTypes.volunteer && (!form.volunteerQuantity || Number(form.volunteerQuantity) <= 0)) {
+      setErrorMsg("Volunteer quantity must be greater than 0.");
+      setStatus("error");
+      return;
+    }
+
+    if (supportTypes.inKind) {
+      for (const item of inKindItems) {
+        if (!item.itemName.trim() || !item.unit.trim() || !item.targetQuantity || Number(item.targetQuantity) <= 0) {
+          setErrorMsg("All in-kind items must have a name, positive quantity, and unit.");
+          setStatus("error");
+          return;
+        }
+      }
+    }
+    // ===== END VALIDATION =====
 
     const project = {
       projectName: form.campaignTitle,
       location: form.location,
-      cause: form.cause,
-      causeKey: getCause(form.cause),
+      cause: getCause(form.cause),
       impactGoals: form.impactGoals,
+      priority: form.priority,
       supportTypes: {
         monetary: {
           enabled: supportTypes.monetary && !!form.monetarySupport,
-          targetAmount: supportTypes.monetary
-            ? Number(form.monetarySupport) || 0
-            : 0,
+          targetAmount: supportTypes.monetary ? Number(form.monetarySupport) : 0,
         },
         inKind: supportTypes.inKind
-          ? validInKind.map((i) => ({
+          ? inKindItems.map((i) => ({
               itemName: i.itemName,
-              targetQuantity: Number(i.targetQuantity) || 0,
+              targetQuantity: Number(i.targetQuantity),
               unit: i.unit,
             }))
           : [],
         volunteer: {
           enabled: supportTypes.volunteer && !!form.volunteerQuantity,
-          targetVolunteers: supportTypes.volunteer
-            ? Number(form.volunteerQuantity) || 0
-            : 0,
+          targetVolunteers: supportTypes.volunteer ? Number(form.volunteerQuantity) : 0,
         },
       },
       createdAt: new Date().toLocaleDateString("en-US", {
@@ -115,7 +140,6 @@ export default function PostNewProject({ onProjectCreated }) {
       }),
     };
 
-    // Call the callback if provided
     if (onProjectCreated) onProjectCreated(project);
 
     setStatus("loading");
@@ -123,13 +147,7 @@ export default function PostNewProject({ onProjectCreated }) {
       const res = await fetch("/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectName: project.projectName,
-          location: project.location,
-          cause: getCause(form.cause),
-          impactGoals: project.impactGoals,
-          supportTypes: project.supportTypes,
-        }),
+        body: JSON.stringify(project),
       });
       const data = await res.json();
       if (res.ok) {
@@ -141,12 +159,10 @@ export default function PostNewProject({ onProjectCreated }) {
           impactGoals: "",
           monetarySupport: "",
           volunteerQuantity: "",
+          priority: "",
         });
         setInKindItems([newRow()]);
-
-        setTimeout(() => {
-          navigate("/project-ledger");
-        }, 1200);
+        setTimeout(() => navigate("/project-ledger"), 1200);
       } else {
         setErrorMsg(data.error || "Failed to create project.");
         setStatus("error");
@@ -189,7 +205,9 @@ export default function PostNewProject({ onProjectCreated }) {
             </div>
 
             <div>
-              <label className="postProjectLabel">Location</label>
+			  <label className="postProjectLabel">
+                Location <span className="postProjectRequired">*</span>
+              </label>
               <input
                 className="postProjectInput"
                 name="location"
@@ -215,6 +233,23 @@ export default function PostNewProject({ onProjectCreated }) {
                     {c}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="postProjectLabel">
+                Priority <span className="postProjectRequired">*</span>
+              </label>
+              <select
+                className="postProjectInput"
+                name="priority"
+                value={form.priority || ""}
+                onChange={handleChange}
+              >
+                <option value="">Select priority</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
               </select>
             </div>
 
@@ -280,9 +315,7 @@ export default function PostNewProject({ onProjectCreated }) {
                   <button
                     type="button"
                     className="postProjectAddBtn"
-                    onClick={() =>
-                      setInKindItems((prev) => [...prev, newRow()])
-                    }
+                    onClick={() => setInKindItems((prev) => [...prev, newRow()])}
                     title="Add item"
                   >
                     +
@@ -296,11 +329,7 @@ export default function PostNewProject({ onProjectCreated }) {
                         placeholder="Enter item"
                         value={item.itemName}
                         onChange={(e) =>
-                          handleInKindChange(
-                            item.id,
-                            "itemName",
-                            e.target.value,
-                          )
+                          handleInKindChange(item.id, "itemName", e.target.value)
                         }
                       />
                       <input
@@ -309,11 +338,7 @@ export default function PostNewProject({ onProjectCreated }) {
                         placeholder="Enter quantity"
                         value={item.targetQuantity}
                         onChange={(e) =>
-                          handleInKindChange(
-                            item.id,
-                            "targetQuantity",
-                            e.target.value,
-                          )
+                          handleInKindChange(item.id, "targetQuantity", e.target.value)
                         }
                       />
                       <input
@@ -329,7 +354,7 @@ export default function PostNewProject({ onProjectCreated }) {
                         className="postProjectDeleteRowBtn"
                         onClick={() =>
                           setInKindItems((prev) =>
-                            prev.filter((i) => i.id !== item.id),
+                            prev.filter((i) => i.id !== item.id)
                           )
                         }
                         title="Remove item"
@@ -340,9 +365,7 @@ export default function PostNewProject({ onProjectCreated }) {
                     </div>
                   ))}
                   {inKindItems.filter((i) => i.itemName).length === 0 && (
-                    <p className="postProjectInKindEmpty">
-                      No item entered yet
-                    </p>
+                    <p className="postProjectInKindEmpty">No item entered yet</p>
                   )}
                 </div>
               </div>
