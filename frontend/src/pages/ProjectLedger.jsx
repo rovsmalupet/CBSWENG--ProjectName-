@@ -11,7 +11,7 @@ const CAUSE_STYLES = {
   communityDevelopment: { label: "COMMUNITY", bg: "#ede9fe", color: "#6d28d9" },
   livelihoodAndSkillsTraining: { label: "LIVELIHOOD", bg: "#ffedd5", color: "#c2410c" },
   animalWelfare: { label: "ANIMALS", bg: "#fce7f3", color: "#be185d" },
-  other: { label: "OTHERS", bg: "#f3f4f6", color: "#374151" },
+  others: { label: "OTHERS", bg: "#f3f4f6", color: "#374151" },
 };
 
 export default function ProjectLedger() {
@@ -23,7 +23,7 @@ export default function ProjectLedger() {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/posts"); // fetch all projects for tempID
+        const res = await fetch("/posts");
         const data = await res.json();
         setProjects(data);
       } catch (err) {
@@ -84,7 +84,8 @@ export default function ProjectLedger() {
         ) : (
           <div className="ledger-grid">
             {projects.map((project) => {
-              const causeStyle = CAUSE_STYLES[project.cause] || CAUSE_STYLES.other;
+              // project.cause stores the causeKey directly (e.g. "healthAndMedical")
+              const causeStyle = CAUSE_STYLES[project.cause] || CAUSE_STYLES.others;
 
               return (
                 <div key={project._id} className="pcard">
@@ -96,7 +97,6 @@ export default function ProjectLedger() {
                       {causeStyle.label}
                     </span>
 
-                    {/* Verified badge */}
                     <span className="pcard-verified">
                       <svg
                         width="12"

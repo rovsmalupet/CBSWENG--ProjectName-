@@ -23,9 +23,22 @@ function getCause(cause) {
     "Community Development": "communityDevelopment",
     "Livelihood and Skills Training": "livelihoodAndSkillsTraining",
     "Animal Welfare": "animalWelfare",
+    "Others": "others",
   };
-  return map[cause] || "other";
+  return map[cause] || "others";
 }
+
+const CAUSE_KEY_TO_LABEL = {
+  educationAndChildren: "Education and Children",
+  healthAndMedical: "Health and Medicine",
+  disasterRelief: "Disaster Relief",
+  environmentAndClimate: "Environment and Climate Change",
+  povertyAndHunger: "Reducing Poverty and Hunger",
+  communityDevelopment: "Community Development",
+  livelihoodAndSkillsTraining: "Livelihood and Skills Training",
+  animalWelfare: "Animal Welfare",
+  others: "Others",
+};
 
 const newRow = () => ({
   id: Date.now() + Math.random(),
@@ -68,14 +81,10 @@ export default function EditProject() {
           setForm({
             campaignTitle: data.projectName || "",
             location: data.location || "",
-            cause:
-              Object.keys(CAUSES).find((key) => getCause(CAUSES[key]) === data.causeKey) ||
-              data.cause ||
-              "",
+            cause: CAUSE_KEY_TO_LABEL[data.cause] || "",
             impactGoals: data.impactGoals || "",
             monetarySupport: data.supportTypes?.monetary?.targetAmount || "",
-            volunteerQuantity:
-              data.supportTypes?.volunteer?.targetVolunteers || "",
+            volunteerQuantity: data.supportTypes?.volunteer?.targetVolunteers || "",
             priority: data.priority || "",
           });
 
@@ -164,8 +173,7 @@ export default function EditProject() {
     const updatedProject = {
       projectName: form.campaignTitle,
       location: form.location,
-      cause: form.cause,
-      causeKey: getCause(form.cause),
+      cause: getCause(form.cause), // saves causeKey like "healthAndMedical"
       impactGoals: form.impactGoals,
       priority: form.priority,
       supportTypes: {
@@ -288,7 +296,7 @@ export default function EditProject() {
 
             <div>
               <p className="postProjectSectionLabel">Support Types Required</p>
-              {[ 
+              {[
                 { key: "monetary", label: "Monetary Support (PHP)" },
                 { key: "inKind", label: "In-Kind (Food/Supplies)" },
                 { key: "volunteer", label: "Volunteer Staffing" },
