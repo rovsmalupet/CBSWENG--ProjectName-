@@ -115,9 +115,10 @@ export default function DonorHomepage() {
             <h3 className="section-title">Active Campaigns</h3>
             <p className="section-subtitle">
               Refining results for "
-			  <span className="highlight">
-				{[filters.cause, filters.urgency, filters.region].join(" • ")}
-			  </span>"
+              <span className="highlight">
+                {[filters.cause, filters.urgency, filters.region].join(" • ")}
+              </span>
+              "
             </p>
           </div>
 
@@ -148,7 +149,7 @@ export default function DonorHomepage() {
                 <option value="Any">Any</option>
                 <option value="High">High</option>
                 <option value="Medium">Medium</option>
-				<option value="Low">Low</option>
+                <option value="Low">Low</option>
               </select>
             </div>
 
