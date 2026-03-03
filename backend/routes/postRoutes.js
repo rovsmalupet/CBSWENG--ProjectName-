@@ -10,9 +10,9 @@ import {
 const router = express.Router();
 
 router.post("/", createPost);
-router.get("/", getOrgPosts);          // fetch all posts for tempID
-router.get("/:postId", getPostById);   // single post for edit
-router.put("/:postId", updatePost);    // update post
+router.get("/", getOrgPosts);
+router.get("/:postId", getPostById);
+router.put("/:postId", updatePost);
 router.delete("/:postId", deletePost);
 
 export default router;

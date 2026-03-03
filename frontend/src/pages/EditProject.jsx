@@ -2,43 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const CAUSES = [
-  "Education and Children",
-  "Health and Medicine",
-  "Disaster Relief",
-  "Environment and Climate Change",
-  "Reducing Poverty and Hunger",
-  "Community Development",
-  "Livelihood and Skills Training",
-  "Animal Welfare",
-  "Others",
+  { label: "Education", key: "educationAndChildren" },
+  { label: "Health", key: "healthAndMedical" },
+  { label: "Relief", key: "disasterRelief" },
+  { label: "Environment", key: "environmentAndClimate" },
+  { label: "Poverty", key: "povertyAndHunger" },
+  { label: "Community", key: "communityDevelopment" },
+  { label: "Livelihood", key: "livelihoodAndSkillsTraining" },
+  { label: "Animals", key: "animalWelfare" },
+  { label: "Others", key: "others" },
 ];
-
-function getCause(cause) {
-  const map = {
-    "Education and Children": "educationAndChildren",
-    "Health and Medicine": "healthAndMedical",
-    "Disaster Relief": "disasterRelief",
-    "Environment and Climate Change": "environmentAndClimate",
-    "Reducing Poverty and Hunger": "povertyAndHunger",
-    "Community Development": "communityDevelopment",
-    "Livelihood and Skills Training": "livelihoodAndSkillsTraining",
-    "Animal Welfare": "animalWelfare",
-    "Others": "others",
-  };
-  return map[cause] || "others";
-}
-
-const CAUSE_KEY_TO_LABEL = {
-  educationAndChildren: "Education and Children",
-  healthAndMedical: "Health and Medicine",
-  disasterRelief: "Disaster Relief",
-  environmentAndClimate: "Environment and Climate Change",
-  povertyAndHunger: "Reducing Poverty and Hunger",
-  communityDevelopment: "Community Development",
-  livelihoodAndSkillsTraining: "Livelihood and Skills Training",
-  animalWelfare: "Animal Welfare",
-  others: "Others",
-};
 
 const newRow = () => ({
   id: Date.now() + Math.random(),
@@ -54,24 +27,32 @@ export default function EditProject() {
   const [form, setForm] = useState({
     campaignTitle: "",
     location: "",
-    cause: "",
-    impactGoals: "",
+    description: "",
     monetarySupport: "",
     volunteerQuantity: "",
     priority: "",
+    startDate: "",
+    endDate: "",
+    startTime: "",
+    endTime: "",
   });
 
+  const [selectedCauses, setSelectedCauses] = useState([]);
+  const [causeInput, setCauseInput] = useState("");
+
+  const [dateEnabled, setDateEnabled] = useState(false);
+  const [timeEnabled, setTimeEnabled] = useState(false);
+
   const [supportTypes, setSupportTypes] = useState({
-    monetary: true,
-    inKind: true,
-    volunteer: true,
+    monetary: false,
+    inKind: false,
+    volunteer: false,
   });
 
   const [inKindItems, setInKindItems] = useState([newRow()]);
   const [status, setStatus] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ===== Prefill form from backend =====
   useEffect(() => {
     const fetchProject = async () => {
       try {
@@ -81,12 +62,19 @@ export default function EditProject() {
           setForm({
             campaignTitle: data.projectName || "",
             location: data.location || "",
-            cause: CAUSE_KEY_TO_LABEL[data.cause] || "",
-            impactGoals: data.impactGoals || "",
+            description: data.description || "",
             monetarySupport: data.supportTypes?.monetary?.targetAmount || "",
             volunteerQuantity: data.supportTypes?.volunteer?.targetVolunteers || "",
             priority: data.priority || "",
+            startDate: data.startDate || "",
+            endDate: data.endDate || "",
+            startTime: data.startTime || "",
+            endTime: data.endTime || "",
           });
+
+          setSelectedCauses(data.causes ?? []);
+          setDateEnabled(!!(data.startDate || data.endDate));
+          setTimeEnabled(!!(data.startTime || data.endTime));
 
           setSupportTypes({
             monetary: data.supportTypes?.monetary?.enabled || false,
@@ -111,32 +99,46 @@ export default function EditProject() {
       } catch (err) {
         setErrorMsg("Network error. Please try again.");
         setStatus("error");
-        console.error(err);
       }
     };
     fetchProject();
   }, [id]);
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
 
-  const toggleSupport = (type) => {
+  const toggleSupport = (type) =>
     setSupportTypes((prev) => ({ ...prev, [type]: !prev[type] }));
+
+  const addCause = (key) => {
+    if (key && !selectedCauses.includes(key)) {
+      setSelectedCauses((prev) => [...prev, key]);
+    }
+    setCauseInput("");
   };
 
-  const handleInKindChange = (id, field, value) => {
+  const removeCause = (key) =>
+    setSelectedCauses((prev) => prev.filter((c) => c !== key));
+
+  const getCauseLabel = (key) =>
+    CAUSES.find((c) => c.key === key)?.label ?? key;
+
+  const handleInKindChange = (id, field, value) =>
     setInKindItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ======= FORM VALIDATION =======
-    if (!form.campaignTitle.trim() || !form.cause || !form.priority || !form.location.trim()) {
-      setErrorMsg("Campaign title, location, cause, and priority are required.");
+    if (!form.campaignTitle.trim() || !form.location.trim() || !form.priority) {
+      setErrorMsg("Campaign title, location, and priority are required.");
+      setStatus("error");
+      return;
+    }
+
+    if (selectedCauses.length === 0) {
+      setErrorMsg("At least one cause must be selected.");
       setStatus("error");
       return;
     }
@@ -168,14 +170,17 @@ export default function EditProject() {
         }
       }
     }
-    // ===== END VALIDATION =====
 
     const updatedProject = {
       projectName: form.campaignTitle,
       location: form.location,
-      cause: getCause(form.cause), // saves causeKey like "healthAndMedical"
-      impactGoals: form.impactGoals,
+      description: form.description,
+      causes: selectedCauses,
       priority: form.priority,
+      startDate: dateEnabled ? form.startDate : null,
+      endDate: dateEnabled ? form.endDate : null,
+      startTime: timeEnabled ? form.startTime : null,
+      endTime: timeEnabled ? form.endTime : null,
       supportTypes: {
         monetary: {
           enabled: supportTypes.monetary && !!form.monetarySupport,
@@ -213,7 +218,6 @@ export default function EditProject() {
     } catch (err) {
       setErrorMsg("Network error. Please try again.");
       setStatus("error");
-      console.error(err);
     }
   };
 
@@ -234,6 +238,7 @@ export default function EditProject() {
         <form onSubmit={handleSubmit} className="postProjectForm">
           {/* LEFT COLUMN */}
           <div className="postProjectCol">
+
             <div>
               <label className="postProjectLabel">
                 Campaign Title <span className="postProjectRequired">*</span>
@@ -248,7 +253,9 @@ export default function EditProject() {
             </div>
 
             <div>
-              <label className="postProjectLabel">Location</label>
+              <label className="postProjectLabel">
+                Location <span className="postProjectRequired">*</span>
+              </label>
               <input
                 className="postProjectInput"
                 name="location"
@@ -258,23 +265,39 @@ export default function EditProject() {
               />
             </div>
 
+            {/* Cause multi-select with chips */}
             <div>
               <label className="postProjectLabel">
                 Cause <span className="postProjectRequired">*</span>
               </label>
               <select
                 className="postProjectInput"
-                name="cause"
-                value={form.cause}
-                onChange={handleChange}
+                value={causeInput}
+                onChange={(e) => addCause(e.target.value)}
               >
                 <option value="">Select a cause</option>
-                {CAUSES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {CAUSES.filter((c) => !selectedCauses.includes(c.key)).map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
                   </option>
                 ))}
               </select>
+              {selectedCauses.length > 0 && (
+                <div className="postProjectChips">
+                  {selectedCauses.map((key) => (
+                    <span key={key} className="postProjectChip">
+                      <button
+                        type="button"
+                        className="postProjectChipRemove"
+                        onClick={() => removeCause(key)}
+                      >
+                        ✕
+                      </button>
+                      {getCauseLabel(key)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
@@ -284,7 +307,7 @@ export default function EditProject() {
               <select
                 className="postProjectInput"
                 name="priority"
-                value={form.priority || ""}
+                value={form.priority}
                 onChange={handleChange}
               >
                 <option value="">Select priority</option>
@@ -294,6 +317,119 @@ export default function EditProject() {
               </select>
             </div>
 
+           {/* Date range with toggle */}
+<div>
+  <label className="postProjectLabel">
+    Date
+    <button
+      type="button"
+      onClick={() => setDateEnabled((v) => !v)}
+      style={{
+        marginLeft: 8,
+        width: 40,
+        height: 22,
+        borderRadius: 999,
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: dateEnabled ? "#16a34a" : "#cbd5e0",
+        position: "relative",
+        transition: "background-color 0.2s",
+        verticalAlign: "middle",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 3,
+          left: dateEnabled ? 20 : 3,
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          backgroundColor: "#fff",
+          transition: "left 0.2s",
+        }}
+      />
+    </button>
+  </label>
+  {dateEnabled && (
+    <div className="postProjectDateRow">
+      <span className="postProjectDateLabel">FROM</span>
+      <input
+        className="postProjectInput"
+        type="date"
+        name="startDate"
+        value={form.startDate}
+        onChange={handleChange}
+      />
+      <span className="postProjectDateLabel">TO</span>
+      <input
+        className="postProjectInput"
+        type="date"
+        name="endDate"
+        value={form.endDate}
+        onChange={handleChange}
+      />
+    </div>
+  )}
+</div>
+
+{/* Time range with toggle */}
+<div>
+  <label className="postProjectLabel">
+    Time
+    <button
+      type="button"
+      onClick={() => setTimeEnabled((v) => !v)}
+      style={{
+        marginLeft: 8,
+        width: 40,
+        height: 22,
+        borderRadius: 999,
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: timeEnabled ? "#16a34a" : "#cbd5e0",
+        position: "relative",
+        transition: "background-color 0.2s",
+        verticalAlign: "middle",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 3,
+          left: timeEnabled ? 20 : 3,
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          backgroundColor: "#fff",
+          transition: "left 0.2s",
+        }}
+      />
+    </button>
+  </label>
+  {timeEnabled && (
+    <div className="postProjectDateRow">
+      <span className="postProjectDateLabel">FROM</span>
+      <input
+        className="postProjectInput"
+        type="time"
+        name="startTime"
+        value={form.startTime}
+        onChange={handleChange}
+      />
+      <span className="postProjectDateLabel">TO</span>
+      <input
+        className="postProjectInput"
+        type="time"
+        name="endTime"
+        value={form.endTime}
+        onChange={handleChange}
+      />
+    </div>
+  )}
+</div>
+
+            {/* Support Types */}
             <div>
               <p className="postProjectSectionLabel">Support Types Required</p>
               {[
@@ -311,16 +447,18 @@ export default function EditProject() {
                 </label>
               ))}
             </div>
+
           </div>
 
           {/* RIGHT COLUMN */}
           <div className="postProjectCol">
+
             <div>
-              <label className="postProjectLabel">Impact Goals & Budget</label>
+              <label className="postProjectLabel">Project Description</label>
               <textarea
                 className="postProjectTextarea"
-                name="impactGoals"
-                value={form.impactGoals}
+                name="description"
+                value={form.description}
                 onChange={handleChange}
                 placeholder="Enter your project description here..."
               />
@@ -364,34 +502,26 @@ export default function EditProject() {
                         className="postProjectInput"
                         placeholder="Enter item"
                         value={item.itemName}
-                        onChange={(e) =>
-                          handleInKindChange(item.id, "itemName", e.target.value)
-                        }
+                        onChange={(e) => handleInKindChange(item.id, "itemName", e.target.value)}
                       />
                       <input
                         className="postProjectInput"
                         type="number"
                         placeholder="Enter quantity"
                         value={item.targetQuantity}
-                        onChange={(e) =>
-                          handleInKindChange(item.id, "targetQuantity", e.target.value)
-                        }
+                        onChange={(e) => handleInKindChange(item.id, "targetQuantity", e.target.value)}
                       />
                       <input
                         className="postProjectInput"
                         placeholder="Enter unit"
                         value={item.unit}
-                        onChange={(e) =>
-                          handleInKindChange(item.id, "unit", e.target.value)
-                        }
+                        onChange={(e) => handleInKindChange(item.id, "unit", e.target.value)}
                       />
                       <button
                         type="button"
                         className="postProjectDeleteRowBtn"
                         onClick={() =>
-                          setInKindItems((prev) =>
-                            prev.filter((i) => i.id !== item.id)
-                          )
+                          setInKindItems((prev) => prev.filter((i) => i.id !== item.id))
                         }
                         disabled={inKindItems.length === 1}
                       >
@@ -426,6 +556,7 @@ export default function EditProject() {
             >
               {status === "loading" ? "Updating..." : "Update Project"}
             </button>
+
           </div>
         </form>
       </div>

@@ -2,33 +2,19 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const CAUSES = [
-  "Education and Children",
-  "Health and Medicine",
-  "Disaster Relief",
-  "Environment and Climate Change",
-  "Reducing Poverty and Hunger",
-  "Community Development",
-  "Livelihood and Skills Training",
-  "Animal Welfare",
-  "Others",
+  { label: "Education", key: "educationAndChildren" },
+  { label: "Health", key: "healthAndMedical" },
+  { label: "Relief", key: "disasterRelief" },
+  { label: "Environment", key: "environmentAndClimate" },
+  { label: "Poverty", key: "povertyAndHunger" },
+  { label: "Community", key: "communityDevelopment" },
+  { label: "Livelihood", key: "livelihoodAndSkillsTraining" },
+  { label: "Animals", key: "animalWelfare" },
+  { label: "Others", key: "others" },
 ];
 
-function getCause(cause) {
-  const map = {
-    "Education and Children": "educationAndChildren",
-    "Health and Medicine": "healthAndMedical",
-    "Disaster Relief": "disasterRelief",
-    "Environment and Climate Change": "environmentAndClimate",
-    "Reducing Poverty and Hunger": "povertyAndHunger",
-    "Community Development": "communityDevelopment",
-    "Livelihood and Skills Training": "livelihoodAndSkillsTraining",
-    "Animal Welfare": "animalWelfare",
-  };
-  return map[cause] || "other";
-}
-
 const newRow = () => ({
-  id: Date.now(),
+  id: Date.now() + Math.random(),
   itemName: "",
   targetQuantity: "",
   unit: "",
@@ -40,12 +26,21 @@ export default function PostNewProject({ onProjectCreated }) {
   const [form, setForm] = useState({
     campaignTitle: "",
     location: "",
-    cause: "",
-    impactGoals: "",
+    description: "",
     monetarySupport: "",
     volunteerQuantity: "",
     priority: "",
+    startDate: "",
+    endDate: "",
+    startTime: "",
+    endTime: "",
   });
+
+  const [selectedCauses, setSelectedCauses] = useState([]);
+  const [causeInput, setCauseInput] = useState("");
+
+  const [dateEnabled, setDateEnabled] = useState(false);
+  const [timeEnabled, setTimeEnabled] = useState(false);
 
   const [supportTypes, setSupportTypes] = useState({
     monetary: true,
@@ -57,26 +52,42 @@ export default function PostNewProject({ onProjectCreated }) {
   const [status, setStatus] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
 
-  const toggleSupport = (type) => {
+  const toggleSupport = (type) =>
     setSupportTypes((prev) => ({ ...prev, [type]: !prev[type] }));
+
+  const addCause = (key) => {
+    if (key && !selectedCauses.includes(key)) {
+      setSelectedCauses((prev) => [...prev, key]);
+    }
+    setCauseInput("");
   };
 
-  const handleInKindChange = (id, field, value) => {
+  const removeCause = (key) =>
+    setSelectedCauses((prev) => prev.filter((c) => c !== key));
+
+  const getCauseLabel = (key) =>
+    CAUSES.find((c) => c.key === key)?.label ?? key;
+
+  const handleInKindChange = (id, field, value) =>
     setInKindItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // ======= FORM VALIDATION =======
-    if (!form.campaignTitle.trim() || !form.cause || !form.priority) {
-      setErrorMsg("Campaign title, cause, and priority are required.");
+    if (!form.campaignTitle.trim() || !form.priority || !form.location.trim()) {
+      setErrorMsg("Campaign title, location, and priority are required.");
+      setStatus("error");
+      return;
+    }
+
+    if (selectedCauses.length === 0) {
+      setErrorMsg("At least one cause must be selected.");
       setStatus("error");
       return;
     }
@@ -101,7 +112,12 @@ export default function PostNewProject({ onProjectCreated }) {
 
     if (supportTypes.inKind) {
       for (const item of inKindItems) {
-        if (!item.itemName.trim() || !item.unit.trim() || !item.targetQuantity || Number(item.targetQuantity) <= 0) {
+        if (
+          !item.itemName.trim() ||
+          !item.unit.trim() ||
+          !item.targetQuantity ||
+          Number(item.targetQuantity) <= 0
+        ) {
           setErrorMsg("All in-kind items must have a name, positive quantity, and unit.");
           setStatus("error");
           return;
@@ -113,9 +129,13 @@ export default function PostNewProject({ onProjectCreated }) {
     const project = {
       projectName: form.campaignTitle,
       location: form.location,
-      cause: getCause(form.cause),
-      impactGoals: form.impactGoals,
+      description: form.description,
+      causes: selectedCauses,
       priority: form.priority,
+      startDate: dateEnabled ? form.startDate : null,
+      endDate: dateEnabled ? form.endDate : null,
+      startTime: timeEnabled ? form.startTime : null,
+      endTime: timeEnabled ? form.endTime : null,
       supportTypes: {
         monetary: {
           enabled: supportTypes.monetary && !!form.monetarySupport,
@@ -133,11 +153,6 @@ export default function PostNewProject({ onProjectCreated }) {
           targetVolunteers: supportTypes.volunteer ? Number(form.volunteerQuantity) : 0,
         },
       },
-      createdAt: new Date().toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
     };
 
     if (onProjectCreated) onProjectCreated(project);
@@ -155,13 +170,19 @@ export default function PostNewProject({ onProjectCreated }) {
         setForm({
           campaignTitle: "",
           location: "",
-          cause: "",
-          impactGoals: "",
+          description: "",
           monetarySupport: "",
           volunteerQuantity: "",
           priority: "",
+          startDate: "",
+          endDate: "",
+          startTime: "",
+          endTime: "",
         });
+        setSelectedCauses([]);
         setInKindItems([newRow()]);
+        setDateEnabled(false);
+        setTimeEnabled(false);
         setTimeout(() => navigate("/project-ledger"), 1200);
       } else {
         setErrorMsg(data.error || "Failed to create project.");
@@ -191,6 +212,7 @@ export default function PostNewProject({ onProjectCreated }) {
         <form onSubmit={handleSubmit} className="postProjectForm">
           {/* LEFT COLUMN */}
           <div className="postProjectCol">
+
             <div>
               <label className="postProjectLabel">
                 Campaign Title <span className="postProjectRequired">*</span>
@@ -205,7 +227,7 @@ export default function PostNewProject({ onProjectCreated }) {
             </div>
 
             <div>
-			  <label className="postProjectLabel">
+              <label className="postProjectLabel">
                 Location <span className="postProjectRequired">*</span>
               </label>
               <input
@@ -217,23 +239,39 @@ export default function PostNewProject({ onProjectCreated }) {
               />
             </div>
 
+            {/* Cause multi-select with chips */}
             <div>
               <label className="postProjectLabel">
                 Cause <span className="postProjectRequired">*</span>
               </label>
               <select
                 className="postProjectInput"
-                name="cause"
-                value={form.cause}
-                onChange={handleChange}
+                value={causeInput}
+                onChange={(e) => addCause(e.target.value)}
               >
                 <option value="">Select a cause</option>
-                {CAUSES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {CAUSES.filter((c) => !selectedCauses.includes(c.key)).map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
                   </option>
                 ))}
               </select>
+              {selectedCauses.length > 0 && (
+                <div className="postProjectChips">
+                  {selectedCauses.map((key) => (
+                    <span key={key} className="postProjectChip">
+                      <button
+                        type="button"
+                        className="postProjectChipRemove"
+                        onClick={() => removeCause(key)}
+                      >
+                        ✕
+                      </button>
+                      {getCauseLabel(key)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
@@ -243,7 +281,7 @@ export default function PostNewProject({ onProjectCreated }) {
               <select
                 className="postProjectInput"
                 name="priority"
-                value={form.priority || ""}
+                value={form.priority}
                 onChange={handleChange}
               >
                 <option value="">Select priority</option>
@@ -253,6 +291,119 @@ export default function PostNewProject({ onProjectCreated }) {
               </select>
             </div>
 
+           {/* Date range with toggle */}
+<div>
+  <label className="postProjectLabel">
+    Date
+    <button
+      type="button"
+      onClick={() => setDateEnabled((v) => !v)}
+      style={{
+        marginLeft: 8,
+        width: 40,
+        height: 22,
+        borderRadius: 999,
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: dateEnabled ? "#16a34a" : "#cbd5e0",
+        position: "relative",
+        transition: "background-color 0.2s",
+        verticalAlign: "middle",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 3,
+          left: dateEnabled ? 20 : 3,
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          backgroundColor: "#fff",
+          transition: "left 0.2s",
+        }}
+      />
+    </button>
+  </label>
+  {dateEnabled && (
+    <div className="postProjectDateRow">
+      <span className="postProjectDateLabel">FROM</span>
+      <input
+        className="postProjectInput"
+        type="date"
+        name="startDate"
+        value={form.startDate}
+        onChange={handleChange}
+      />
+      <span className="postProjectDateLabel">TO</span>
+      <input
+        className="postProjectInput"
+        type="date"
+        name="endDate"
+        value={form.endDate}
+        onChange={handleChange}
+      />
+    </div>
+  )}
+</div>
+
+{/* Time range with toggle */}
+<div>
+  <label className="postProjectLabel">
+    Time
+    <button
+      type="button"
+      onClick={() => setTimeEnabled((v) => !v)}
+      style={{
+        marginLeft: 8,
+        width: 40,
+        height: 22,
+        borderRadius: 999,
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: timeEnabled ? "#16a34a" : "#cbd5e0",
+        position: "relative",
+        transition: "background-color 0.2s",
+        verticalAlign: "middle",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 3,
+          left: timeEnabled ? 20 : 3,
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          backgroundColor: "#fff",
+          transition: "left 0.2s",
+        }}
+      />
+    </button>
+  </label>
+  {timeEnabled && (
+    <div className="postProjectDateRow">
+      <span className="postProjectDateLabel">FROM</span>
+      <input
+        className="postProjectInput"
+        type="time"
+        name="startTime"
+        value={form.startTime}
+        onChange={handleChange}
+      />
+      <span className="postProjectDateLabel">TO</span>
+      <input
+        className="postProjectInput"
+        type="time"
+        name="endTime"
+        value={form.endTime}
+        onChange={handleChange}
+      />
+    </div>
+  )}
+</div>
+
+            {/* Support Types */}
             <div>
               <p className="postProjectSectionLabel">Support Types Required</p>
               {[
@@ -270,18 +421,18 @@ export default function PostNewProject({ onProjectCreated }) {
                 </label>
               ))}
             </div>
+
           </div>
 
           {/* RIGHT COLUMN */}
           <div className="postProjectCol">
+
             <div>
-              <label className="postProjectLabel">
-                Impact Goals &amp; Budget
-              </label>
+              <label className="postProjectLabel">Project Description</label>
               <textarea
                 className="postProjectTextarea"
-                name="impactGoals"
-                value={form.impactGoals}
+                name="description"
+                value={form.description}
                 onChange={handleChange}
                 placeholder="Enter your project description here..."
               />
@@ -289,9 +440,7 @@ export default function PostNewProject({ onProjectCreated }) {
 
             {supportTypes.monetary && (
               <div>
-                <label className="postProjectLabel">
-                  Monetary Support (PHP)
-                </label>
+                <label className="postProjectLabel">Monetary Support (PHP)</label>
                 <div className="postProjectInputWrapper">
                   <input
                     className="postProjectInput"
@@ -392,10 +541,9 @@ export default function PostNewProject({ onProjectCreated }) {
               className="postProjectSubmitBtn"
               disabled={status === "loading"}
             >
-              {status === "loading"
-                ? "Publishing..."
-                : "Publish Verified Project"}
+              {status === "loading" ? "Publishing..." : "Publish Verified Project"}
             </button>
+
           </div>
         </form>
       </div>

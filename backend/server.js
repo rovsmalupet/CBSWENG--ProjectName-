@@ -1,15 +1,11 @@
 import express from "express";
-import mongoose from "mongoose";
+import dotenv from "dotenv";
 import postRoutes from "./routes/postRoutes.js";
 
-const app = express();
-const port = 3000;
+dotenv.config();
 
-// MongoDB connection (Mongoose v7+)
-mongoose
-  .connect("mongodb://127.0.0.1:27017/CBSWENG1")
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error(err));
+const app = express();
+const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());

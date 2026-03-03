@@ -42,7 +42,7 @@ export default function ProjectLedger() {
     try {
       const res = await fetch(`/posts/${projectId}`, { method: "DELETE" });
       if (res.ok) {
-        setProjects((prev) => prev.filter((p) => p._id !== projectId));
+        setProjects((prev) => prev.filter((p) => p.id !== projectId));
       } else {
         alert("Failed to delete project");
       }
@@ -73,8 +73,6 @@ export default function ProjectLedger() {
               <circle cx="4" cy="7" r="1" fill="#9ca3af" stroke="none" />
               <line x1="8" y1="7" x2="20" y2="7" />
               <circle cx="4" cy="12" r="1" fill="#9ca3af" stroke="none" />
-              <line x1="8" y1="12" x2="20" y2="12" />
-              <circle cx="4" cy="17" r="1" fill="#9ca3af" stroke="none" />
               <line x1="8" y1="17" x2="20" y2="17" />
             </svg>
             <p>
@@ -84,18 +82,37 @@ export default function ProjectLedger() {
         ) : (
           <div className="ledger-grid">
             {projects.map((project) => {
-              // project.cause stores the causeKey directly (e.g. "healthAndMedical")
-              const causeStyle = CAUSE_STYLES[project.cause] || CAUSE_STYLES.others;
+              const causes = project.causes?.length
+                ? project.causes
+                : [];
 
               return (
-                <div key={project._id} className="pcard">
+                <div key={project.id} className="pcard">
                   <div className="pcard-top">
-                    <span
-                      className="pcard-cause-badge"
-                      style={{ background: causeStyle.bg, color: causeStyle.color }}
-                    >
-                      {causeStyle.label}
-                    </span>
+                    {/* Render a badge for each cause */}
+                    <div className="pcard-cause-badges">
+                      {causes.length > 0 ? (
+                        causes.map((causeKey) => {
+                          const style = CAUSE_STYLES[causeKey] || CAUSE_STYLES.others;
+                          return (
+                            <span
+                              key={causeKey}
+                              className="pcard-cause-badge"
+                              style={{ background: style.bg, color: style.color }}
+                            >
+                              {style.label}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span
+                          className="pcard-cause-badge"
+                          style={{ background: CAUSE_STYLES.others.bg, color: CAUSE_STYLES.others.color }}
+                        >
+                          {CAUSE_STYLES.others.label}
+                        </span>
+                      )}
+                    </div>
 
                     <span className="pcard-verified">
                       <svg
@@ -131,21 +148,21 @@ export default function ProjectLedger() {
                     </p>
                   )}
 
-                  {project.impactGoals && (
-                    <p className="pcard-desc">{project.impactGoals}</p>
+                  {project.description && (
+                    <p className="pcard-desc">{project.description}</p>
                   )}
 
                   <div className="pcard-actions">
                     <button
                       className="edit-btn"
-                      onClick={() => navigate(`/edit-project/${project._id}`)}
+                      onClick={() => navigate(`/edit-project/${project.id}`)}
                       title="Edit project"
                     >
                       ✏️ Edit
                     </button>
                     <button
                       className="delete-btn"
-                      onClick={() => handleDelete(project._id)}
+                      onClick={() => handleDelete(project.id)}
                       title="Delete project"
                     >
                       🗑️ Delete
