@@ -1,149 +1,168 @@
-import Post from "../models/posts.js";
+import prisma from "../prisma/client.js";
 
-// Create a new project (sprint-friendly)
+const formatPost = (post) => ({
+  ...post,
+  supportTypes: {
+    monetary: {
+      enabled: post.monetaryEnabled,
+      targetAmount: post.monetaryTargetAmount,
+      currentAmount: post.monetaryCurrentAmount,
+      status: post.monetaryStatus,
+    },
+    inKind: post.inKindItems ?? [],
+    volunteer: {
+      enabled: post.volunteerEnabled,
+      targetVolunteers: post.volunteerTargetCount,
+      currentVolunteers: post.volunteerCurrentCount,
+      status: post.volunteerStatus,
+    },
+  },
+  monetaryEnabled: undefined,
+  monetaryTargetAmount: undefined,
+  monetaryCurrentAmount: undefined,
+  monetaryStatus: undefined,
+  volunteerEnabled: undefined,
+  volunteerTargetCount: undefined,
+  volunteerCurrentCount: undefined,
+  volunteerStatus: undefined,
+  inKindItems: undefined,
+});
+
+const buildPostData = (body) => {
+  const {
+    projectName,
+    description,
+    category,
+    causes,
+    location,
+    priority,
+    supportTypes,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+  } = body;
+
+  const monetary = supportTypes?.monetary;
+  const volunteer = supportTypes?.volunteer;
+  const inKind = supportTypes?.inKind ?? [];
+
+  return {
+    projectName,
+    description,
+    category,
+    causes: causes ?? [],
+    location,
+    priority,
+    startDate: startDate || null,
+    endDate: endDate || null,
+    startTime: startTime || null,
+    endTime: endTime || null,
+    monetaryEnabled: monetary?.enabled ?? false,
+    monetaryTargetAmount: monetary?.enabled ? (monetary.targetAmount ?? 0) : null,
+    volunteerEnabled: volunteer?.enabled ?? false,
+    volunteerTargetCount: volunteer?.enabled ? (volunteer.targetVolunteers ?? 0) : null,
+    inKindItems: inKind.map((i) => ({
+      itemName: i.itemName,
+      targetQuantity: i.targetQuantity,
+      unit: i.unit ?? null,
+    })),
+  };
+};
+
 export const createPost = async (req, res) => {
   try {
-    const {
-      projectName,
-      description,
-      category,
-      cause,
-      location,
-      impactGoals,
-      priority,
-      supportTypes,
-    } = req.body;
-
-    if (!projectName || !cause) {
-      return res
-        .status(400)
-        .json({ error: "projectName and cause are required" });
+    const { projectName, causes } = req.body;
+    if (!projectName || !causes?.length) {
+      return res.status(400).json({ error: "projectName and at least one cause are required" });
     }
 
-    // SPRINT: fixed orgId for testing
-    const orgId = "tempID";
+    const data = buildPostData(req.body);
+    const { inKindItems, ...postFields } = data;
 
-    const newPost = new Post({
-      orgId,
-      projectName,
-      description,
-      category,
-      cause,
-      location,
-      impactGoals,
-      priority,
-      supportTypes: {
-        monetary: supportTypes?.monetary?.enabled
-          ? { enabled: true, targetAmount: supportTypes.monetary.targetAmount || 0 }
-          : { enabled: false },
-        inKind: supportTypes?.inKind?.length
-          ? supportTypes.inKind.map((i) => ({
-              itemName: i.itemName,
-              targetQuantity: i.targetQuantity,
-              unit: i.unit,
-            }))
-          : [],
-        volunteer: supportTypes?.volunteer?.enabled
-          ? { enabled: true, targetVolunteers: supportTypes.volunteer.targetVolunteers || 0 }
-          : { enabled: false },
+    const post = await prisma.post.create({
+      data: {
+        ...postFields,
+        orgId: "tempID",
+        overallStatus: "Published",
+        inKindItems: { create: inKindItems },
       },
-      overallStatus: "Published",
+      include: { inKindItems: true },
     });
 
-    await newPost.save();
-    res.status(201).json({ message: "Project posted successfully", post: newPost });
+    res.status(201).json({ message: "Project posted successfully", post: formatPost(post) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Get all posts for sprint orgId
 export const getOrgPosts = async (req, res) => {
   try {
-    // SPRINT: always fetch orgId="tempID"
-    const posts = await Post.find({ orgId: "tempID" }).sort({ createdAt: -1 });
-    res.json(posts);
+    const posts = await prisma.post.findMany({
+      where: { orgId: "tempID" },
+      orderBy: { createdAt: "desc" },
+      include: { inKindItems: true },
+    });
+    res.json(posts.map(formatPost));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Get single post by ID (for edit)
 export const getPostById = async (req, res) => {
   try {
-    const { postId } = req.params;
-    const post = await Post.findById(postId);
+    const post = await prisma.post.findUnique({
+      where: { id: req.params.postId },
+      include: { inKindItems: true },
+    });
     if (!post) return res.status(404).json({ error: "Post not found" });
-    res.json(post);
+    res.json(formatPost(post));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Update a post (edit)
 export const updatePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const {
-      projectName,
-      description,
-      category,
-      cause,
-      location,
-      impactGoals,
-      priority,
-      supportTypes,
-    } = req.body;
+    const data = buildPostData(req.body);
+    const { inKindItems, ...postFields } = data;
 
-    const updated = await Post.findByIdAndUpdate(
-      postId,
-      {
-        projectName,
-        description,
-        category,
-        cause,
-        location,
-        impactGoals,
-        priority,
-        supportTypes: {
-          monetary: supportTypes?.monetary?.enabled
-            ? { enabled: true, targetAmount: supportTypes.monetary.targetAmount || 0 }
-            : { enabled: false },
-          inKind: supportTypes?.inKind?.length
-            ? supportTypes.inKind.map((i) => ({
-                itemName: i.itemName,
-                targetQuantity: i.targetQuantity,
-                unit: i.unit,
-              }))
-            : [],
-          volunteer: supportTypes?.volunteer?.enabled
-            ? { enabled: true, targetVolunteers: supportTypes.volunteer.targetVolunteers || 0 }
-            : { enabled: false },
+    const updated = await prisma.post.update({
+      where: { id: postId },
+      data: {
+        ...postFields,
+        inKindItems: {
+          deleteMany: {},
+          create: inKindItems,
         },
       },
-      { new: true }
-    );
+      include: { inKindItems: true },
+    });
 
-    if (!updated) return res.status(404).json({ error: "Post not found" });
-
-    res.json({ message: "Post updated successfully", post: updated });
+    res.json({ message: "Post updated successfully", post: formatPost(updated) });
   } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Post not found" });
+    }
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Delete a post
 export const deletePost = async (req, res) => {
   try {
-    const { postId } = req.params;
-    const deletedPost = await Post.findByIdAndDelete(postId);
-    if (!deletedPost) return res.status(404).json({ error: "Post not found" });
-    res.json({ message: "Post deleted successfully", post: deletedPost });
+    const post = await prisma.post.delete({
+      where: { id: req.params.postId },
+    });
+    res.json({ message: "Post deleted successfully", post });
   } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Post not found" });
+    }
     console.error(err);
     res.status(500).json({ error: err.message });
   }
