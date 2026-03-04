@@ -2,6 +2,13 @@ generator client {
   provider = "prisma-client-js"
 }
 
+<<<<<<< HEAD
+=======
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+>>>>>>> a7b993688afbfc594575665180e485664139c8b1
 
 model Organization {
   id         String   @id @default(uuid())
@@ -79,9 +86,12 @@ enum PostStatus {
 enum SupportStatus {
   Open
   Closed
+<<<<<<< HEAD
 }
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+=======
+>>>>>>> a7b993688afbfc594575665180e485664139c8b1
 }
