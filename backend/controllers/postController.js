@@ -167,3 +167,57 @@ export const deletePost = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// PATCH /posts/:postId/contribute
+// Increments current amounts for monetary, in-kind items, and/or volunteers
+export const addContribution = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { monetaryDelta = 0, inKindDeltas = [], volunteerDelta = 0 } = req.body;
+
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      include: { inKindItems: true },
+    });
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    const postUpdate = {};
+
+    if (monetaryDelta > 0 && post.monetaryEnabled) {
+      postUpdate.monetaryCurrentAmount = post.monetaryCurrentAmount + monetaryDelta;
+    }
+
+    if (volunteerDelta > 0 && post.volunteerEnabled) {
+      postUpdate.volunteerCurrentCount = post.volunteerCurrentCount + volunteerDelta;
+    }
+
+    if (Object.keys(postUpdate).length > 0) {
+      await prisma.post.update({
+        where: { id: postId },
+        data: postUpdate,
+      });
+    }
+
+    // Update individual in-kind item quantities
+    for (const { itemId, quantityDelta } of inKindDeltas) {
+      if (!quantityDelta || quantityDelta <= 0) continue;
+      const item = post.inKindItems.find((i) => i.id === itemId);
+      if (item) {
+        await prisma.postInKindItem.update({
+          where: { id: itemId },
+          data: { currentQuantity: item.currentQuantity + quantityDelta },
+        });
+      }
+    }
+
+    const finalPost = await prisma.post.findUnique({
+      where: { id: postId },
+      include: { inKindItems: true },
+    });
+
+    res.json({ message: "Contribution recorded successfully", post: formatPost(finalPost) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
