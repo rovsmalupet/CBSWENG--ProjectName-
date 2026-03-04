@@ -2,13 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
-<<<<<<< HEAD
-=======
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
->>>>>>> a7b993688afbfc594575665180e485664139c8b1
 
 model Organization {
   id         String   @id @default(uuid())
@@ -29,22 +27,18 @@ model Post {
   priority      Priority      @default(Medium)
   overallStatus PostStatus    @default(Draft)
   createdAt     DateTime      @default(now())
-
   startDate     String?
   endDate       String?
   startTime     String?
   endTime       String?
-
   monetaryEnabled       Boolean       @default(false)
   monetaryTargetAmount  Float?
   monetaryCurrentAmount Float         @default(0)
   monetaryStatus        SupportStatus @default(Open)
-
   volunteerEnabled      Boolean       @default(false)
   volunteerTargetCount  Int?
   volunteerCurrentCount Int           @default(0)
   volunteerStatus       SupportStatus @default(Open)
-
   inKindItems PostInKindItem[]
 }
 
@@ -56,7 +50,6 @@ model PostInKindItem {
   currentQuantity Float         @default(0)
   unit            String?
   status          SupportStatus @default(Open)
-
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
@@ -86,12 +79,4 @@ enum PostStatus {
 enum SupportStatus {
   Open
   Closed
-<<<<<<< HEAD
-}
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-=======
->>>>>>> a7b993688afbfc594575665180e485664139c8b1
 }

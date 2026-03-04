@@ -159,7 +159,7 @@ export default function PostNewProject({ onProjectCreated }) {
 
     setStatus("loading");
     try {
-      const res = await fetch("/posts", {
+      const res = await fetch("http://localhost:3000/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(project),
