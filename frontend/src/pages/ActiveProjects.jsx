@@ -63,7 +63,15 @@ export default function ActiveProjects() {
   return (
     <div className="ledger-page">
       <main className="ledger-main">
-        <h1 className="ledger-title">My Active Projects</h1>
+        <div className="ledger-header">
+          <h1 className="ledger-title">My Active Projects</h1>
+          <button
+            className="ledger-add-btn"
+            onClick={() => navigate("/post-project")}
+          >
+            Add New Project
+          </button>
+        </div>
 
         {loading ? (
           <div className="ledger-empty">
@@ -176,6 +184,13 @@ export default function ActiveProjects() {
                       ✏️ Edit
                     </button>
                     <button
+                      className="contribution-btn"
+                      onClick={() => navigate(`/add-contribution/${project.id}`)}
+                      title="Add contribution"
+                    >
+                      ➕ Add Contribution
+                    </button>
+                    <button
                       className="delete-btn"
                       onClick={() => handleDelete(project.id)}
                       title="Delete project"
@@ -188,15 +203,6 @@ export default function ActiveProjects() {
             })}
           </div>
         )}
-
-        <div className="ledger-add-wrap">
-          <button
-            className="ledger-add-btn"
-            onClick={() => navigate("/post-project")}
-          >
-            Add New Project
-          </button>
-        </div>
       </main>
     </div>
   );

@@ -13,11 +13,19 @@
 }
 
 /* ── Title ── */
+.ledger-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
 .ledger-title {
   font-size: 1.75rem;
   font-weight: 800;
   color: #111827;
-  margin: 0 0 28px 0;
+  margin: 0;
 }
 
 /* ── Cards grid ── */
@@ -147,11 +155,6 @@
 }
 
 /* ── Add New Project button ── */
-.ledger-add-wrap {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .ledger-add-btn {
   background: #22c55e;
   color: #ffffff;
@@ -165,6 +168,7 @@
     background 0.18s ease,
     transform 0.15s ease;
   box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+  white-space: nowrap;
 }
 
 .ledger-add-btn:hover {
@@ -178,6 +182,7 @@
 
 /* ── Edit and Delete buttons ── */
 .edit-btn,
+.contribution-btn,
 .delete-btn {
   font-size: 0.72rem;
   font-weight: 600;
@@ -204,6 +209,19 @@
   transform: translateY(-1px);
 }
 
+/* Contribution button styling (blue) */
+.contribution-btn {
+  background: #bfdbfe;
+  color: #1d4ed8;
+  border: 1px solid #60a5fa;
+}
+
+.contribution-btn:hover {
+  background: #93c5fd;
+  border-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
 /* Delete button styling (red) */
 .delete-btn {
   background: #fee2e2;
@@ -222,8 +240,18 @@
     padding: 24px 16px 60px;
   }
 
+  .ledger-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
   .ledger-title {
     font-size: 1.5rem;
+  }
+
+  .ledger-add-btn {
+    width: 100%;
   }
 
   .ledger-grid {
