@@ -11,19 +11,17 @@ async function main() {
       isVerified: false,
     },
   });
-
   console.log("Created organization:", org);
 
-  // Create dummy Approved project
-  const approvedProject = await prisma.post.create({
+  // Create dummy project 1
+  const project1 = await prisma.post.create({
     data: {
       projectName: "Community Medical Mission",
-      description:
-        "Free medical checkup and health awareness campaign for the community",
+      description: "Free medical checkup and health awareness campaign for the community",
       causes: ["healthAndMedical", "communityDevelopment"],
       location: "Manila",
       priority: "High",
-      overallStatus: "Approved",
+      overallStatus: "Published",
       orgId: "tempID",
       monetaryEnabled: true,
       monetaryTargetAmount: 50000,
@@ -41,30 +39,73 @@ async function main() {
     },
     include: { inKindItems: true },
   });
+  console.log("Created project 1:", project1);
 
-  console.log("Created approved project:", approvedProject);
+  // Create dummy project 2
+  const project2 = await prisma.post.create({
+    data: {
+      projectName: "Batangas Typhoon Support Donation Drive",
+      description: "Donate any monetary amount, food, and clothing for the victims of the Batangas Typhoon",
+      causes: ["healthAndMedical", "communityDevelopment"],
+      location: "Manila",
+      priority: "High",
+      overallStatus: "Published",
+      startDate: "2026-03-23",
+      endDate: "2026-03-28",
+      orgId: "tempID",
+      monetaryEnabled: true,
+      monetaryTargetAmount: 50000,
+      volunteerEnabled: false,
+      inKindItems: {
+        create: [
+          { itemName: "Biogesic", targetQuantity: 500, unit: "pills" },
+          { itemName: "150g Canned Tuna", targetQuantity: 250, unit: "pieces" },
+          { itemName: "Instant Cup Noodles", targetQuantity: 250, unit: "pieces" },
+          { itemName: "1kg Rice", targetQuantity: 250, unit: "bags" },
+        ],
+      },
+    },
+    include: { inKindItems: true },
+  });
+  console.log("Created project 2:", project2);
 
-  // Create dummy Rejected project
-  const rejectedProject = await prisma.post.create({
+  // Create dummy project 3
+  const project3 = await prisma.post.create({
     data: {
       projectName: "Clean Water Initiative",
       description: "Building water wells in rural areas",
       causes: ["povertyAndHunger", "environmentAndClimate"],
       location: "Mindanao",
       priority: "Medium",
-      overallStatus: "Unapproved",
+      overallStatus: "Draft",
       orgId: "tempID",
       monetaryEnabled: true,
       monetaryTargetAmount: 75000,
       volunteerEnabled: false,
-      inKindItems: {
-        create: [],
-      },
+      inKindItems: { create: [] },
     },
     include: { inKindItems: true },
   });
+  console.log("Created project 3:", project3);
 
-  console.log("Created unapproved project:", rejectedProject);
+  // Create dummy project 4
+  const project4 = await prisma.post.create({
+    data: {
+      projectName: "Batangas Typhoon Support Day 1",
+      description: "Help us bag our donated materials and deliver them to the victims",
+      causes: ["healthAndMedical", "povertyAndHunger"],
+      location: "Batangas",
+      priority: "High",
+      overallStatus: "Published",
+      orgId: "tempID",
+      monetaryEnabled: false,
+      volunteerEnabled: true,
+      volunteerTargetCount: 50,
+      inKindItems: { create: [] },
+    },
+    include: { inKindItems: true },
+  });
+  console.log("Created project 4:", project4);
 }
 
 main()
