@@ -14,54 +14,6 @@ export default function DonorHomepage() {
 
   useEffect(() => {
     // TODO: Fetch campaigns from backend API
-    // For now, using mock data
-    const mockCampaigns = [
-      {
-        id: 1,
-        projectName: "Batangas Typhoon Support",
-        description: "Food and med packs for 2,000 households.",
-        cause: "disasterRelief",
-        urgency: "High",
-        region: "Luzon",
-        category: "URGENT RELIEF",
-        categoryColor: "#ff6b6b",
-        verified: true,
-        raised: 1200000,
-        target: 1411765,
-        currency: "₱",
-      },
-      {
-        id: 2,
-        projectName: "Mobile Clinic Supply Hub",
-        description: "Sterile surgical equipment replenishment.",
-        cause: "healthAndMedical",
-        urgency: "High",
-        region: "Luzon",
-        category: "HEALTH",
-        categoryColor: "#4dabf7",
-        verified: true,
-        raised: 300021,
-        target: 1000000,
-        currency: "₱",
-      },
-      {
-        id: 3,
-        projectName: "Digital Literacy Philippines",
-        description: "Laptop drives for 15 rural school centers.",
-        cause: "educationAndChildren",
-        urgency: "Medium",
-        region: "Luzon",
-        category: "EDUCATION",
-        categoryColor: "#51cf66",
-        verified: true,
-        raised: 100021,
-        target: 656000,
-        currency: "₱",
-      },
-    ];
-
-    setCampaigns(mockCampaigns);
-    setFilteredCampaigns(mockCampaigns);
   }, []);
 
   const handleFilterChange = (filterName, value) => {

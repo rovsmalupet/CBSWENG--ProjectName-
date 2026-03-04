@@ -8,18 +8,21 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+///there must be no default for orgName, email, and representativePerson (these are for sprint 2-3 only assuming there are no other users)
 model Organization {
-  id         String   @id @default(uuid())
-  orgName    String
-  email      String   @unique
-  representativePerson String
-  isVerified Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id                   String   @id @default(uuid())
+  orgName              String   @default("Philippine Red Cross")
+  email                String   @unique @default("mary.angela@redcross.ph")
+  representativePerson String   @default("Mary Angela Cruz")
+  isVerified           Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  posts                Post[]   
 }
 
 model Post {
   id            String        @id @default(uuid())
-  orgId         String        @default("tempID")
+  orgId         String        
+  organization  Organization  @relation(fields: [orgId], references: [id])
   projectName   String
   description   String?
   causes        CauseEnum[]
