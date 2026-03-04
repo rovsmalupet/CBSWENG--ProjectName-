@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import "../css/ActiveProjects.css";
+import "../css/UnapprovedProjects.css";
+import Navbar from "../components/Navbar.jsx";
 
 const CAUSE_STYLES = {
   educationAndChildren: { label: "EDUCATION", bg: "#dbeafe", color: "#1d4ed8" },
@@ -22,7 +23,7 @@ const CAUSE_STYLES = {
   others: { label: "OTHERS", bg: "#f3f4f6", color: "#374151" },
 };
 
-export default function ActiveProjects() {
+export default function UnapprovedProjects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,11 +34,13 @@ export default function ActiveProjects() {
         setLoading(true);
         const res = await fetch("/posts");
         const data = await res.json();
-        // Filter to only show Approved projects
-        const approvedProjects = data.filter(
-          (project) => project.overallStatus === "Approved",
+        // Filter for Pending and Unapproved projects
+        const unapprovedProjects = data.filter(
+          (project) =>
+            project.overallStatus === "Pending" ||
+            project.overallStatus === "Unapproved",
         );
-        setProjects(approvedProjects);
+        setProjects(unapprovedProjects);
       } catch (err) {
         console.error("Failed to fetch projects:", err);
       } finally {
@@ -65,24 +68,31 @@ export default function ActiveProjects() {
   };
 
   return (
-    <div className="ledger-page">
-      <main className="ledger-main">
-        <div className="ledger-header">
-          <h1 className="ledger-title">My Active Projects</h1>
-          <button
-            className="ledger-add-btn"
-            onClick={() => navigate("/post-project")}
+    <div className="unapproved-page">
+      <Navbar />
+      <main className="unapproved-main">
+        <button className="back-link" onClick={() => navigate(-1)}>
+          <svg
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
           >
-            Add New Project
-          </button>
-        </div>
+            <path d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+          Back
+        </button>
+
+        <h1 className="unapproved-title">Unapproved Projects</h1>
 
         {loading ? (
-          <div className="ledger-empty">
+          <div className="unapproved-empty">
             <p>Loading projects...</p>
           </div>
         ) : projects.length === 0 ? (
-          <div className="ledger-empty">
+          <div className="unapproved-empty">
             <svg
               width="48"
               height="48"
@@ -94,20 +104,23 @@ export default function ActiveProjects() {
               <circle cx="4" cy="7" r="1" fill="#9ca3af" stroke="none" />
               <line x1="8" y1="7" x2="20" y2="7" />
               <circle cx="4" cy="12" r="1" fill="#9ca3af" stroke="none" />
+              <line x1="8" y1="12" x2="20" y2="12" />
+              <circle cx="4" cy="17" r="1" fill="#9ca3af" stroke="none" />
               <line x1="8" y1="17" x2="20" y2="17" />
             </svg>
-            <p>
-              No projects yet. Click <strong>Add New Project</strong> to get
-              started.
-            </p>
+            <p>No unapproved projects at this time.</p>
           </div>
         ) : (
-          <div className="ledger-grid">
+          <div className="unapproved-grid">
             {projects.map((project) => {
               const causes = project.causes?.length ? project.causes : [];
+              const isRejected = project.overallStatus === "Unapproved";
 
               return (
-                <div key={project.id} className="pcard">
+                <div
+                  key={project.id}
+                  className={`pcard ${isRejected ? "pcard-rejected" : ""}`}
+                >
                   <div className="pcard-top">
                     {/* Render a badge for each cause */}
                     <div className="pcard-cause-badges">
@@ -141,18 +154,11 @@ export default function ActiveProjects() {
                       )}
                     </div>
 
-                    <span className="pcard-verified">
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#16a34a"
-                        strokeWidth="3"
-                      >
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                      Verified
+                    <span
+                      className={`pcard-status pcard-status-${project.overallStatus.toLowerCase()}`}
+                    >
+                      {project.overallStatus === "Pending" ? "⏳" : "❌"}{" "}
+                      {project.overallStatus}
                     </span>
                   </div>
 
@@ -180,22 +186,15 @@ export default function ActiveProjects() {
                   )}
 
                   <div className="pcard-actions">
-                    <button
-                      className="edit-btn"
-                      onClick={() => navigate(`/edit-project/${project.id}`)}
-                      title="Edit project"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      className="contribution-btn"
-                      onClick={() =>
-                        navigate(`/add-contribution/${project.id}`)
-                      }
-                      title="Add contribution"
-                    >
-                      ➕ Add Contribution
-                    </button>
+                    {!isRejected && (
+                      <button
+                        className="edit-btn"
+                        onClick={() => navigate(`/edit-project/${project.id}`)}
+                        title="Edit project"
+                      >
+                        ✏️ Edit
+                      </button>
+                    )}
                     <button
                       className="delete-btn"
                       onClick={() => handleDelete(project.id)}

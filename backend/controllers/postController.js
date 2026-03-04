@@ -59,9 +59,13 @@ const buildPostData = (body) => {
     startTime: startTime || null,
     endTime: endTime || null,
     monetaryEnabled: monetary?.enabled ?? false,
-    monetaryTargetAmount: monetary?.enabled ? (monetary.targetAmount ?? 0) : null,
+    monetaryTargetAmount: monetary?.enabled
+      ? (monetary.targetAmount ?? 0)
+      : null,
     volunteerEnabled: volunteer?.enabled ?? false,
-    volunteerTargetCount: volunteer?.enabled ? (volunteer.targetVolunteers ?? 0) : null,
+    volunteerTargetCount: volunteer?.enabled
+      ? (volunteer.targetVolunteers ?? 0)
+      : null,
     inKindItems: inKind.map((i) => ({
       itemName: i.itemName,
       targetQuantity: i.targetQuantity,
@@ -74,7 +78,9 @@ export const createPost = async (req, res) => {
   try {
     const { projectName, causes } = req.body;
     if (!projectName || !causes?.length) {
-      return res.status(400).json({ error: "projectName and at least one cause are required" });
+      return res
+        .status(400)
+        .json({ error: "projectName and at least one cause are required" });
     }
 
     const data = buildPostData(req.body);
@@ -84,13 +90,15 @@ export const createPost = async (req, res) => {
       data: {
         ...postFields,
         orgId: "tempID",
-        overallStatus: "Published",
+        overallStatus: "Pending",
         inKindItems: { create: inKindItems },
       },
       include: { inKindItems: true },
     });
 
-    res.status(201).json({ message: "Project posted successfully", post: formatPost(post) });
+    res
+      .status(201)
+      .json({ message: "Project posted successfully", post: formatPost(post) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -143,7 +151,10 @@ export const updatePost = async (req, res) => {
       include: { inKindItems: true },
     });
 
-    res.json({ message: "Post updated successfully", post: formatPost(updated) });
+    res.json({
+      message: "Post updated successfully",
+      post: formatPost(updated),
+    });
   } catch (err) {
     if (err.code === "P2025") {
       return res.status(404).json({ error: "Post not found" });
@@ -173,7 +184,11 @@ export const deletePost = async (req, res) => {
 export const addContribution = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { monetaryDelta = 0, inKindDeltas = [], volunteerDelta = 0 } = req.body;
+    const {
+      monetaryDelta = 0,
+      inKindDeltas = [],
+      volunteerDelta = 0,
+    } = req.body;
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
@@ -184,11 +199,13 @@ export const addContribution = async (req, res) => {
     const postUpdate = {};
 
     if (monetaryDelta > 0 && post.monetaryEnabled) {
-      postUpdate.monetaryCurrentAmount = post.monetaryCurrentAmount + monetaryDelta;
+      postUpdate.monetaryCurrentAmount =
+        post.monetaryCurrentAmount + monetaryDelta;
     }
 
     if (volunteerDelta > 0 && post.volunteerEnabled) {
-      postUpdate.volunteerCurrentCount = post.volunteerCurrentCount + volunteerDelta;
+      postUpdate.volunteerCurrentCount =
+        post.volunteerCurrentCount + volunteerDelta;
     }
 
     if (Object.keys(postUpdate).length > 0) {
@@ -215,7 +232,10 @@ export const addContribution = async (req, res) => {
       include: { inKindItems: true },
     });
 
-    res.json({ message: "Contribution recorded successfully", post: formatPost(finalPost) });
+    res.json({
+      message: "Contribution recorded successfully",
+      post: formatPost(finalPost),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

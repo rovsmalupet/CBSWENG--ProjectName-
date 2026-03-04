@@ -28,7 +28,7 @@ model Post {
   causes        CauseEnum[]
   location      String?
   priority      Priority      @default(Medium)
-  overallStatus PostStatus    @default(Draft)
+  overallStatus PostStatus    @default(Pending)
   createdAt     DateTime      @default(now())
   startDate     String?
   endDate       String?
@@ -75,8 +75,11 @@ enum Priority {
 }
 
 enum PostStatus {
-  Draft
-  Published
+  Pending
+  Approved
+  Unapproved
+  Edited
+  Deleted
 }
 
 enum SupportStatus {
