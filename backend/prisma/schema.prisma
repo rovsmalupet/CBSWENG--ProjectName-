@@ -21,7 +21,6 @@ model Post {
   orgId         String        @default("tempID")
   projectName   String
   description   String?
-  category      String?
   causes        CauseEnum[]
   location      String?
   priority      Priority      @default(Medium)
@@ -79,4 +78,6 @@ enum PostStatus {
 enum SupportStatus {
   Open
   Closed
+  Edited
+  Deleted
 }
