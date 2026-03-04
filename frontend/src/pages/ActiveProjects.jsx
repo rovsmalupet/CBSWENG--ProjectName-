@@ -67,6 +67,20 @@ export default function ActiveProjects() {
   return (
     <div className="ledger-page">
       <main className="ledger-main">
+        <button className="back-link" onClick={() => navigate(-1)}>
+          <svg
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+          Back
+        </button>
+
         <div className="ledger-header">
           <h1 className="ledger-title">My Active Projects</h1>
           <button

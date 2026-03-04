@@ -12,6 +12,25 @@
   padding: 36px 32px 80px;
 }
 
+/* ── Back link ── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  margin-bottom: 24px;
+}
+
+.back-link:hover {
+  color: #111827;
+}
+
 /* ── Title ── */
 .ledger-header {
   display: flex;
