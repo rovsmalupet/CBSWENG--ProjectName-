@@ -56,7 +56,11 @@ export default function UnapprovedProjects() {
       return;
 
     try {
-      const res = await fetch(`http://localhost:3000/posts/${projectId}`, { method: "DELETE" });
+      const res = await fetch(`http://localhost:3000/posts/${projectId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ overallStatus: "Deleted" }),
+      });
       if (res.ok) {
         setProjects((prev) => prev.filter((p) => p.id !== projectId));
       } else {

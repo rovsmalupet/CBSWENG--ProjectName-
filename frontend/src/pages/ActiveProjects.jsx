@@ -53,7 +53,11 @@ export default function ActiveProjects() {
       return;
 
     try {
-      const res = await fetch(`/posts/${projectId}`, { method: "DELETE" });
+      const res = await fetch(`/posts/${projectId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ overallStatus: "Deleted" }),
+      });
       if (res.ok) {
         setProjects((prev) => prev.filter((p) => p.id !== projectId));
       } else {

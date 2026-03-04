@@ -2,6 +2,10 @@ import prisma from "../prisma/client.js";
 
 const formatPost = (post) => ({
   ...post,
+  orgName: post.organization?.orgName ?? null,
+  orgEmail: post.organization?.email ?? null,
+  orgRepresentative: post.organization?.representativePerson ?? null,
+  organization: undefined,
   supportTypes: {
     monetary: {
       enabled: post.monetaryEnabled,
@@ -105,12 +109,25 @@ export const createPost = async (req, res) => {
   }
 };
 
+export const getAllPosts = async (req, res) => {
+  try {
+    const posts = await prisma.post.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { inKindItems: true, organization: true },
+    });
+    res.json(posts.map(formatPost));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const getOrgPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
-      where: { orgId: "tempID" },
+      where: { orgId: "tempID", NOT: { overallStatus: "Deleted" } },
       orderBy: { createdAt: "desc" },
-      include: { inKindItems: true },
+      include: { inKindItems: true, organization: true },
     });
     res.json(posts.map(formatPost));
   } catch (err) {
@@ -123,7 +140,7 @@ export const getPostById = async (req, res) => {
   try {
     const post = await prisma.post.findUnique({
       where: { id: req.params.postId },
-      include: { inKindItems: true },
+      include: { inKindItems: true, organization: true },
     });
     if (!post) return res.status(404).json({ error: "Post not found" });
     res.json(formatPost(post));
@@ -166,10 +183,11 @@ export const updatePost = async (req, res) => {
 
 export const deletePost = async (req, res) => {
   try {
-    const post = await prisma.post.delete({
+    const post = await prisma.post.update({
       where: { id: req.params.postId },
+      data: { overallStatus: "Deleted" },
     });
-    res.json({ message: "Post deleted successfully", post });
+    res.json({ message: "Post marked as deleted", post });
   } catch (err) {
     if (err.code === "P2025") {
       return res.status(404).json({ error: "Post not found" });
@@ -179,7 +197,46 @@ export const deletePost = async (req, res) => {
   }
 };
 
-// PATCH /posts/:postId/contribute
+export const permanentDeletePost = async (req, res) => {
+  try {
+    const post = await prisma.post.delete({
+      where: { id: req.params.postId },
+    });
+    res.json({ message: "Post permanently deleted", post });
+  } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// PATCH /posts/:postId/status
+export const updatePostStatus = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { overallStatus } = req.body;
+
+    const validStatuses = ["Pending", "Approved", "Unapproved", "Edited", "Deleted"];
+    if (!validStatuses.includes(overallStatus)) {
+      return res.status(400).json({ error: "Invalid status value." });
+    }
+
+    const updated = await prisma.post.update({
+      where: { id: postId },
+      data: { overallStatus },
+    });
+
+    res.json({ message: "Status updated successfully", post: updated });
+  } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
 // Increments current amounts for monetary, in-kind items, and/or volunteers
 export const addContribution = async (req, res) => {
   try {

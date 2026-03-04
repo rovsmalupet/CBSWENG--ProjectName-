@@ -8,6 +8,9 @@ import ProjectDetailPage from "./pages/ProjectDetailPage.jsx";
 import PostNewProject from "./components/PostNewProject.jsx";
 import EditProject from "./pages/EditProject.jsx"; // <-- added
 import AddContribution from "./pages/AddContribution.jsx"; // <-- added
+import AdminHomepage from "./pages/AdminHomepage.jsx";
+import ViewProjects from "./pages/viewProjects.jsx";
+import AdminProjectDetail from "./pages/AdminProjectDetail.jsx";
 
 export default function App() {
   return (
@@ -15,16 +18,20 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
+		
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/project-ledger" element={<ActiveProjects />} />
         <Route path="/unposted-projects" element={<UnapprovedProjects />} />
         <Route path="/post-project" element={<PostNewProject />} />
         <Route path="/edit-project/:id" element={<EditProject />} />{" "}
-        {/* <-- added */}
         <Route path="/add-contribution/:id" element={<AddContribution />} />{" "}
-        {/* <-- added */}
+		
         <Route path="/donor" element={<DonorHomepage />} />
         <Route path="/project/:id" element={<ProjectDetailPage />} />
+		
+		<Route path="/admin" element={<AdminHomepage />} />
+		<Route path="/viewProjects" element={<ViewProjects />} />
+		<Route path="/admin/project/:id" element={<AdminProjectDetail />} />
       </Routes>
     </BrowserRouter>
   );

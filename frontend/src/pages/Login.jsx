@@ -22,8 +22,15 @@ export default function Login() {
             className="login-btn ngo-btn"
             onClick={() => navigate("/dashboard")}
           >
-            🏢 NGO
+			🏢 NGO
           </button>
+		  
+		  <button
+            className="login-btn admin-btn"
+            onClick={() => navigate("/admin")}
+          >
+		  👤 Admin
+		  </button>
         </div>
       </div>
     </div>
