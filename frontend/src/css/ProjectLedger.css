@@ -234,3 +234,41 @@
     font-size: 0.65rem;
   }
 }
+
+.pcard-cause-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Makes all cards in a row the same height */
+.ledger-grid {
+  align-items: stretch;
+}
+
+.pcard {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Causes wrap on left, Verified stays pinned top-right */
+.pcard-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pcard-cause-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+/* Pushes Edit/Delete to the bottom of every card */
+.pcard-actions {
+  margin-top: auto;
+  padding-top: 12px;
+}
