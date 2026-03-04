@@ -17,7 +17,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/project-ledger" element={<ActiveProjects />} />
-        <Route path="/unapproved-projects" element={<UnapprovedProjects />} />
+        <Route path="/unposted-projects" element={<UnapprovedProjects />} />
         <Route path="/post-project" element={<PostNewProject />} />
         <Route path="/edit-project/:id" element={<EditProject />} />{" "}
         {/* <-- added */}

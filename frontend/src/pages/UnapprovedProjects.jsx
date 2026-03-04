@@ -32,7 +32,7 @@ export default function UnapprovedProjects() {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/posts");
+        const res = await fetch("http://localhost:3000/posts");
         const data = await res.json();
         // Filter for Pending and Unapproved projects
         const unapprovedProjects = data.filter(
@@ -56,7 +56,7 @@ export default function UnapprovedProjects() {
       return;
 
     try {
-      const res = await fetch(`/posts/${projectId}`, { method: "DELETE" });
+      const res = await fetch(`http://localhost:3000/posts/${projectId}`, { method: "DELETE" });
       if (res.ok) {
         setProjects((prev) => prev.filter((p) => p.id !== projectId));
       } else {
@@ -85,7 +85,7 @@ export default function UnapprovedProjects() {
           Back
         </button>
 
-        <h1 className="unapproved-title">Unapproved Projects</h1>
+        <h1 className="unapproved-title">Unposted Projects</h1>
 
         {loading ? (
           <div className="unapproved-empty">
@@ -108,7 +108,7 @@ export default function UnapprovedProjects() {
               <circle cx="4" cy="17" r="1" fill="#9ca3af" stroke="none" />
               <line x1="8" y1="17" x2="20" y2="17" />
             </svg>
-            <p>No unapproved projects at this time.</p>
+            <p>No unposted projects at this time.</p>
           </div>
         ) : (
           <div className="unapproved-grid">

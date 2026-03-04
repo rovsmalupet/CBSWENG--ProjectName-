@@ -13,7 +13,7 @@ async function main() {
   });
   console.log("Created organization:", org);
 
-  // Create dummy project 1
+  // Create mock posted project
   const project1 = await prisma.post.create({
     data: {
       projectName: "Community Medical Mission",
@@ -21,7 +21,7 @@ async function main() {
       causes: ["healthAndMedical", "communityDevelopment"],
       location: "Manila",
       priority: "High",
-      overallStatus: "Published",
+      overallStatus: "Approved",
       orgId: "tempID",
       monetaryEnabled: true,
       monetaryTargetAmount: 50000,
@@ -41,7 +41,7 @@ async function main() {
   });
   console.log("Created project 1:", project1);
 
-  // Create dummy project 2
+  // Create mock posted project
   const project2 = await prisma.post.create({
     data: {
       projectName: "Batangas Typhoon Support Donation Drive",
@@ -49,7 +49,7 @@ async function main() {
       causes: ["healthAndMedical", "communityDevelopment"],
       location: "Manila",
       priority: "High",
-      overallStatus: "Published",
+      overallStatus: "Approved",
       startDate: "2026-03-23",
       endDate: "2026-03-28",
       orgId: "tempID",
@@ -69,7 +69,7 @@ async function main() {
   });
   console.log("Created project 2:", project2);
 
-  // Create dummy project 3
+  // Create mock pending project
   const project3 = await prisma.post.create({
     data: {
       projectName: "Clean Water Initiative",
@@ -77,7 +77,7 @@ async function main() {
       causes: ["povertyAndHunger", "environmentAndClimate"],
       location: "Mindanao",
       priority: "Medium",
-      overallStatus: "Draft",
+      overallStatus: "Pending",
       orgId: "tempID",
       monetaryEnabled: true,
       monetaryTargetAmount: 75000,
@@ -88,7 +88,7 @@ async function main() {
   });
   console.log("Created project 3:", project3);
 
-  // Create dummy project 4
+  // Create mock edited project 4
   const project4 = await prisma.post.create({
     data: {
       projectName: "Batangas Typhoon Support Day 1",
@@ -96,7 +96,7 @@ async function main() {
       causes: ["healthAndMedical", "povertyAndHunger"],
       location: "Batangas",
       priority: "High",
-      overallStatus: "Published",
+      overallStatus: "Edited",
       orgId: "tempID",
       monetaryEnabled: false,
       volunteerEnabled: true,
@@ -106,6 +106,27 @@ async function main() {
     include: { inKindItems: true },
   });
   console.log("Created project 4:", project4);
+  
+  const project5 = await prisma.post.create({
+    data: {
+      projectName: "Donate-A-Book",
+      description: "Help us collect 200 chgildren's books to be given away during Paaralang Elementarya's back to school program.",
+      causes: ["healthAndMedical"],
+      location: "Quezon City",
+      priority: "High",
+      overallStatus: "Unapproved",
+      orgId: "tempID",
+      monetaryEnabled: false,
+      volunteerEnabled: false,
+      inKindItems: {
+        create: [
+          { itemName: "Children's Book", targetQuantity: 300, unit: "pieces" },
+        ],
+      },
+    },
+    include: { inKindItems: true },
+  });
+  console.log("Created project 5:", project5);
 }
 
 main()

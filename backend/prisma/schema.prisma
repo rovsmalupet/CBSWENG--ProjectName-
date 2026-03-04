@@ -85,6 +85,4 @@ enum PostStatus {
 enum SupportStatus {
   Open
   Closed
-  Edited
-  Deleted
 }

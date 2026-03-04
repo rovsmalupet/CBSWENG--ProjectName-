@@ -28,9 +28,9 @@ const cards = [
     style: "card active",
   },
   {
-    key: "unapproved-projects",
-    label: "Unapproved Projects",
-    route: "/unapproved-projects",
+    key: "unposted-projects",
+    label: "Unposted Projects",
+    route: "/unposted-projects",
     icon: (
       <svg
         width="52"
