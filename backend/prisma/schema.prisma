@@ -12,6 +12,7 @@ model Organization {
   id         String   @id @default(uuid())
   orgName    String
   email      String   @unique
+  representativePerson String
   isVerified Boolean  @default(false)
   createdAt  DateTime @default(now())
 }
