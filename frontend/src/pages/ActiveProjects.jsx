@@ -185,7 +185,9 @@ export default function ActiveProjects() {
                     </button>
                     <button
                       className="contribution-btn"
-                      onClick={() => navigate(`/add-contribution/${project.id}`)}
+                      onClick={() =>
+                        navigate(`/add-contribution/${project.id}`)
+                      }
                       title="Add contribution"
                     >
                       ➕ Add Contribution
