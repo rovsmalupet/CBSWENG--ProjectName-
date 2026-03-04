@@ -6,10 +6,17 @@ import "../css/Dashboard.css";
 const cards = [
   {
     key: "project-ledger",
-    label: "Project Ledger",
+    label: "Active Projects",
     route: "/project-ledger",
     icon: (
-      <svg width="52" height="52" fill="none" stroke="#4b5563" strokeWidth="1.4" viewBox="0 0 24 24">
+      <svg
+        width="52"
+        height="52"
+        fill="none"
+        stroke="#4b5563"
+        strokeWidth="1.4"
+        viewBox="0 0 24 24"
+      >
         <circle cx="4" cy="7" r="1" fill="#4b5563" stroke="none" />
         <line x1="8" y1="7" x2="20" y2="7" />
         <circle cx="4" cy="12" r="1" fill="#4b5563" stroke="none" />
@@ -19,7 +26,27 @@ const cards = [
       </svg>
     ),
     style: "card active",
-  }
+  },
+  {
+    key: "unapproved-projects",
+    label: "Unapproved Projects",
+    route: "/unapproved-projects",
+    icon: (
+      <svg
+        width="52"
+        height="52"
+        fill="none"
+        stroke="#4b5563"
+        strokeWidth="1.4"
+        viewBox="0 0 24 24"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v4" strokeLinecap="round" />
+        <circle cx="12" cy="17" r="0.5" fill="#4b5563" stroke="none" />
+      </svg>
+    ),
+    style: "card active",
+  },
 ];
 
 export default function Dashboard() {
@@ -30,7 +57,14 @@ export default function Dashboard() {
       <Navbar />
       <main className="dashboard-main">
         <button className="back-link" onClick={() => navigate(-1)}>
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
             <path d="M19 12H5M12 5l-7 7 7 7" />
           </svg>
           Back

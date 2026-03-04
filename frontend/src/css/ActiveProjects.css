@@ -1,4 +1,4 @@
-/* ── ProjectLedger.css ── */
+/* ── ActiveProjects.css ── */
 
 .ledger-page {
   min-height: 100vh;
@@ -177,7 +177,8 @@
 }
 
 /* ── Edit and Delete buttons ── */
-.edit-btn, .delete-btn {
+.edit-btn,
+.delete-btn {
   font-size: 0.72rem;
   font-weight: 600;
   padding: 4px 10px;

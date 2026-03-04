@@ -1,20 +1,28 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import "../css/ProjectLedger.css";
+import "../css/ActiveProjects.css";
 
 const CAUSE_STYLES = {
   educationAndChildren: { label: "EDUCATION", bg: "#dbeafe", color: "#1d4ed8" },
   healthAndMedical: { label: "HEALTH", bg: "#dcfce7", color: "#15803d" },
   disasterRelief: { label: "URGENT RELIEF", bg: "#fee2e2", color: "#b91c1c" },
-  environmentAndClimate: { label: "ENVIRONMENT", bg: "#d1fae5", color: "#065f46" },
+  environmentAndClimate: {
+    label: "ENVIRONMENT",
+    bg: "#d1fae5",
+    color: "#065f46",
+  },
   povertyAndHunger: { label: "POVERTY", bg: "#fef9c3", color: "#92400e" },
   communityDevelopment: { label: "COMMUNITY", bg: "#ede9fe", color: "#6d28d9" },
-  livelihoodAndSkillsTraining: { label: "LIVELIHOOD", bg: "#ffedd5", color: "#c2410c" },
+  livelihoodAndSkillsTraining: {
+    label: "LIVELIHOOD",
+    bg: "#ffedd5",
+    color: "#c2410c",
+  },
   animalWelfare: { label: "ANIMALS", bg: "#fce7f3", color: "#be185d" },
   others: { label: "OTHERS", bg: "#f3f4f6", color: "#374151" },
 };
 
-export default function ProjectLedger() {
+export default function ActiveProjects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +45,8 @@ export default function ProjectLedger() {
   }, []);
 
   const handleDelete = async (projectId) => {
-    if (!window.confirm("Are you sure you want to delete this project?")) return;
+    if (!window.confirm("Are you sure you want to delete this project?"))
+      return;
 
     try {
       const res = await fetch(`/posts/${projectId}`, { method: "DELETE" });
@@ -76,15 +85,14 @@ export default function ProjectLedger() {
               <line x1="8" y1="17" x2="20" y2="17" />
             </svg>
             <p>
-              No projects yet. Click <strong>Add New Project</strong> to get started.
+              No projects yet. Click <strong>Add New Project</strong> to get
+              started.
             </p>
           </div>
         ) : (
           <div className="ledger-grid">
             {projects.map((project) => {
-              const causes = project.causes?.length
-                ? project.causes
-                : [];
+              const causes = project.causes?.length ? project.causes : [];
 
               return (
                 <div key={project.id} className="pcard">
@@ -93,12 +101,16 @@ export default function ProjectLedger() {
                     <div className="pcard-cause-badges">
                       {causes.length > 0 ? (
                         causes.map((causeKey) => {
-                          const style = CAUSE_STYLES[causeKey] || CAUSE_STYLES.others;
+                          const style =
+                            CAUSE_STYLES[causeKey] || CAUSE_STYLES.others;
                           return (
                             <span
                               key={causeKey}
                               className="pcard-cause-badge"
-                              style={{ background: style.bg, color: style.color }}
+                              style={{
+                                background: style.bg,
+                                color: style.color,
+                              }}
                             >
                               {style.label}
                             </span>
@@ -107,7 +119,10 @@ export default function ProjectLedger() {
                       ) : (
                         <span
                           className="pcard-cause-badge"
-                          style={{ background: CAUSE_STYLES.others.bg, color: CAUSE_STYLES.others.color }}
+                          style={{
+                            background: CAUSE_STYLES.others.bg,
+                            color: CAUSE_STYLES.others.color,
+                          }}
                         >
                           {CAUSE_STYLES.others.label}
                         </span>
