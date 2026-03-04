@@ -209,7 +209,7 @@ export default function AdminProjectDetail() {
               {project.startDate && (
                 <> <strong>On</strong> {project.startDate}
                   {project.endDate && <> <strong>to</strong> {project.endDate}</>}
-                  {project.startTime && <> <strong>At</strong> {project.startTime}
+                  {project.startTime && <> <strong>At</strong> {project.startTime} to
                     {project.endTime && <> {project.endTime}</>}
                   </>}
                 </>
