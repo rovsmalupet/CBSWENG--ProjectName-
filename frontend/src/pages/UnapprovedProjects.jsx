@@ -27,6 +27,8 @@ export default function UnapprovedProjects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -56,11 +58,14 @@ export default function UnapprovedProjects() {
       return;
 
     try {
-      const res = await fetch(`http://localhost:3000/posts/${projectId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ overallStatus: "Deleted" }),
-      });
+      const res = await fetch(
+        `http://localhost:3000/posts/${projectId}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ overallStatus: "Deleted" }),
+        },
+      );
       if (res.ok) {
         setProjects((prev) => prev.filter((p) => p.id !== projectId));
       } else {
@@ -69,6 +74,22 @@ export default function UnapprovedProjects() {
     } catch (err) {
       console.error("Error deleting project:", err);
     }
+  };
+
+  const handleEditRejected = (projectId) => {
+    setSelectedProjectId(projectId);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmEdit = () => {
+    setShowConfirmation(false);
+    navigate(`/edit-project/${selectedProjectId}`);
+    setSelectedProjectId(null);
+  };
+
+  const handleCancelEdit = () => {
+    setShowConfirmation(false);
+    setSelectedProjectId(null);
   };
 
   return (
@@ -89,7 +110,15 @@ export default function UnapprovedProjects() {
           Back
         </button>
 
-        <h1 className="unapproved-title">Unposted Projects</h1>
+        <div className="ledger-header">
+          <h1 className="unapproved-title">Unposted Projects</h1>
+          <button
+            className="ledger-add-btn"
+            onClick={() => navigate("/post-project")}
+          >
+            Add New Project
+          </button>
+        </div>
 
         {loading ? (
           <div className="unapproved-empty">
@@ -190,15 +219,17 @@ export default function UnapprovedProjects() {
                   )}
 
                   <div className="pcard-actions">
-                    {!isRejected && (
-                      <button
-                        className="edit-btn"
-                        onClick={() => navigate(`/edit-project/${project.id}`)}
-                        title="Edit project"
-                      >
-                        ✏️ Edit
-                      </button>
-                    )}
+                    <button
+                      className="edit-btn"
+                      onClick={() =>
+                        isRejected
+                          ? handleEditRejected(project.id)
+                          : navigate(`/edit-project/${project.id}`)
+                      }
+                      title="Edit project"
+                    >
+                      ✏️ Edit
+                    </button>
                     <button
                       className="delete-btn"
                       onClick={() => handleDelete(project.id)}
@@ -213,6 +244,81 @@ export default function UnapprovedProjects() {
           </div>
         )}
       </main>
+
+      {showConfirmation && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "8px",
+              padding: "24px",
+              maxWidth: "400px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <h3
+              style={{ marginTop: 0, marginBottom: "12px", fontSize: "18px" }}
+            >
+              ⚠️ Status Change Notice
+            </h3>
+            <p
+              style={{ marginBottom: "20px", color: "#555", lineHeight: "1.5" }}
+            >
+              When you edit this rejected project, its status will be changed to{" "}
+              <strong>Pending</strong>. Your project will need to be reviewed
+              and approved by an admin again.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={handleCancelEdit}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                  backgroundColor: "#f5f5f5",
+                  cursor: "pointer",
+                  fontWeight: "500",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmEdit}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "4px",
+                  border: "none",
+                  backgroundColor: "#2563eb",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "500",
+                }}
+              >
+                Continue Editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

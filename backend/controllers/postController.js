@@ -160,6 +160,7 @@ export const updatePost = async (req, res) => {
       where: { id: postId },
       data: {
         ...postFields,
+        overallStatus: req.body.overallStatus || "Pending",
         inKindItems: {
           deleteMany: {},
           create: inKindItems,

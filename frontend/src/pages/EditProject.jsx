@@ -52,6 +52,8 @@ export default function EditProject() {
   const [inKindItems, setInKindItems] = useState([newRow()]);
   const [status, setStatus] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState(null);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -64,7 +66,8 @@ export default function EditProject() {
             location: data.location || "",
             description: data.description || "",
             monetarySupport: data.supportTypes?.monetary?.targetAmount || "",
-            volunteerQuantity: data.supportTypes?.volunteer?.targetVolunteers || "",
+            volunteerQuantity:
+              data.supportTypes?.volunteer?.targetVolunteers || "",
             priority: data.priority || "",
             startDate: data.startDate || "",
             endDate: data.endDate || "",
@@ -90,7 +93,7 @@ export default function EditProject() {
                   targetQuantity: i.targetQuantity,
                   unit: i.unit,
                 }))
-              : [newRow()]
+              : [newRow()],
           );
         } else {
           setErrorMsg(data.error || "Failed to load project.");
@@ -125,7 +128,7 @@ export default function EditProject() {
 
   const handleInKindChange = (id, field, value) =>
     setInKindItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
 
   const handleSubmit = async (e) => {
@@ -143,19 +146,29 @@ export default function EditProject() {
       return;
     }
 
-    if (!supportTypes.monetary && !supportTypes.inKind && !supportTypes.volunteer) {
+    if (
+      !supportTypes.monetary &&
+      !supportTypes.inKind &&
+      !supportTypes.volunteer
+    ) {
       setErrorMsg("At least one support type must be selected.");
       setStatus("error");
       return;
     }
 
-    if (supportTypes.monetary && (!form.monetarySupport || Number(form.monetarySupport) <= 0)) {
+    if (
+      supportTypes.monetary &&
+      (!form.monetarySupport || Number(form.monetarySupport) <= 0)
+    ) {
       setErrorMsg("Monetary support must be greater than 0.");
       setStatus("error");
       return;
     }
 
-    if (supportTypes.volunteer && (!form.volunteerQuantity || Number(form.volunteerQuantity) <= 0)) {
+    if (
+      supportTypes.volunteer &&
+      (!form.volunteerQuantity || Number(form.volunteerQuantity) <= 0)
+    ) {
       setErrorMsg("Volunteer quantity must be greater than 0.");
       setStatus("error");
       return;
@@ -163,8 +176,15 @@ export default function EditProject() {
 
     if (supportTypes.inKind) {
       for (const item of inKindItems) {
-        if (!item.itemName.trim() || !item.unit.trim() || !item.targetQuantity || Number(item.targetQuantity) <= 0) {
-          setErrorMsg("All in-kind items must have a name, positive quantity, and unit.");
+        if (
+          !item.itemName.trim() ||
+          !item.unit.trim() ||
+          !item.targetQuantity ||
+          Number(item.targetQuantity) <= 0
+        ) {
+          setErrorMsg(
+            "All in-kind items must have a name, positive quantity, and unit.",
+          );
           setStatus("error");
           return;
         }
@@ -184,7 +204,9 @@ export default function EditProject() {
       supportTypes: {
         monetary: {
           enabled: supportTypes.monetary && !!form.monetarySupport,
-          targetAmount: supportTypes.monetary ? Number(form.monetarySupport) : 0,
+          targetAmount: supportTypes.monetary
+            ? Number(form.monetarySupport)
+            : 0,
         },
         inKind: supportTypes.inKind
           ? inKindItems.map((i) => ({
@@ -195,17 +217,31 @@ export default function EditProject() {
           : [],
         volunteer: {
           enabled: supportTypes.volunteer && !!form.volunteerQuantity,
-          targetVolunteers: supportTypes.volunteer ? Number(form.volunteerQuantity) : 0,
+          targetVolunteers: supportTypes.volunteer
+            ? Number(form.volunteerQuantity)
+            : 0,
         },
       },
     };
 
+    setPendingUpdate(updatedProject);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmUpdate = async () => {
+    if (!pendingUpdate) return;
+
+    setShowConfirmation(false);
     setStatus("loading");
+
     try {
       const res = await fetch(`http://localhost:3000/posts/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedProject),
+        body: JSON.stringify({
+          ...pendingUpdate,
+          overallStatus: "Pending",
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -219,6 +255,13 @@ export default function EditProject() {
       setErrorMsg("Network error. Please try again.");
       setStatus("error");
     }
+
+    setPendingUpdate(null);
+  };
+
+  const handleCancelUpdate = () => {
+    setShowConfirmation(false);
+    setPendingUpdate(null);
   };
 
   return (
@@ -238,7 +281,6 @@ export default function EditProject() {
         <form onSubmit={handleSubmit} className="postProjectForm">
           {/* LEFT COLUMN */}
           <div className="postProjectCol">
-
             <div>
               <label className="postProjectLabel">
                 Campaign Title <span className="postProjectRequired">*</span>
@@ -276,11 +318,13 @@ export default function EditProject() {
                 onChange={(e) => addCause(e.target.value)}
               >
                 <option value="">Select a cause</option>
-                {CAUSES.filter((c) => !selectedCauses.includes(c.key)).map((c) => (
-                  <option key={c.key} value={c.key}>
-                    {c.label}
-                  </option>
-                ))}
+                {CAUSES.filter((c) => !selectedCauses.includes(c.key)).map(
+                  (c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.label}
+                    </option>
+                  ),
+                )}
               </select>
               {selectedCauses.length > 0 && (
                 <div className="postProjectChips">
@@ -317,117 +361,117 @@ export default function EditProject() {
               </select>
             </div>
 
-           {/* Date range with toggle */}
-<div>
-  <label className="postProjectLabel">
-    Date
-    <button
-      type="button"
-      onClick={() => setDateEnabled((v) => !v)}
-      style={{
-        marginLeft: 8,
-        width: 40,
-        height: 22,
-        borderRadius: 999,
-        border: "none",
-        cursor: "pointer",
-        backgroundColor: dateEnabled ? "#16a34a" : "#cbd5e0",
-        position: "relative",
-        transition: "background-color 0.2s",
-        verticalAlign: "middle",
-      }}
-    >
-      <span
-        style={{
-          position: "absolute",
-          top: 3,
-          left: dateEnabled ? 20 : 3,
-          width: 16,
-          height: 16,
-          borderRadius: "50%",
-          backgroundColor: "#fff",
-          transition: "left 0.2s",
-        }}
-      />
-    </button>
-  </label>
-  {dateEnabled && (
-    <div className="postProjectDateRow">
-      <span className="postProjectDateLabel">FROM</span>
-      <input
-        className="postProjectInput"
-        type="date"
-        name="startDate"
-        value={form.startDate}
-        onChange={handleChange}
-      />
-      <span className="postProjectDateLabel">TO</span>
-      <input
-        className="postProjectInput"
-        type="date"
-        name="endDate"
-        value={form.endDate}
-        onChange={handleChange}
-      />
-    </div>
-  )}
-</div>
+            {/* Date range with toggle */}
+            <div>
+              <label className="postProjectLabel">
+                Date
+                <button
+                  type="button"
+                  onClick={() => setDateEnabled((v) => !v)}
+                  style={{
+                    marginLeft: 8,
+                    width: 40,
+                    height: 22,
+                    borderRadius: 999,
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: dateEnabled ? "#16a34a" : "#cbd5e0",
+                    position: "relative",
+                    transition: "background-color 0.2s",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 3,
+                      left: dateEnabled ? 20 : 3,
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      backgroundColor: "#fff",
+                      transition: "left 0.2s",
+                    }}
+                  />
+                </button>
+              </label>
+              {dateEnabled && (
+                <div className="postProjectDateRow">
+                  <span className="postProjectDateLabel">FROM</span>
+                  <input
+                    className="postProjectInput"
+                    type="date"
+                    name="startDate"
+                    value={form.startDate}
+                    onChange={handleChange}
+                  />
+                  <span className="postProjectDateLabel">TO</span>
+                  <input
+                    className="postProjectInput"
+                    type="date"
+                    name="endDate"
+                    value={form.endDate}
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
+            </div>
 
-{/* Time range with toggle */}
-<div>
-  <label className="postProjectLabel">
-    Time
-    <button
-      type="button"
-      onClick={() => setTimeEnabled((v) => !v)}
-      style={{
-        marginLeft: 8,
-        width: 40,
-        height: 22,
-        borderRadius: 999,
-        border: "none",
-        cursor: "pointer",
-        backgroundColor: timeEnabled ? "#16a34a" : "#cbd5e0",
-        position: "relative",
-        transition: "background-color 0.2s",
-        verticalAlign: "middle",
-      }}
-    >
-      <span
-        style={{
-          position: "absolute",
-          top: 3,
-          left: timeEnabled ? 20 : 3,
-          width: 16,
-          height: 16,
-          borderRadius: "50%",
-          backgroundColor: "#fff",
-          transition: "left 0.2s",
-        }}
-      />
-    </button>
-  </label>
-  {timeEnabled && (
-    <div className="postProjectDateRow">
-      <span className="postProjectDateLabel">FROM</span>
-      <input
-        className="postProjectInput"
-        type="time"
-        name="startTime"
-        value={form.startTime}
-        onChange={handleChange}
-      />
-      <span className="postProjectDateLabel">TO</span>
-      <input
-        className="postProjectInput"
-        type="time"
-        name="endTime"
-        value={form.endTime}
-        onChange={handleChange}
-      />
-    </div>
-  )}
-</div>
+            {/* Time range with toggle */}
+            <div>
+              <label className="postProjectLabel">
+                Time
+                <button
+                  type="button"
+                  onClick={() => setTimeEnabled((v) => !v)}
+                  style={{
+                    marginLeft: 8,
+                    width: 40,
+                    height: 22,
+                    borderRadius: 999,
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: timeEnabled ? "#16a34a" : "#cbd5e0",
+                    position: "relative",
+                    transition: "background-color 0.2s",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 3,
+                      left: timeEnabled ? 20 : 3,
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      backgroundColor: "#fff",
+                      transition: "left 0.2s",
+                    }}
+                  />
+                </button>
+              </label>
+              {timeEnabled && (
+                <div className="postProjectDateRow">
+                  <span className="postProjectDateLabel">FROM</span>
+                  <input
+                    className="postProjectInput"
+                    type="time"
+                    name="startTime"
+                    value={form.startTime}
+                    onChange={handleChange}
+                  />
+                  <span className="postProjectDateLabel">TO</span>
+                  <input
+                    className="postProjectInput"
+                    type="time"
+                    name="endTime"
+                    value={form.endTime}
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Support Types */}
             <div>
@@ -447,12 +491,10 @@ export default function EditProject() {
                 </label>
               ))}
             </div>
-
           </div>
 
           {/* RIGHT COLUMN */}
           <div className="postProjectCol">
-
             <div>
               <label className="postProjectLabel">Project Description</label>
               <textarea
@@ -466,7 +508,9 @@ export default function EditProject() {
 
             {supportTypes.monetary && (
               <div>
-                <label className="postProjectLabel">Monetary Support (PHP)</label>
+                <label className="postProjectLabel">
+                  Monetary Support (PHP)
+                </label>
                 <div className="postProjectInputWrapper">
                   <input
                     className="postProjectInput"
@@ -490,7 +534,9 @@ export default function EditProject() {
                   <button
                     type="button"
                     className="postProjectAddBtn"
-                    onClick={() => setInKindItems((prev) => [...prev, newRow()])}
+                    onClick={() =>
+                      setInKindItems((prev) => [...prev, newRow()])
+                    }
                   >
                     +
                   </button>
@@ -502,26 +548,42 @@ export default function EditProject() {
                         className="postProjectInput"
                         placeholder="Enter item"
                         value={item.itemName}
-                        onChange={(e) => handleInKindChange(item.id, "itemName", e.target.value)}
+                        onChange={(e) =>
+                          handleInKindChange(
+                            item.id,
+                            "itemName",
+                            e.target.value,
+                          )
+                        }
                       />
                       <input
                         className="postProjectInput"
                         type="number"
                         placeholder="Enter quantity"
                         value={item.targetQuantity}
-                        onChange={(e) => handleInKindChange(item.id, "targetQuantity", e.target.value)}
+                        onChange={(e) =>
+                          handleInKindChange(
+                            item.id,
+                            "targetQuantity",
+                            e.target.value,
+                          )
+                        }
                       />
                       <input
                         className="postProjectInput"
                         placeholder="Enter unit"
                         value={item.unit}
-                        onChange={(e) => handleInKindChange(item.id, "unit", e.target.value)}
+                        onChange={(e) =>
+                          handleInKindChange(item.id, "unit", e.target.value)
+                        }
                       />
                       <button
                         type="button"
                         className="postProjectDeleteRowBtn"
                         onClick={() =>
-                          setInKindItems((prev) => prev.filter((i) => i.id !== item.id))
+                          setInKindItems((prev) =>
+                            prev.filter((i) => i.id !== item.id),
+                          )
                         }
                         disabled={inKindItems.length === 1}
                       >
@@ -556,9 +618,87 @@ export default function EditProject() {
             >
               {status === "loading" ? "Updating..." : "Update Project"}
             </button>
-
           </div>
         </form>
+
+        {showConfirmation && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "white",
+                borderRadius: "8px",
+                padding: "24px",
+                maxWidth: "400px",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+            >
+              <h3
+                style={{ marginTop: 0, marginBottom: "12px", fontSize: "18px" }}
+              >
+                ⚠️ Status Change Notice
+              </h3>
+              <p
+                style={{
+                  marginBottom: "20px",
+                  color: "#555",
+                  lineHeight: "1.5",
+                }}
+              >
+                When you edit this project, its status will be changed to{" "}
+                <strong>Pending</strong>. Your project will need to be reviewed
+                and approved by an admin again before it becomes active.
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <button
+                  onClick={handleCancelUpdate}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                    backgroundColor: "#f5f5f5",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmUpdate}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "4px",
+                    border: "none",
+                    backgroundColor: "#2563eb",
+                    color: "white",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                  }}
+                >
+                  Continue Editing
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
