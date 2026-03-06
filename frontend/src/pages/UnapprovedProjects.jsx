@@ -36,10 +36,11 @@ export default function UnapprovedProjects() {
         setLoading(true);
         const res = await fetch("http://localhost:3000/posts");
         const data = await res.json();
-        // Filter for Pending and Unapproved projects
+        // Filter for Pending, Edited, and Unapproved projects
         const unapprovedProjects = data.filter(
           (project) =>
             project.overallStatus === "Pending" ||
+            project.overallStatus === "Edited" ||
             project.overallStatus === "Unapproved",
         );
         setProjects(unapprovedProjects);

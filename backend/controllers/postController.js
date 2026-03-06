@@ -160,7 +160,7 @@ export const updatePost = async (req, res) => {
       where: { id: postId },
       data: {
         ...postFields,
-        overallStatus: req.body.overallStatus || "Pending",
+        overallStatus: req.body.overallStatus || "Edited",
         inKindItems: {
           deleteMany: {},
           create: inKindItems,
@@ -219,7 +219,13 @@ export const updatePostStatus = async (req, res) => {
     const { postId } = req.params;
     const { overallStatus } = req.body;
 
-    const validStatuses = ["Pending", "Approved", "Unapproved", "Edited", "Deleted"];
+    const validStatuses = [
+      "Pending",
+      "Approved",
+      "Unapproved",
+      "Edited",
+      "Deleted",
+    ];
     if (!validStatuses.includes(overallStatus)) {
       return res.status(400).json({ error: "Invalid status value." });
     }

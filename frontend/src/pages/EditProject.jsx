@@ -240,7 +240,7 @@ export default function EditProject() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...pendingUpdate,
-          overallStatus: "Pending",
+          overallStatus: "Edited",
         }),
       });
       const data = await res.json();
