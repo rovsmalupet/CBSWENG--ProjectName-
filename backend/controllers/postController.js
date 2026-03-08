@@ -136,6 +136,21 @@ export const getOrgPosts = async (req, res) => {
   }
 };
 
+// get only approved posts for donor homepage
+export const getApprovedPosts = async (req, res) => {
+  try {
+    const posts = await prisma.post.findMany({
+      where: { overallStatus: "Approved" },
+      orderBy: { createdAt: "desc" },
+      include: { inKindItems: true, organization: true },
+    });
+    res.json(posts.map(formatPost));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const getPostById = async (req, res) => {
   try {
     const post = await prisma.post.findUnique({
