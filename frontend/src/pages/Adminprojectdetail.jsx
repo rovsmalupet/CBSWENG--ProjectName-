@@ -159,9 +159,9 @@ export default function AdminProjectDetail() {
         {/* Date/Time */}
         {(project.startDate || project.endDate) && (
           <p className="apd-datetime">
-            📅 {project.startDate} {project.endDate ? `→ ${project.endDate}` : ""}
+            dates: {project.startDate} {project.endDate ? `→ ${project.endDate}` : ""}
             {(project.startTime || project.endTime) && (
-              <> &nbsp;🕐 {project.startTime} {project.endTime ? `- ${project.endTime}` : ""}</>
+              <> &nbsp;time: {project.startTime} {project.endTime ? `- ${project.endTime}` : ""}</>
             )}
           </p>
         )}

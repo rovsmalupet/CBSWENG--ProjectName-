@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import postRoutes from "./routes/postRoutes.js";
+import organizationRoutes from "./routes/organizationRoutes.js";
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/posts", postRoutes);
+app.use("/organizations", organizationRoutes);
 
 // Start server
 app.listen(port, () => console.log(`Server running on port ${port}`));

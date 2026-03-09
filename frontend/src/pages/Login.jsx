@@ -15,21 +15,21 @@ export default function Login() {
             className="login-btn donor-btn"
             onClick={() => navigate("/donor")}
           >
-            🤝 Donor
+            Donor
           </button>
 
           <button
             className="login-btn ngo-btn"
             onClick={() => navigate("/dashboard")}
           >
-			🏢 NGO
+			NGO
           </button>
 		  
 		  <button
             className="login-btn admin-btn"
             onClick={() => navigate("/admin")}
           >
-		  👤 Admin
+		  Admin
 		  </button>
         </div>
       </div>

@@ -8,6 +8,10 @@ export default function DonorHomepage() {
   const [filteredCampaigns, setFilteredCampaigns] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("latest");
+  const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
+    const saved = localStorage.getItem('bookmarkedProjects');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [filters, setFilters] = useState({
     cause: "Any",
     urgency: "Any",
@@ -99,6 +103,12 @@ export default function DonorHomepage() {
             (b.supportTypes.monetary.targetAmount || 0) -
             (a.supportTypes.monetary.targetAmount || 0)
         );
+      case "date":
+        return sorted.sort((a, b) => {
+          const dateA = a.startDate ? new Date(a.startDate) : new Date(0);
+          const dateB = b.startDate ? new Date(b.startDate) : new Date(0);
+          return dateB - dateA;
+        });
       case "latest":
       default:
         return sorted.sort(
@@ -109,6 +119,18 @@ export default function DonorHomepage() {
 
   const handleFilterChange = (filterName, value) => {
     setFilters({ ...filters, [filterName]: value });
+  };
+
+  const toggleBookmark = (e, campaignId) => {
+    e.stopPropagation();
+    setBookmarkedProjects(prev => {
+      const isBookmarked = prev.includes(campaignId);
+      const updated = isBookmarked
+        ? prev.filter(id => id !== campaignId)
+        : [...prev, campaignId];
+      localStorage.setItem('bookmarkedProjects', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const getCauseDisplay = (cause) => {
@@ -156,13 +178,19 @@ export default function DonorHomepage() {
   return (
     <div className="donor-homepage">
       <div className="donor-header">
-        <h2 className="greeting">hello, isa!</h2>
+        <h2 className="greeting">Hello, Isa!</h2>
+        <button 
+          className="bookmarks-nav-btn"
+          onClick={() => navigate('/donor/bookmarks')}
+        >
+          BOOKMARKS
+        </button>
       </div>
 
       <div className="donor-main">
         <div className="campaigns-section">
           <div className="section-header">
-            <h3 className="section-title">active campaigns</h3>
+            <h3 className="section-title">Active Campaigns</h3>
             <p className="section-subtitle">
               {filteredCampaigns.length} campaign
               {filteredCampaigns.length !== 1 ? "s" : ""} found
@@ -183,6 +211,7 @@ export default function DonorHomepage() {
               className="sort-select"
             >
               <option value="latest">latest</option>
+              <option value="date">project date</option>
               <option value="urgency">most urgent</option>
               <option value="progress">highest progress</option>
               <option value="amount">highest target</option>
@@ -249,7 +278,19 @@ export default function DonorHomepage() {
 
               const raised = campaign.supportTypes?.monetary?.currentAmount || 0;
               const target = campaign.supportTypes?.monetary?.targetAmount || 1;
+              const remaining = Math.max(0, target - raised);
               const progress = calculateProgress(raised, target);
+
+              const inKindItems = campaign.supportTypes?.inKind || [];
+              const volunteerTarget = campaign.supportTypes?.volunteer?.targetVolunteers || 0;
+              const volunteerCurrent = campaign.supportTypes?.volunteer?.currentVolunteers || 0;
+              const volunteerRemaining = Math.max(0, volunteerTarget - volunteerCurrent);
+
+              // truncate title and description
+              const truncateText = (text, maxLength) => {
+                if (!text) return "";
+                return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+              };
 
               return (
                 <div
@@ -258,79 +299,123 @@ export default function DonorHomepage() {
                   onClick={() => navigate(`/project/${campaign.id}`)}
                 >
                   <div className="card-header">
-                    {campaign.causes?.map((cause, idx) => (
-                      <span
-                        key={idx}
-                        className="category-badge"
-                        style={{ backgroundColor: getCauseColor(cause) }}
-                      >
-                        {getCauseDisplay(cause)}
+                    <div className="card-badges">
+                      {campaign.causes?.map((cause, idx) => (
+                        <span
+                          key={idx}
+                          className="category-badge"
+                          style={{ backgroundColor: getCauseColor(cause) }}
+                        >
+                          {getCauseDisplay(cause)}
+                        </span>
+                      ))}
+                      <span className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}>
+                        {campaign.priority?.toLowerCase() || "medium"}
                       </span>
-                    ))}
-                    <span className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}>
-                      {campaign.priority?.toLowerCase() || "medium"}
-                    </span>
+                    </div>
+                    <button
+                      className={`bookmark-btn ${bookmarkedProjects.includes(campaign.id) ? 'bookmarked' : ''}`}
+                      onClick={(e) => toggleBookmark(e, campaign.id)}
+                      title={bookmarkedProjects.includes(campaign.id) ? "Remove bookmark" : "Bookmark project"}
+                    >
+                      {bookmarkedProjects.includes(campaign.id) ? '★' : '☆'}
+                    </button>
                   </div>
 
-                  <h4 className="campaign-title">{campaign.projectName}</h4>
-                  <p className="campaign-description">
-                    {campaign.description?.substring(0, 120)}
-                    {campaign.description?.length > 120 ? "..." : ""}
+                  <h4 className="campaign-title" title={campaign.projectName}>
+                    {truncateText(campaign.projectName, 60)}
+                  </h4>
+                  <p className="campaign-description" title={campaign.description}>
+                    {truncateText(campaign.description, 100)}
                   </p>
 
                   <div className="campaign-meta">
                     <div className="meta-item">
-                      <span className="meta-icon">📍</span>
+                      <span className="meta-label">location:</span>
                       <span>{campaign.location || "not specified"}</span>
                     </div>
                     <div className="meta-item">
-                      <span className="meta-icon">🏢</span>
-                      <span>{campaign.orgName || "organization"}</span>
+                      <span className="meta-label">org:</span>
+                      <span>{truncateText(campaign.orgName || "organization", 30)}</span>
                     </div>
+                    {(campaign.startDate || campaign.endDate) && (
+                      <div className="meta-item">
+                        <span className="meta-label">dates:</span>
+                        <span>
+                          {campaign.startDate ? new Date(campaign.startDate).toLocaleDateString() : ""}
+                          {campaign.endDate ? ` - ${new Date(campaign.endDate).toLocaleDateString()}` : ""}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="support-types">
                     {monetaryEnabled && (
-                      <span className="support-badge">💰 monetary</span>
+                      <span className="support-badge">monetary</span>
                     )}
                     {inKindEnabled && (
-                      <span className="support-badge">📦 in-kind</span>
+                      <span className="support-badge">in-kind</span>
                     )}
                     {volunteerEnabled && (
-                      <span className="support-badge">🤝 volunteer</span>
+                      <span className="support-badge">volunteer</span>
                     )}
                   </div>
 
+                  {/* Monetary Support - Show remaining amount needed */}
                   {monetaryEnabled && (
-                    <>
-                      <div className="campaign-stats">
-                        <div className="stat">
-                          <span className="stat-label">raised</span>
-                          <span className="stat-value">
-                            ₱{formatCurrency(raised)}
-                          </span>
+                    <div className="resource-needs">
+                      <div className="resource-section">
+                        <div className="resource-header">monetary support needed</div>
+                        <div className="resource-amount">
+                          ₱{formatCurrency(remaining)} <span className="resource-unit">php</span>
                         </div>
-                        <div className="stat">
-                          <span className="stat-label">target</span>
-                          <span className="stat-value">
-                            ₱{formatCurrency(target)}
-                          </span>
-                        </div>
-                        <div className="stat">
-                          <span className="stat-label">progress</span>
-                          <span className="stat-value">{progress}%</span>
+                        <div className="resource-detail">
+                          target: ₱{formatCurrency(target)} • raised: ₱{formatCurrency(raised)} ({progress}%)
                         </div>
                       </div>
+                    </div>
+                  )}
 
-                      <div className="progress-container">
-                        <div className="progress-bar">
-                          <div
-                            className="progress-fill"
-                            style={{ width: `${Math.min(progress, 100)}%` }}
-                          ></div>
-                        </div>
+                  {/* In-Kind Support - Show specific items needed */}
+                  {inKindEnabled && inKindItems.length > 0 && (
+                    <div className="resource-needs">
+                      <div className="resource-section">
+                        <div className="resource-header">in-kind items needed</div>
+                        <ul className="inkind-list">
+                          {inKindItems.slice(0, 3).map((item) => {
+                            const itemRemaining = Math.max(0, item.targetQuantity - (item.currentQuantity || 0));
+                            return (
+                              <li key={item.id} className="inkind-item">
+                                <strong>{item.itemName}</strong>: {itemRemaining} {item.unit || "units"}
+                              </li>
+                            );
+                          })}
+                          {inKindItems.length > 3 && (
+                            <li className="inkind-more">+{inKindItems.length - 3} more items</li>
+                          )}
+                        </ul>
                       </div>
-                    </>
+                    </div>
+                  )}
+
+                  {/* Volunteer Support - Show volunteers needed */}
+                  {volunteerEnabled && (
+                    <div className="resource-needs">
+                      <div className="resource-section">
+                        <div className="resource-header">volunteers needed</div>
+                        <div className="resource-amount">
+                          {volunteerRemaining} <span className="resource-unit">volunteers</span>
+                        </div>
+                        <div className="resource-detail">
+                          target: {volunteerTarget} • committed: {volunteerCurrent}
+                        </div>
+                        {(campaign.startTime || campaign.endTime) && (
+                          <div className="resource-schedule">
+                            time: {campaign.startTime || ""} {campaign.endTime ? `- ${campaign.endTime}` : ""}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               );

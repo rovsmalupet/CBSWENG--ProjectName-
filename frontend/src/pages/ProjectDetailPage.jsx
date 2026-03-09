@@ -34,6 +34,23 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
+    const saved = localStorage.getItem('bookmarkedProjects');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const toggleBookmark = () => {
+    setBookmarkedProjects(prev => {
+      const isBookmarked = prev.includes(id);
+      const updated = isBookmarked
+        ? prev.filter(projectId => projectId !== id)
+        : [...prev, id];
+      localStorage.setItem('bookmarkedProjects', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const isBookmarked = bookmarkedProjects.includes(id);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -75,11 +92,19 @@ export default function ProjectDetailPage() {
       <div className="apd-card">
         <div className="apd-title-row">
           <h1 className="apd-title">{project.projectName}</h1>
-          {project.priority && (
-            <span className={`apd-priority ${priorityClass[project.priority] ?? ""}`}>
-              {project.priority.toLowerCase()} priority
-            </span>
-          )}
+          <div className="apd-title-actions">
+            {project.priority && (
+              <span className={`apd-priority ${priorityClass[project.priority] ?? ""}`}>
+                {project.priority.toLowerCase()} priority
+              </span>
+            )}
+            <button
+              className={`apd-save-btn ${isBookmarked ? 'saved' : ''}`}
+              onClick={toggleBookmark}
+            >
+              {isBookmarked ? '★ SAVED' : '☆ SAVE'}
+            </button>
+          </div>
         </div>
 
         <p className="apd-org-name">{project.orgName ?? "organization"}</p>
@@ -155,10 +180,31 @@ export default function ProjectDetailPage() {
 
         {volunteer?.enabled && (
           <>
-            <h2 className="apd-section-title">volunteer</h2>
-            <p className="apd-volunteer-text">
-              <strong>{volunteer.targetVolunteers ?? 0}</strong> volunteers needed
-            </p>
+            <h2 className="apd-section-title">volunteer staffing</h2>
+            <div className="apd-volunteer-info">
+              <div className="apd-volunteer-count">
+                <span className="apd-volunteer-label">volunteers needed:</span>
+                <span className="apd-volunteer-number">{volunteer.targetVolunteers ?? 0}</span>
+              </div>
+              {(project.startDate || project.endDate) && (
+                <div className="apd-volunteer-schedule">
+                  <span className="apd-volunteer-label">schedule:</span>
+                  <span className="apd-volunteer-dates">
+                    {project.startDate && new Date(project.startDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })}
+                    {project.endDate && ` to ${new Date(project.endDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })}`}
+                  </span>
+                </div>
+              )}
+              {(project.startTime || project.endTime) && (
+                <div className="apd-volunteer-time">
+                  <span className="apd-volunteer-label">time:</span>
+                  <span className="apd-volunteer-hours">
+                    {project.startTime || ""}
+                    {project.endTime && ` - ${project.endTime}`}
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="apd-progress-info">
               <span>committed: {volunteer.currentVolunteers ?? 0} volunteers</span>
               <span>{percent(volunteer.currentVolunteers, volunteer.targetVolunteers)}% complete</span>
