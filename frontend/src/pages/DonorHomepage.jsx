@@ -66,9 +66,48 @@ export default function DonorHomepage() {
 
     // apply region filter
     if (filters.region !== "Any") {
-      filtered = filtered.filter((campaign) =>
-        campaign.location?.toLowerCase().includes(filters.region.toLowerCase())
-      );
+      filtered = filtered.filter((campaign) => {
+        const location = campaign.location?.toLowerCase() || "";
+        
+        // Define region mappings
+        const regionMap = {
+          luzon: [
+            "batangas", "manila", "quezon city", "caloocan", "pasig", "taguig", 
+            "makati", "muntinlupa", "parañaque", "las piñas", "valenzuela", 
+            "malabon", "navotas", "san juan", "mandaluyong", "marikina", "pasay",
+            "laguna", "cavite", "rizal", "bulacan", "pampanga", "tarlac", 
+            "nueva ecija", "pangasinan", "la union", "ilocos norte", "ilocos sur",
+            "abra", "benguet", "ifugao", "kalinga", "mountain province", "apayao",
+            "cagayan", "isabela", "nueva vizcaya", "quirino", "aurora", "zambales",
+            "bataan", "albay", "camarines norte", "camarines sur", "catanduanes",
+            "masbate", "sorsogon", "marinduque", "occidental mindoro", 
+            "oriental mindoro", "palawan", "romblon", "metro manila", "ncr"
+          ],
+          visayas: [
+            "cebu", "aklan", "antique", "capiz", "guimaras", "iloilo", 
+            "negros occidental", "bohol", "negros oriental", "siquijor",
+            "biliran", "eastern samar", "leyte", "northern samar", "samar",
+            "southern leyte", "tacloban", "bacolod", "iloilo city", "dumaguete"
+          ],
+          mindanao: [
+            "davao", "zamboanga", "cagayan de oro", "general santos", "cotabato",
+            "bukidnon", "camiguin", "lanao del norte", "misamis occidental",
+            "misamis oriental", "compostela valley", "davao del norte", 
+            "davao del sur", "davao oriental", "davao occidental", "sarangani",
+            "south cotabato", "sultan kudarat", "lanao del sur", "maguindanao",
+            "basilan", "sulu", "tawi-tawi", "zamboanga del norte", 
+            "zamboanga del sur", "zamboanga sibugay", "agusan del norte",
+            "agusan del sur", "surigao del norte", "surigao del sur", 
+            "dinagat islands"
+          ]
+        };
+        
+        const selectedRegion = filters.region.toLowerCase();
+        const provinces = regionMap[selectedRegion] || [];
+        
+        // Check if location matches any province in the selected region
+        return provinces.some(province => location.includes(province));
+      });
     }
 
     // apply sorting
