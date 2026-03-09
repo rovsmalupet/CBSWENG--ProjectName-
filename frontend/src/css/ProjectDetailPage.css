@@ -1,9 +1,38 @@
-/* ProjectDetailPage.css */
+/* reuse admin project detail styles for donor view */
+@import url("./Adminprojectdetail.css");
 
-.project-detail-page {
-  min-height: 100vh;
-  background: #f8f9fa;
-  font-family: "Inter", sans-serif;
+/* additional styles for progress bars */
+.apd-progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 8px;
+  margin-bottom: 6px;
+}
+
+.apd-progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.apd-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2daa6e, #22c55e);
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.apd-progress-fill-volunteer {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.apd-inkind-item-wrapper {
+  margin-bottom: 12px;
 }
 
 .detail-header {
@@ -23,6 +52,14 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 36px 32px;
+}
+
+.loading-message,
+.error-message {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1rem;
+  color: #6b7280;
 }
 
 .back-btn {
@@ -47,26 +84,187 @@
 
 .project-info {
   margin-bottom: 48px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px;
+  border: 1px solid #e5e7eb;
 }
 
 .project-title {
   font-size: 2rem;
   font-weight: 700;
   color: #1f2937;
-  margin: 0 0 12px 0;
+  margin: 0 0 24px 0;
   line-height: 1.3;
 }
 
-.project-meta {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin: 0;
-  line-height: 1.6;
+.project-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.project-meta strong {
+.meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meta-label {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.meta-value {
+  font-size: 0.95rem;
   color: #1f2937;
+  font-weight: 500;
+}
+
+.priority-badge-detail {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.priority-high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.priority-medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.priority-low {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.project-description {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.project-description h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+}
+
+.project-description p {
+  font-size: 0.95rem;
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.project-dates {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.project-dates h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+}
+
+.dates-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.date-label {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.support-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+  text-transform: lowercase;
+}
+
+.support-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.support-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value-large {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.progress-container {
+  margin-top: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2daa6e, #22c55e);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.progress-fill.volunteer {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
 }
 
 .inventory-section {
@@ -74,6 +272,7 @@
   border-radius: 12px;
   padding: 28px;
   border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
 }
 
 .inventory-title {
@@ -81,41 +280,103 @@
   font-weight: 700;
   color: #1f2937;
   margin: 0 0 24px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.85rem;
+  text-transform: lowercase;
 }
 
 .inventory-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .inventory-item {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.item-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.inventory-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+  margin-bottom: 8px;
 }
 
 .inventory-name {
   font-size: 0.95rem;
-  color: #4b5563;
-  font-weight: 500;
+  color: #1f2937;
+  font-weight: 600;
 }
 
 .inventory-status {
   font-size: 0.85rem;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: lowercase;
   letter-spacing: 0.05em;
+}
+
+.item-details {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.progress-container-small {
+  margin-top: 8px;
+}
+
+.progress-bar-small {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill-small {
+  height: 100%;
+  background: linear-gradient(90deg, #2daa6e, #22c55e);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 32px;
+}
+
+.donate-btn,
+.share-btn {
+  flex: 1;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.donate-btn {
+  background: #2563eb;
+  color: white;
+}
+
+.donate-btn:hover {
+  background: #1d4ed8;
+}
+
+.share-btn {
+  background: #f3f4f6;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+}
+
+.share-btn:hover {
+  background: #e5e7eb;
 }
 
 @media (max-width: 768px) {
@@ -127,17 +388,27 @@
     font-size: 1.5rem;
   }
 
-  .inventory-section {
+  .project-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .support-details {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-section,
+  .support-section,
+  .project-info {
     padding: 20px;
   }
 
-  .inventory-item {
+  .item-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
 
-  .inventory-status {
-    align-self: flex-start;
+  .action-buttons {
+    flex-direction: column;
   }
 }

@@ -3,6 +3,7 @@ import {
   createPost,
   getOrgPosts,
   getAllPosts,
+  getApprovedPosts,
   deletePost,
   getPostById,
   updatePost,
@@ -16,6 +17,7 @@ const router = express.Router();
 router.post("/", createPost);
 router.get("/", getOrgPosts);
 router.get("/admin/all", getAllPosts);
+router.get("/approved", getApprovedPosts);
 router.get("/:postId", getPostById);
 router.put("/:postId", updatePost);
 router.delete("/:postId", deletePost);
