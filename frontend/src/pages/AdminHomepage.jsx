@@ -47,6 +47,27 @@ export default function AdminHomepage() {
             </div>
             <span className="card-label">View Projects</span>
           </div>
+
+          <div
+            className="card active"
+            onClick={() => navigate("/admin/pending-accounts")}
+          >
+            <div className="card-icon">
+              <svg
+                width="52"
+                height="52"
+                fill="none"
+                stroke="#4b5563"
+                strokeWidth="1.4"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="12" cy="8" r="4" />
+                <path d="M3 21v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2" />
+                <path d="M16 11l2 2 4-4" />
+              </svg>
+            </div>
+            <span className="card-label">Pending Accounts</span>
+          </div>
 		</div>
       </main>
     </div>

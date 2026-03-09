@@ -11,12 +11,35 @@
   background: #ffffff;
   padding: 2rem;
   border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .greeting {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #2563eb;
+  color: #2563eb !important;
+}
+
+.bookmarks-nav-btn {
+  padding: 0.75rem 1.5rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+}
+
+.bookmarks-nav-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .donor-main {
@@ -37,9 +60,11 @@
 
 .section-title {
   font-size: 1.75rem;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-weight: 600;
+  color: #2563eb;
   margin: 0 0 0.5rem 0;
+  text-transform: none !important;
+  letter-spacing: normal;
 }
 
 .section-subtitle {
@@ -180,6 +205,14 @@
   gap: 0.75rem;
   align-items: flex-start;
   flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.card-badges {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
 .category-badge {
@@ -216,6 +249,26 @@
 .priority-low {
   background: #e0e7ff;
   color: #3730a3;
+}
+
+.bookmark-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.bookmark-btn:hover {
+  color: #f59e0b;
+  transform: scale(1.1);
+}
+
+.bookmark-btn.bookmarked {
+  color: #f59e0b;
 }
 
 .verified-badge {
@@ -278,6 +331,79 @@
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+/* Resource Needs Section */
+.resource-needs {
+  margin-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.75rem;
+}
+
+.resource-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.resource-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: lowercase;
+}
+
+.resource-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.resource-unit {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.resource-detail {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.resource-schedule {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.inkind-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.inkind-item {
+  font-size: 0.85rem;
+  color: #374151;
+  padding: 0.4rem 0.6rem;
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+.inkind-item strong {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.inkind-more {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+  padding: 0.4rem 0.6rem;
 }
 
 .campaign-stats {
