@@ -215,7 +215,7 @@ export default function AdminProjectDetail() {
               <strong>{project.supportTypes.volunteer.targetVolunteers}</strong> volunteers
               {project.startDate && (
                 <> <strong>On</strong> {formatDate(project.startDate)}
-                  {project.endDate && <> <strong>to</strong> {formatDateproject.endDate}</>}
+                  {project.endDate && <> <strong>to</strong> {formatDate.endDate}</>}
                   {project.startTime && <> <strong>At</strong> {project.startTime} to
                     {project.endTime && <> {project.endTime}</>}
                   </>}
