@@ -20,6 +20,14 @@ const priorityClass = {
   Low: "apd-priority-low",
 };
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric", month: "short", day: "numeric"
+  });
+};
+
+
 const percent = (current, target) => {
   const safeCurrent = Number(current ?? 0);
   const safeTarget = Number(target ?? 0);
