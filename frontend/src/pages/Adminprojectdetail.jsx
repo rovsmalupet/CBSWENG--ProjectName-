@@ -20,6 +20,13 @@ const priorityClass = {
   Low: "apd-priority-low",
 };
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric", month: "short", day: "numeric"
+  });
+};
+
 export default function AdminProjectDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -159,7 +166,7 @@ export default function AdminProjectDetail() {
         {/* Date/Time */}
         {(project.startDate || project.endDate) && (
           <p className="apd-datetime">
-            dates: {project.startDate} {project.endDate ? `→ ${project.endDate}` : ""}
+            dates: {formatDate(project.startDate)} {project.endDate ? `→${formatDate(project.endDate)}` : ""}
             {(project.startTime || project.endTime) && (
               <> &nbsp;time: {project.startTime} {project.endTime ? `- ${project.endTime}` : ""}</>
             )}
@@ -207,8 +214,8 @@ export default function AdminProjectDetail() {
             <p className="apd-volunteer-text">
               <strong>{project.supportTypes.volunteer.targetVolunteers}</strong> volunteers
               {project.startDate && (
-                <> <strong>On</strong> {project.startDate}
-                  {project.endDate && <> <strong>to</strong> {project.endDate}</>}
+                <> <strong>On</strong> {formatDate(project.startDate)}
+                  {project.endDate && <> <strong>to</strong> {formatDateproject.endDate}</>}
                   {project.startTime && <> <strong>At</strong> {project.startTime} to
                     {project.endTime && <> {project.endTime}</>}
                   </>}

@@ -1,7 +1,6 @@
 import prisma from "./client.js";
 
 async function main() {
-  // Create default organization
   const org = await prisma.organization.create({
     data: {
       id: "tempID",
@@ -13,7 +12,7 @@ async function main() {
   });
   console.log("Created organization:", org);
 
-  // Create mock posted project
+  // Project 1 — Monetary + Volunteer + InKind
   const project1 = await prisma.post.create({
     data: {
       projectName: "Community Medical Mission",
@@ -23,10 +22,21 @@ async function main() {
       priority: "High",
       overallStatus: "Approved",
       orgId: "tempID",
-      monetaryEnabled: true,
-      monetaryTargetAmount: 50000,
-      volunteerEnabled: true,
-      volunteerTargetCount: 20,
+	  
+      supportOptions: {
+        create: [
+          {
+            type: "Monetary",
+            targetAmount: 50000,
+            currentAmount: 0,
+          },
+          {
+            type: "Volunteer",
+            targetCount: 20,
+            currentCount: 0,
+          },
+        ],
+      },
       inKindItems: {
         create: [
           {
@@ -37,11 +47,11 @@ async function main() {
         ],
       },
     },
-    include: { inKindItems: true },
+    include: { inKindItems: true, supportOptions: true },
   });
   console.log("Created project 1:", project1);
 
-  // Create mock posted project
+  // Project 2 — Monetary + InKind only (no volunteer)
   const project2 = await prisma.post.create({
     data: {
       projectName: "Batangas Typhoon Support Donation Drive",
@@ -50,12 +60,18 @@ async function main() {
       location: "Manila",
       priority: "High",
       overallStatus: "Approved",
-      startDate: "2026-03-23",
-      endDate: "2026-03-28",
+      startDate: new Date("2026-03-23"),
+      endDate: new Date("2026-03-28"),
       orgId: "tempID",
-      monetaryEnabled: true,
-      monetaryTargetAmount: 50000,
-      volunteerEnabled: false,
+      supportOptions: {
+        create: [
+          {
+            type: "Monetary",
+            targetAmount: 50000,
+            currentAmount: 0,
+          },
+        ],
+      },
       inKindItems: {
         create: [
           { itemName: "Biogesic", targetQuantity: 500, unit: "pills" },
@@ -65,11 +81,11 @@ async function main() {
         ],
       },
     },
-    include: { inKindItems: true },
+    include: { inKindItems: true, supportOptions: true },
   });
   console.log("Created project 2:", project2);
 
-  // Create mock pending project
+  // Project 3 — Monetary only, Pending status
   const project3 = await prisma.post.create({
     data: {
       projectName: "Clean Water Initiative",
@@ -79,16 +95,21 @@ async function main() {
       priority: "Medium",
       overallStatus: "Pending",
       orgId: "tempID",
-      monetaryEnabled: true,
-      monetaryTargetAmount: 75000,
-      volunteerEnabled: false,
-      inKindItems: { create: [] },
+      supportOptions: {
+        create: [
+          {
+            type: "Monetary",
+            targetAmount: 75000,
+            currentAmount: 0,
+          },
+        ],
+      },
     },
-    include: { inKindItems: true },
+    include: { inKindItems: true, supportOptions: true },
   });
   console.log("Created project 3:", project3);
 
-  // Create mock edited project 4
+  // Project 4 — Volunteer only, Edited status
   const project4 = await prisma.post.create({
     data: {
       projectName: "Batangas Typhoon Support Day 1",
@@ -98,33 +119,37 @@ async function main() {
       priority: "High",
       overallStatus: "Edited",
       orgId: "tempID",
-      monetaryEnabled: false,
-      volunteerEnabled: true,
-      volunteerTargetCount: 50,
-      inKindItems: { create: [] },
+      supportOptions: {
+        create: [
+          {
+            type: "Volunteer",
+            targetCount: 50,
+            currentCount: 0,
+          },
+        ],
+      },
     },
-    include: { inKindItems: true },
+    include: { inKindItems: true, supportOptions: true },
   });
   console.log("Created project 4:", project4);
-  
+
+  // Project 5 — InKind only, Unapproved status
   const project5 = await prisma.post.create({
     data: {
       projectName: "Donate-A-Book",
-      description: "Help us collect 200 chgildren's books to be given away during Paaralang Elementarya's back to school program.",
-      causes: ["healthAndMedical"],
+      description: "Help us collect 200 children's books to be given away during Paaralang Elementarya's back to school program.",
+      causes: ["educationAndChildren"],
       location: "Quezon City",
       priority: "High",
       overallStatus: "Unapproved",
       orgId: "tempID",
-      monetaryEnabled: false,
-      volunteerEnabled: false,
       inKindItems: {
         create: [
           { itemName: "Children's Book", targetQuantity: 300, unit: "pieces" },
         ],
       },
     },
-    include: { inKindItems: true },
+    include: { inKindItems: true, supportOptions: true },
   });
   console.log("Created project 5:", project5);
 }

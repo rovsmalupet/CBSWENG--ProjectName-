@@ -1,88 +1,106 @@
-generator client {
-  provider = "prisma-client-js"
-}
+	generator client {
+	  provider = "prisma-client-js"
+	}
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
+	datasource db {
+	  provider  = "postgresql"
+	  url       = env("DATABASE_URL")
+	  directUrl = env("DIRECT_URL")
+	}
 
-///there must be no default for orgName, email, and representativePerson (these are for sprint 2-3 only assuming there are no other users)
-model Organization {
-  id                   String   @id @default(uuid())
-  orgName              String   @default("Philippine Red Cross")
-  email                String   @unique @default("mary.angela@redcross.ph")
-  representativePerson String   @default("Mary Angela Cruz")
-  isVerified           Boolean  @default(false)
-  createdAt            DateTime @default(now())
-  posts                Post[]   
-}
+	/// There must be no default for orgName, email, and representativePerson
+	/// (these are for sprint 2-3 only assuming there are no other users)
+	model Organization {
+	  id                   String   @id @default(uuid())
+	  orgName              String   @default("Philippine Red Cross")
+	  email                String   @unique @default("mary.angela@redcross.ph")
+	  representativePerson String   @default("Mary Angela Cruz")
+	  isVerified           Boolean  @default(false)
+	  createdAt            DateTime @default(now())
+	  posts                Post[]
+	}
 
-model Post {
-  id            String        @id @default(uuid())
-  orgId         String        
-  organization  Organization  @relation(fields: [orgId], references: [id])
-  projectName   String
-  description   String?
-  causes        CauseEnum[]
-  location      String?
-  priority      Priority      @default(Medium)
-  overallStatus PostStatus    @default(Pending)
-  createdAt     DateTime      @default(now())
-  startDate     String?
-  endDate       String?
-  startTime     String?
-  endTime       String?
-  monetaryEnabled       Boolean       @default(false)
-  monetaryTargetAmount  Float?
-  monetaryCurrentAmount Float         @default(0)
-  monetaryStatus        SupportStatus @default(Open)
-  volunteerEnabled      Boolean       @default(false)
-  volunteerTargetCount  Int?
-  volunteerCurrentCount Int           @default(0)
-  volunteerStatus       SupportStatus @default(Open)
-  inKindItems PostInKindItem[]
-}
+	model Post {
+	  id             String              @id @default(uuid())
+	  orgId          String
+	  organization   Organization        @relation(fields: [orgId], references: [id])
+	  projectName    String
+	  description    String?
+	  causes         CauseEnum[]
+	  location       String?
+	  priority       Priority            @default(Medium)
+	  overallStatus  PostStatus          @default(Pending)
+	  createdAt      DateTime            @default(now())
+	  startDate      DateTime?
+	  endDate        DateTime?
 
-model PostInKindItem {
-  id              String        @id @default(uuid())
-  postId          String
-  itemName        String
-  targetQuantity  Float
-  currentQuantity Float         @default(0)
-  unit            String?
-  status          SupportStatus @default(Open)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-}
+	  supportOptions PostSupportOption[]
+	  inKindItems    PostInKindItem[]
+	}
 
-enum CauseEnum {
-  educationAndChildren
-  healthAndMedical
-  disasterRelief
-  environmentAndClimate
-  povertyAndHunger
-  communityDevelopment
-  livelihoodAndSkillsTraining
-  animalWelfare
-  others
-}
+	model PostSupportOption {
+	  id             String        @id @default(uuid())
+	  postId         String
+	  post           Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+	  type           SupportType
 
-enum Priority {
-  High
-  Medium
-  Low
-}
+	  //Monetary fields
+	  targetAmount   Float?
+	  currentAmount  Float         @default(0)
 
-enum PostStatus {
-  Pending
-  Approved
-  Unapproved
-  Edited
-  Deleted
-}
+	  // Volunteer fields
+	  targetCount    Int?
+	  currentCount   Int           @default(0)
 
-enum SupportStatus {
-  Open
-  Closed
-}
+	  status         SupportStatus @default(Open)
+
+	  // Ensure a post can only have one Monetary and one Volunteer option
+	  @@unique([postId, type])
+	}
+
+	model PostInKindItem {
+	  id              String        @id @default(uuid())
+	  postId          String
+	  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+	  itemName        String
+	  targetQuantity  Float
+	  currentQuantity Float         @default(0)
+	  unit            String?
+	  status          SupportStatus @default(Open)
+	}
+
+	enum SupportType {
+	  Monetary
+	  Volunteer
+	}
+
+	enum CauseEnum {
+	  educationAndChildren
+	  healthAndMedical
+	  disasterRelief
+	  environmentAndClimate
+	  povertyAndHunger
+	  communityDevelopment
+	  livelihoodAndSkillsTraining
+	  animalWelfare
+	  others
+	}
+
+	enum Priority {
+	  High
+	  Medium
+	  Low
+	}
+
+	enum PostStatus {
+	  Pending
+	  Approved
+	  Unapproved
+	  Edited
+	  Deleted
+	}
+
+	enum SupportStatus {
+	  Open
+	  Closed
+	}

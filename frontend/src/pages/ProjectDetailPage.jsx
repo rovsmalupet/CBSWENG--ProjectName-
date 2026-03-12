@@ -126,13 +126,13 @@ export default function ProjectDetailPage() {
         </div>
 
         {(project.startDate || project.endDate) && (
-          <p className="apd-datetime">
-            {project.startDate || ""} {project.endDate ? `→ ${project.endDate}` : ""}
-            {(project.startTime || project.endTime) && (
-              <> • {project.startTime || ""} {project.endTime ? `- ${project.endTime}` : ""}</>
-            )}
-          </p>
-        )}
+			<p className="apd-datetime">
+				{formatDate(project.startDate)} {project.endDate ? `→ ${formatDate(project.endDate)}` : ""}
+				{(project.startTime || project.endTime) && (
+				  <> • {project.startTime || ""} {project.endTime ? `- ${project.endTime}` : ""}</>
+				)}
+			</p>
+		)}
 
         {project.description && <p className="apd-description">{project.description}</p>}
 

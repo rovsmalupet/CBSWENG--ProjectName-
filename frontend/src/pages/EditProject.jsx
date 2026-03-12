@@ -658,7 +658,7 @@ export default function EditProject() {
                 }}
               >
                 When you edit this project, its status will be changed to{" "}
-                <strong>Pending</strong>. Your project will need to be reviewed
+                <strong>Edited</strong>. Your project will need to be reviewed
                 and approved by an admin again before it becomes active.
               </p>
               <div
