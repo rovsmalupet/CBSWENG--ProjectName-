@@ -6,9 +6,11 @@ async function main() {
     data: {
       id: "tempID",
       orgName: "Philippine Red Cross",
+      firstName: "Mary Angela",
+      surname: "Cruz",
       email: "mary.angela@redcross.ph",
-      representativePerson: "Mary Angela Cruz",
       isVerified: false,
+      status: "pending",
     },
   });
   console.log("Created organization:", org);

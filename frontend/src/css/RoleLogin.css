@@ -1,0 +1,89 @@
+.role-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(145deg, #dbeafe, #ecfeff);
+}
+
+.role-login-card {
+  width: 100%;
+  max-width: 460px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+  padding: 1.8rem;
+  font-family: "DM Sans", sans-serif;
+}
+
+.role-login-back {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
+.role-login-card h1 {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 1.7rem;
+}
+
+.role-login-card p {
+  margin: 0 0 1rem;
+  color: #64748b;
+}
+
+.role-login-card form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.role-login-card label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+}
+
+.role-login-card input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.72rem 0.8rem;
+}
+
+.role-login-card button[type="submit"] {
+  margin-top: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.8rem;
+  cursor: pointer;
+}
+
+.role-login-card button[type="submit"]:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.role-login-error {
+  margin-top: 0.9rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.92rem;
+}
+
+.role-register-link {
+  margin-top: 0.9rem;
+  border: none;
+  background: transparent;
+  color: #0f766e;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}

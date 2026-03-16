@@ -4,7 +4,10 @@ const formatPost = (post) => ({
   ...post,
   orgName: post.organization?.orgName ?? null,
   orgEmail: post.organization?.email ?? null,
-  orgRepresentative: post.organization?.representativePerson ?? null,
+  orgRepresentative:
+    post.organization?.firstName && post.organization?.surname
+      ? `${post.organization.firstName} ${post.organization.surname}`
+      : null,
   organization: undefined,
   supportTypes: {
     monetary: {
@@ -43,8 +46,6 @@ const buildPostData = (body) => {
     supportTypes,
     startDate,
     endDate,
-    startTime,
-    endTime,
   } = body;
 
   const monetary = supportTypes?.monetary;
@@ -60,8 +61,6 @@ const buildPostData = (body) => {
     priority,
     startDate: startDate || null,
     endDate: endDate || null,
-    startTime: startTime || null,
-    endTime: endTime || null,
     monetaryEnabled: monetary?.enabled ?? false,
     monetaryTargetAmount: monetary?.enabled
       ? (monetary.targetAmount ?? 0)
@@ -111,11 +110,29 @@ export const createPost = async (req, res) => {
 
 export const getAllPosts = async (req, res) => {
   try {
-    const posts = await prisma.post.findMany({
-      orderBy: { createdAt: "desc" },
-      include: { inKindItems: true, organization: true },
-    });
-    res.json(posts.map(formatPost));
+    const rows = await prisma.$queryRawUnsafe(`
+      SELECT
+        p."id",
+        p."projectName",
+        p."overallStatus",
+        p."createdAt",
+        p."orgId",
+        o."orgName"
+      FROM "Post" p
+      LEFT JOIN "Organization" o ON o."id" = p."orgId"
+      ORDER BY p."createdAt" DESC
+    `);
+
+    const posts = rows.map((row) => ({
+      id: row.id,
+      projectName: row.projectName,
+      overallStatus: row.overallStatus,
+      createdAt: row.createdAt,
+      orgId: row.orgId,
+      orgName: row.orgName ?? null,
+    }));
+
+    res.json(posts);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -146,8 +163,59 @@ export const getApprovedPosts = async (req, res) => {
     });
     res.json(posts.map(formatPost));
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    try {
+      const rows = await prisma.$queryRawUnsafe(`
+        SELECT
+          p."id",
+          p."projectName",
+          p."description",
+          p."location",
+          p."priority",
+          p."overallStatus",
+          p."createdAt",
+          p."orgId",
+          o."orgName"
+        FROM "Post" p
+        LEFT JOIN "Organization" o ON o."id" = p."orgId"
+        WHERE p."overallStatus" = 'Approved'
+        ORDER BY p."createdAt" DESC
+      `);
+
+      const fallback = rows.map((row) => ({
+        id: row.id,
+        projectName: row.projectName,
+        description: row.description,
+        location: row.location,
+        priority: row.priority,
+        overallStatus: row.overallStatus,
+        createdAt: row.createdAt,
+        orgId: row.orgId,
+        orgName: row.orgName ?? null,
+        causes: [],
+        startDate: null,
+        endDate: null,
+        supportTypes: {
+          monetary: {
+            enabled: false,
+            targetAmount: 0,
+            currentAmount: 0,
+            status: "Open",
+          },
+          inKind: [],
+          volunteer: {
+            enabled: false,
+            targetVolunteers: 0,
+            currentVolunteers: 0,
+            status: "Open",
+          },
+        },
+      }));
+
+      res.json(fallback);
+    } catch (fallbackError) {
+      console.error(fallbackError);
+      res.status(500).json({ error: fallbackError.message });
+    }
   }
 };
 

@@ -1,0 +1,98 @@
+.ngo-register-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(160deg, #e0f2fe, #eef2ff);
+}
+
+.ngo-register-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(37, 99, 235, 0.15);
+  padding: 2rem;
+  font-family: "DM Sans", sans-serif;
+}
+
+.ngo-register-back {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #1f2937;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.ngo-register-card h1 {
+  margin: 1rem 0 0.5rem;
+  color: #0f172a;
+}
+
+.ngo-register-card p {
+  margin: 0 0 1.25rem;
+  color: #475569;
+}
+
+.ngo-register-card form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.ngo-register-card label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-top: 0.4rem;
+}
+
+.ngo-register-card input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.72rem 0.85rem;
+  font-size: 0.95rem;
+}
+
+.ngo-register-card input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.field-error {
+  color: #b91c1c;
+  font-size: 0.82rem;
+}
+
+.submit-btn {
+  margin-top: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+}
+
+.submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.server-message {
+  margin-top: 1rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.75rem;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 640px) {
+  .ngo-register-card {
+    padding: 1.25rem;
+  }
+}

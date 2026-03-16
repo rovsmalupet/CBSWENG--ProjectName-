@@ -43,7 +43,7 @@ export default function PendingAccounts() {
       }
 
       // Remove the approved account from the list
-      setPendingAccounts(pendingAccounts.filter(acc => acc.id !== accountId));
+      setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
       alert("Account approved successfully!");
     } catch (err) {
       console.error("Error approving account:", err);
@@ -71,7 +71,7 @@ export default function PendingAccounts() {
       }
 
       // Remove the rejected account from the list
-      setPendingAccounts(pendingAccounts.filter(acc => acc.id !== accountId));
+      setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
       alert("Account rejected successfully.");
     } catch (err) {
       console.error("Error rejecting account:", err);
@@ -124,8 +124,9 @@ export default function PendingAccounts() {
             <thead>
               <tr>
                 <th>Organization Name</th>
+                <th>First Name</th>
+                <th>Surname</th>
                 <th>Email</th>
-                <th>Representative</th>
                 <th>Registration Date</th>
                 <th>Actions</th>
               </tr>
@@ -133,9 +134,10 @@ export default function PendingAccounts() {
             <tbody>
               {pendingAccounts.map((account) => (
                 <tr key={account.id}>
-                  <td className="org-name">{account.orgName}</td>
+                  <td className="org-name">{account.orgName || account.affiliation || "-"}</td>
+                  <td>{account.firstName}</td>
+                  <td>{account.surname}</td>
                   <td>{account.email}</td>
-                  <td>{account.representativePerson}</td>
                   <td>{new Date(account.createdAt).toLocaleDateString()}</td>
                   <td className="actions-cell">
                     <button

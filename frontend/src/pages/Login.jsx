@@ -7,7 +7,7 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>Welcome to Bayanihub 🛖</h1>
+        <h1>Welcome to Bayanihub</h1>
         <p>Select your role to continue</p>
 
         <div className="button-group">
@@ -20,14 +20,14 @@ export default function Login() {
 
           <button
             className="login-btn ngo-btn"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/auth/ngo")}
           >
 			NGO
           </button>
 		  
 		  <button
             className="login-btn admin-btn"
-            onClick={() => navigate("/admin")}
+            onClick={() => navigate("/auth/admin")}
           >
 		  Admin
 		  </button>

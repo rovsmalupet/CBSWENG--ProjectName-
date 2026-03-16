@@ -5,16 +5,23 @@ export default function ViewProjects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
+        setError("");
         const res = await fetch("http://localhost:3000/posts/admin/all");
+        if (!res.ok) {
+          const fallback = await res.json().catch(() => ({}));
+          throw new Error(fallback.error || "Failed to fetch projects.");
+        }
         const data = await res.json();
-        setProjects(data);
+        setProjects(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch projects:", err);
+        setError(err.message || "Failed to load projects.");
       } finally {
         setLoading(false);
       }
@@ -48,6 +55,8 @@ export default function ViewProjects() {
 
       {loading ? (
         <p>Loading projects...</p>
+      ) : error ? (
+        <p style={{ color: "#b91c1c" }}>{error}</p>
       ) : projects.length === 0 ? (
         <p>No projects found.</p>
       ) : (
@@ -75,7 +84,7 @@ export default function ViewProjects() {
                     #{project.id.slice(0, 8).toUpperCase()}
                   </td>
                   <td style={tdStyle}>{project.projectName}</td>
-                  <td style={tdStyle}>{project.orgName}</td>
+                  <td style={tdStyle}>{project.orgName || "-"}</td>
                   <td style={tdStyle}>
                     <span style={{
                       padding: "2px 10px",

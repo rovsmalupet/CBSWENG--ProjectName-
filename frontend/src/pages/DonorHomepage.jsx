@@ -1,16 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/DonorHomepage.css";
 
 export default function DonorHomepage() {
   const navigate = useNavigate();
+  const firstName = localStorage.getItem("userFirstName") || "Donor";
   const [campaigns, setCampaigns] = useState([]);
-  const [filteredCampaigns, setFilteredCampaigns] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("latest");
   const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
-    const saved = localStorage.getItem('bookmarkedProjects');
-    return saved ? JSON.parse(saved) : [];
+    const saved = localStorage.getItem("bookmarkedProjects");
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return [];
+    }
   });
   const [filters, setFilters] = useState({
     cause: "Any",
@@ -19,27 +24,27 @@ export default function DonorHomepage() {
   });
 
   useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/posts/approved");
+        if (!response.ok) {
+          setCampaigns([]);
+          return;
+        }
+        const data = await response.json();
+        setCampaigns(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("error fetching campaigns:", error);
+        setCampaigns([]);
+      }
+    };
+
     fetchCampaigns();
   }, []);
 
-  useEffect(() => {
-    applyFiltersAndSearch();
-  }, [campaigns, filters, searchQuery, sortBy]);
-
-  const fetchCampaigns = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/posts/approved");
-      const data = await response.json();
-      setCampaigns(data);
-    } catch (error) {
-      console.error("error fetching campaigns:", error);
-    }
-  };
-
-  const applyFiltersAndSearch = () => {
+  const filteredCampaigns = useMemo(() => {
     let filtered = [...campaigns];
 
-    // apply search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -50,41 +55,37 @@ export default function DonorHomepage() {
       );
     }
 
-    // apply cause filter
     if (filters.cause !== "Any") {
       filtered = filtered.filter((campaign) =>
         campaign.causes?.includes(filters.cause)
       );
     }
 
-    // apply urgency filter
     if (filters.urgency !== "Any") {
       filtered = filtered.filter(
         (campaign) => campaign.priority === filters.urgency
       );
     }
 
-    // apply region filter
     if (filters.region !== "Any") {
       filtered = filtered.filter((campaign) => {
         const location = campaign.location?.toLowerCase() || "";
-        
-        // Define region mappings
+
         const regionMap = {
           luzon: [
-            "batangas", "manila", "quezon city", "caloocan", "pasig", "taguig", 
-            "makati", "muntinlupa", "parañaque", "las piñas", "valenzuela", 
+            "batangas", "manila", "quezon city", "caloocan", "pasig", "taguig",
+            "makati", "muntinlupa", "paranaque", "las pinas", "valenzuela",
             "malabon", "navotas", "san juan", "mandaluyong", "marikina", "pasay",
-            "laguna", "cavite", "rizal", "bulacan", "pampanga", "tarlac", 
+            "laguna", "cavite", "rizal", "bulacan", "pampanga", "tarlac",
             "nueva ecija", "pangasinan", "la union", "ilocos norte", "ilocos sur",
             "abra", "benguet", "ifugao", "kalinga", "mountain province", "apayao",
             "cagayan", "isabela", "nueva vizcaya", "quirino", "aurora", "zambales",
             "bataan", "albay", "camarines norte", "camarines sur", "catanduanes",
-            "masbate", "sorsogon", "marinduque", "occidental mindoro", 
+            "masbate", "sorsogon", "marinduque", "occidental mindoro",
             "oriental mindoro", "palawan", "romblon", "metro manila", "ncr"
           ],
           visayas: [
-            "cebu", "aklan", "antique", "capiz", "guimaras", "iloilo", 
+            "cebu", "aklan", "antique", "capiz", "guimaras", "iloilo",
             "negros occidental", "bohol", "negros oriental", "siquijor",
             "biliran", "eastern samar", "leyte", "northern samar", "samar",
             "southern leyte", "tacloban", "bacolod", "iloilo city", "dumaguete"
@@ -92,69 +93,61 @@ export default function DonorHomepage() {
           mindanao: [
             "davao", "zamboanga", "cagayan de oro", "general santos", "cotabato",
             "bukidnon", "camiguin", "lanao del norte", "misamis occidental",
-            "misamis oriental", "compostela valley", "davao del norte", 
+            "misamis oriental", "compostela valley", "davao del norte",
             "davao del sur", "davao oriental", "davao occidental", "sarangani",
             "south cotabato", "sultan kudarat", "lanao del sur", "maguindanao",
-            "basilan", "sulu", "tawi-tawi", "zamboanga del norte", 
+            "basilan", "sulu", "tawi-tawi", "zamboanga del norte",
             "zamboanga del sur", "zamboanga sibugay", "agusan del norte",
-            "agusan del sur", "surigao del norte", "surigao del sur", 
+            "agusan del sur", "surigao del norte", "surigao del sur",
             "dinagat islands"
           ]
         };
-        
+
         const selectedRegion = filters.region.toLowerCase();
         const provinces = regionMap[selectedRegion] || [];
-        
-        // Check if location matches any province in the selected region
-        return provinces.some(province => location.includes(province));
+
+        return provinces.some((province) => location.includes(province));
       });
     }
 
-    // apply sorting
-    filtered = sortCampaigns(filtered);
-
-    setFilteredCampaigns(filtered);
-  };
-
-  const sortCampaigns = (campaignsList) => {
-    const sorted = [...campaignsList];
+    const sorted = [...filtered];
     switch (sortBy) {
-      case "urgency":
-        return sorted.sort((a, b) => {
-          const priority = { High: 3, Medium: 2, Low: 1 };
-          return priority[b.priority] - priority[a.priority];
-        });
+      case "urgency": {
+        const priority = { High: 3, Medium: 2, Low: 1 };
+        filtered = sorted.sort((a, b) => priority[b.priority] - priority[a.priority]);
+        break;
+      }
       case "progress":
-        return sorted.sort((a, b) => {
-          const progressA = calculateProgress(
-            a.supportTypes.monetary.currentAmount,
-            a.supportTypes.monetary.targetAmount
-          );
-          const progressB = calculateProgress(
-            b.supportTypes.monetary.currentAmount,
-            b.supportTypes.monetary.targetAmount
-          );
+        filtered = sorted.sort((a, b) => {
+          const aTarget = a.supportTypes.monetary.targetAmount || 1;
+          const bTarget = b.supportTypes.monetary.targetAmount || 1;
+          const progressA = Math.round((a.supportTypes.monetary.currentAmount / aTarget) * 100);
+          const progressB = Math.round((b.supportTypes.monetary.currentAmount / bTarget) * 100);
           return progressB - progressA;
         });
+        break;
       case "amount":
-        return sorted.sort(
+        filtered = sorted.sort(
           (a, b) =>
             (b.supportTypes.monetary.targetAmount || 0) -
             (a.supportTypes.monetary.targetAmount || 0)
         );
+        break;
       case "date":
-        return sorted.sort((a, b) => {
+        filtered = sorted.sort((a, b) => {
           const dateA = a.startDate ? new Date(a.startDate) : new Date(0);
           const dateB = b.startDate ? new Date(b.startDate) : new Date(0);
           return dateB - dateA;
         });
+        break;
       case "latest":
       default:
-        return sorted.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
+        filtered = sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
     }
-  };
+
+    return filtered;
+  }, [campaigns, filters, searchQuery, sortBy]);
 
   const handleFilterChange = (filterName, value) => {
     setFilters({ ...filters, [filterName]: value });
@@ -170,6 +163,12 @@ export default function DonorHomepage() {
       localStorage.setItem('bookmarkedProjects', JSON.stringify(updated));
       return updated;
     });
+  };
+
+  const handleSwitchAccount = () => {
+    localStorage.removeItem("userFirstName");
+    localStorage.removeItem("userRole");
+    navigate("/login");
   };
 
   const getCauseDisplay = (cause) => {
@@ -217,13 +216,18 @@ export default function DonorHomepage() {
   return (
     <div className="donor-homepage">
       <div className="donor-header">
-        <h2 className="greeting">Hello, Isa!</h2>
-        <button 
-          className="bookmarks-nav-btn"
-          onClick={() => navigate('/donor/bookmarks')}
-        >
-          BOOKMARKS
-        </button>
+        <h2 className="greeting">Hello, {firstName}!</h2>
+        <div className="donor-header-actions">
+          <button
+            className="bookmarks-nav-btn"
+            onClick={() => navigate('/donor/bookmarks')}
+          >
+            BOOKMARKS
+          </button>
+          <button className="switch-account-btn" onClick={handleSwitchAccount}>
+            SWITCH ACCOUNT / LOGOUT
+          </button>
+        </div>
       </div>
 
       <div className="donor-main">
@@ -325,7 +329,6 @@ export default function DonorHomepage() {
               const volunteerCurrent = campaign.supportTypes?.volunteer?.currentVolunteers || 0;
               const volunteerRemaining = Math.max(0, volunteerTarget - volunteerCurrent);
 
-              // truncate title and description
               const truncateText = (text, maxLength) => {
                 if (!text) return "";
                 return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
@@ -400,7 +403,6 @@ export default function DonorHomepage() {
                     )}
                   </div>
 
-                  {/* Monetary Support - Show remaining amount needed */}
                   {monetaryEnabled && (
                     <div className="resource-needs">
                       <div className="resource-section">
@@ -415,7 +417,6 @@ export default function DonorHomepage() {
                     </div>
                   )}
 
-                  {/* In-Kind Support - Show specific items needed */}
                   {inKindEnabled && inKindItems.length > 0 && (
                     <div className="resource-needs">
                       <div className="resource-section">

@@ -8,13 +8,28 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-///there must be no default for orgName, email, and representativePerson (these are for sprint 2-3 only assuming there are no other users)
+model User {
+  id                   String        @id @default(uuid())
+  firstName            String
+  surname              String
+  email                String        @unique
+  password             String
+  role                 UserRole
+  status               AccountStatus @default(active)
+  affiliation          String?
+  representativePerson String?
+  isVerified           Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+}
+
 model Organization {
   id                   String   @id @default(uuid())
-  orgName              String   @default("Philippine Red Cross")
-  email                String   @unique @default("mary.angela@redcross.ph")
-  representativePerson String   @default("Mary Angela Cruz")
+  orgName              String
+  firstName            String
+  surname              String
+  email                String   @unique
   isVerified           Boolean  @default(false)
+  status               String   @default("pending")
   createdAt            DateTime @default(now())
   posts                Post[]   
 }
@@ -32,8 +47,6 @@ model Post {
   createdAt     DateTime      @default(now())
   startDate     String?
   endDate       String?
-  startTime     String?
-  endTime       String?
   monetaryEnabled       Boolean       @default(false)
   monetaryTargetAmount  Float?
   monetaryCurrentAmount Float         @default(0)
@@ -85,4 +98,17 @@ enum PostStatus {
 enum SupportStatus {
   Open
   Closed
+}
+
+enum UserRole {
+  donor
+  ngo
+  admin
+}
+
+enum AccountStatus {
+  pending
+  approved
+  rejected
+  active
 }

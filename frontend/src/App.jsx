@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import ActiveProjects from "./pages/ActiveProjects.jsx";
@@ -7,12 +7,15 @@ import DonorHomepage from "./pages/DonorHomepage.jsx";
 import BookmarkedProjects from "./pages/BookmarkedProjects.jsx";
 import ProjectDetailPage from "./pages/ProjectDetailPage.jsx";
 import PostNewProject from "./components/PostNewProject.jsx";
-import EditProject from "./pages/EditProject.jsx"; // <-- added
-import AddContribution from "./pages/AddContribution.jsx"; // <-- added
+import EditProject from "./pages/EditProject.jsx";
+import AddContribution from "./pages/AddContribution.jsx";
 import AdminHomepage from "./pages/AdminHomepage.jsx";
 import ViewProjects from "./pages/viewProjects.jsx";
 import AdminProjectDetail from "./pages/AdminProjectDetail.jsx";
 import PendingAccounts from "./pages/PendingAccounts.jsx";
+import NgoRegistration from "./pages/NgoRegistration.jsx";
+import RoleLogin from "./pages/RoleLogin.jsx";
+import DonorRegistration from "./pages/DonorRegistration.jsx";
 
 export default function App() {
   return (
@@ -20,6 +23,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
+    		<Route path="/ngo/register" element={<NgoRegistration />} />
+        <Route path="/donor/register" element={<DonorRegistration />} />
+    		<Route path="/auth/:role" element={<RoleLogin />} />
 		
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/project-ledger" element={<ActiveProjects />} />
