@@ -184,36 +184,6 @@ export default function DonorHomepage() {
             "surigao del sur",
             "dinagat islands",
           ],
-        const regionMap = {
-          luzon: [
-            "batangas", "manila", "quezon city", "caloocan", "pasig", "taguig",
-            "makati", "muntinlupa", "paranaque", "las pinas", "valenzuela",
-            "malabon", "navotas", "san juan", "mandaluyong", "marikina", "pasay",
-            "laguna", "cavite", "rizal", "bulacan", "pampanga", "tarlac",
-            "nueva ecija", "pangasinan", "la union", "ilocos norte", "ilocos sur",
-            "abra", "benguet", "ifugao", "kalinga", "mountain province", "apayao",
-            "cagayan", "isabela", "nueva vizcaya", "quirino", "aurora", "zambales",
-            "bataan", "albay", "camarines norte", "camarines sur", "catanduanes",
-            "masbate", "sorsogon", "marinduque", "occidental mindoro",
-            "oriental mindoro", "palawan", "romblon", "metro manila", "ncr"
-          ],
-          visayas: [
-            "cebu", "aklan", "antique", "capiz", "guimaras", "iloilo",
-            "negros occidental", "bohol", "negros oriental", "siquijor",
-            "biliran", "eastern samar", "leyte", "northern samar", "samar",
-            "southern leyte", "tacloban", "bacolod", "iloilo city", "dumaguete"
-          ],
-          mindanao: [
-            "davao", "zamboanga", "cagayan de oro", "general santos", "cotabato",
-            "bukidnon", "camiguin", "lanao del norte", "misamis occidental",
-            "misamis oriental", "compostela valley", "davao del norte",
-            "davao del sur", "davao oriental", "davao occidental", "sarangani",
-            "south cotabato", "sultan kudarat", "lanao del sur", "maguindanao",
-            "basilan", "sulu", "tawi-tawi", "zamboanga del norte",
-            "zamboanga del sur", "zamboanga sibugay", "agusan del norte",
-            "agusan del sur", "surigao del norte", "surigao del sur",
-            "dinagat islands"
-          ]
         };
 
         const selectedRegion = filters.region.toLowerCase();
