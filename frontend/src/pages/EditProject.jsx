@@ -59,47 +59,41 @@ export default function EditProject() {
     const fetchProject = async () => {
       try {
         const { getApiUrl, apiFetch } = await import("../config/api");
-        const res = await apiFetch(getApiUrl(`/posts/${id}`));
-        const data = await res.json();
-        if (res.ok) {
-          setForm({
-            campaignTitle: data.projectName || "",
-            location: data.location || "",
-            description: data.description || "",
-            monetarySupport: data.supportTypes?.monetary?.targetAmount || "",
-            volunteerQuantity:
-              data.supportTypes?.volunteer?.targetVolunteers || "",
-            priority: data.priority || "",
-            startDate: data.startDate || "",
-            endDate: data.endDate || "",
-            startTime: data.startTime || "",
-            endTime: data.endTime || "",
-          });
+        const data = await apiFetch(getApiUrl(`/posts/${id}`));
+        setForm({
+          campaignTitle: data.projectName || "",
+          location: data.location || "",
+          description: data.description || "",
+          monetarySupport: data.supportTypes?.monetary?.targetAmount || "",
+          volunteerQuantity:
+            data.supportTypes?.volunteer?.targetVolunteers || "",
+          priority: data.priority || "",
+          startDate: data.startDate || "",
+          endDate: data.endDate || "",
+          startTime: data.startTime || "",
+          endTime: data.endTime || "",
+        });
 
-          setSelectedCauses(data.causes ?? []);
-          setDateEnabled(!!(data.startDate || data.endDate));
-          setTimeEnabled(!!(data.startTime || data.endTime));
+        setSelectedCauses(data.causes ?? []);
+        setDateEnabled(!!(data.startDate || data.endDate));
+        setTimeEnabled(!!(data.startTime || data.endTime));
 
-          setSupportTypes({
-            monetary: data.supportTypes?.monetary?.enabled || false,
-            inKind: data.supportTypes?.inKind?.length > 0,
-            volunteer: data.supportTypes?.volunteer?.enabled || false,
-          });
+        setSupportTypes({
+          monetary: data.supportTypes?.monetary?.enabled || false,
+          inKind: data.supportTypes?.inKind?.length > 0,
+          volunteer: data.supportTypes?.volunteer?.enabled || false,
+        });
 
-          setInKindItems(
-            data.supportTypes?.inKind?.length
-              ? data.supportTypes.inKind.map((i) => ({
-                  id: Date.now() + Math.random(),
-                  itemName: i.itemName,
-                  targetQuantity: i.targetQuantity,
-                  unit: i.unit,
-                }))
-              : [newRow()],
-          );
-        } else {
-          setErrorMsg(data.error || "Failed to load project.");
-          setStatus("error");
-        }
+        setInKindItems(
+          data.supportTypes?.inKind?.length
+            ? data.supportTypes.inKind.map((i) => ({
+                id: Date.now() + Math.random(),
+                itemName: i.itemName,
+                targetQuantity: i.targetQuantity,
+                unit: i.unit,
+              }))
+            : [newRow()],
+        );
       } catch (err) {
         setErrorMsg("Network error. Please try again.");
         setStatus("error");
