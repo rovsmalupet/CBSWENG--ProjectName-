@@ -13,7 +13,7 @@ export default function Login() {
         <div className="button-group">
           <button
             className="login-btn donor-btn"
-            onClick={() => navigate("/donor")}
+            onClick={() => navigate("/auth/donor")}
           >
             Donor
           </button>
