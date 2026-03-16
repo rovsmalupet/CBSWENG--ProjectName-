@@ -4,50 +4,35 @@ import prisma from "../prisma/client.js";
 
 /*
  * formatPost: Transforms a raw Prisma post object into the shape the frontend expects.
-* buildPostData: Parses the request body into structured data ready for Prisma.
+ * buildPostData: Parses the request body into structured data ready for Prisma.
  */
-const formatPost = (post) => {
-  const monetary = post.supportOptions?.find((o) => o.type === "Monetary");
-  const volunteer = post.supportOptions?.find((o) => o.type === "Volunteer");
-  return {
-    // Copy all original post fields first (id, projectName, causes, etc.)
-    ...post,
-
-    orgName: post.organization?.orgName ?? null,
-    orgEmail: post.organization?.email ?? null,
-    orgRepresentative: post.organization?.representativePerson ?? null,
-    organization: undefined,
-
-    // Build the supportTypes object the frontend expects
-    supportTypes: {
-      // If a Monetary row exists in supportOptions, populate its fields
-      // Otherwise return { enabled: false } to signal it's not active
-      monetary: monetary
-        ? {
-            enabled: true,
-            targetAmount: monetary.targetAmount,   // Float — e.g. 50000.00
-            currentAmount: monetary.currentAmount, // Float — e.g. 12000.50
-            status: monetary.status,               // "Open" or "Closed"
-          }
-        : { enabled: false },
-
-      // Do the same with volunteer
-      volunteer: volunteer
-        ? {
-            enabled: true,
-            targetVolunteers: volunteer.targetCount,   // Int — e.g. 20
-            currentVolunteers: volunteer.currentCount, // Int — e.g. 8
-            status: volunteer.status,
-          }
-        : { enabled: false },
-
-      inKind: post.inKindItems ?? [],
+const formatPost = (post) => ({
+  ...post,
+  orgName: post.organization?.orgName ?? null,
+  orgEmail: post.organization?.email ?? null,
+  orgRepresentative:
+    post.organization?.firstName && post.organization?.surname
+      ? `${post.organization.firstName} ${post.organization.surname}`
+      : null,
+  organization: undefined,
+  supportTypes: {
+    monetary: {
+      enabled: post.monetaryEnabled,
+      targetAmount: post.monetaryTargetAmount,
+      currentAmount: post.monetaryCurrentAmount,
+      status: post.monetaryStatus,
     },
-
-    supportOptions: undefined,
-    inKindItems: undefined,
-  };
-};
+    volunteer: {
+      enabled: post.volunteerEnabled,
+      targetVolunteers: post.volunteerTargetCount,
+      currentVolunteers: post.volunteerCurrentCount,
+      status: post.volunteerStatus,
+    },
+    inKind: post.inKindItems ?? [],
+  },
+  supportOptions: undefined,
+  inKindItems: undefined,
+});
 
 const buildPostData = (body) => {
   const {
@@ -88,10 +73,16 @@ const buildPostData = (body) => {
     causes: causes ?? [],
     location,
     priority,
-    startDate: startDate ? new Date(startDate) : null,
-    endDate: endDate ? new Date(endDate) : null,
-
-    // Map inKind array from request body
+    startDate: startDate || null,
+    endDate: endDate || null,
+    monetaryEnabled: monetary?.enabled ?? false,
+    monetaryTargetAmount: monetary?.enabled
+      ? (monetary.targetAmount ?? 0)
+      : null,
+    volunteerEnabled: volunteer?.enabled ?? false,
+    volunteerTargetCount: volunteer?.enabled
+      ? (volunteer.targetVolunteers ?? 0)
+      : null,
     inKindItems: inKind.map((i) => ({
       itemName: i.itemName,
       targetQuantity: i.targetQuantity,
@@ -149,7 +140,7 @@ export const getAllPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       orderBy: { createdAt: "desc" },
-      include: { inKindItems: true, supportOptions: true, organization: true },
+      include: { inKindItems: true, organization: true },
     });
     res.json(posts.map(formatPost));
   } catch (err) {
@@ -188,7 +179,7 @@ export const getApprovedPosts = async (req, res) => {
     const posts = await prisma.post.findMany({
       where: { overallStatus: "Approved" },
       orderBy: { createdAt: "desc" },
-      include: { inKindItems: true, supportOptions: true, organization: true },
+      include: { inKindItems: true, organization: true },
     });
     res.json(posts.map(formatPost));
   } catch (err) {

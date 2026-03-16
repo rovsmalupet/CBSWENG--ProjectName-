@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import postRoutes from "./routes/postRoutes.js";
 import organizationRoutes from "./routes/organizationRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import { seedDefaultUsers } from "./services/userAccountService.js";
 
 dotenv.config();
 
@@ -28,6 +30,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.use("/", authRoutes);
 app.use("/posts", postRoutes);
 app.use("/organizations", organizationRoutes);
 
@@ -50,8 +53,12 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(
-    `Server running on port ${port} in ${process.env.NODE_ENV || "development"} mode`,
-  );
+app.listen(port, async () => {
+  try {
+    await seedDefaultUsers();
+    console.log("Auth seed ready: admin@bayanihub.local / donor@bayanihub.local");
+  } catch (error) {
+    console.error("Auth bootstrap warning:", error.message);
+  }
+  console.log(`Server running on port ${port}`);
 });

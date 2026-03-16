@@ -1,0 +1,92 @@
+.donor-register-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(150deg, #dcfce7, #ecfeff);
+}
+
+.donor-register-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(22, 101, 52, 0.14);
+  padding: 2rem;
+  font-family: "DM Sans", sans-serif;
+}
+
+.donor-register-back {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #1f2937;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.donor-register-card h1 {
+  margin: 1rem 0 0.5rem;
+  color: #0f172a;
+}
+
+.donor-register-card p {
+  margin: 0 0 1.25rem;
+  color: #475569;
+}
+
+.donor-register-card form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.donor-register-card label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-top: 0.4rem;
+}
+
+.donor-register-card input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.72rem 0.85rem;
+  font-size: 0.95rem;
+}
+
+.donor-register-card input:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
+}
+
+.field-error {
+  color: #b91c1c;
+  font-size: 0.82rem;
+}
+
+.submit-btn {
+  margin-top: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  background: #16a34a;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+}
+
+.submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.server-message {
+  margin-top: 1rem;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #166534;
+  padding: 0.75rem;
+  font-size: 0.92rem;
+}

@@ -8,99 +8,133 @@
 	  directUrl = env("DIRECT_URL")
 	}
 
-	/// There must be no default for orgName, email, and representativePerson
-	/// (these are for sprint 2-3 only assuming there are no other users)
-	model Organization {
-	  id                   String   @id @default(uuid())
-	  orgName              String   @default("Philippine Red Cross")
-	  email                String   @unique @default("mary.angela@redcross.ph")
-	  representativePerson String   @default("Mary Angela Cruz")
-	  isVerified           Boolean  @default(false)
-	  createdAt            DateTime @default(now())
-	  posts                Post[]
-	}
+model User {
+  id                   String        @id @default(uuid())
+  firstName            String
+  surname              String
+  email                String        @unique
+  password             String
+  role                 UserRole
+  status               AccountStatus @default(active)
+  affiliation          String?
+  representativePerson String?
+  isVerified           Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+}
 
-	model Post {
-	  id             String              @id @default(uuid())
-	  orgId          String
-	  organization   Organization        @relation(fields: [orgId], references: [id])
-	  projectName    String
-	  description    String?
-	  causes         CauseEnum[]
-	  location       String?
-	  priority       Priority            @default(Medium)
-	  overallStatus  PostStatus          @default(Pending)
-	  createdAt      DateTime            @default(now())
-	  startDate      DateTime?
-	  endDate        DateTime?
+model Organization {
+  id                   String   @id @default(uuid())
+  orgName              String
+  firstName            String
+  surname              String
+  email                String   @unique
+  isVerified           Boolean  @default(false)
+  status               String   @default("pending")
+  createdAt            DateTime @default(now())
+  posts                Post[]
+}
 
-	  supportOptions PostSupportOption[]
-	  inKindItems    PostInKindItem[]
-	}
+model Post {
+  id                    String        @id @default(uuid())
+  orgId                 String
+  organization          Organization  @relation(fields: [orgId], references: [id])
+  projectName           String
+  description           String?
+  causes                CauseEnum[]
+  location              String?
+  priority              Priority      @default(Medium)
+  overallStatus         PostStatus    @default(Pending)
+  createdAt             DateTime      @default(now())
+  startDate             String?
+  endDate               String?
+  monetaryEnabled       Boolean       @default(false)
+  monetaryTargetAmount  Float?
+  monetaryCurrentAmount Float         @default(0)
+  monetaryStatus        SupportStatus @default(Open)
+  volunteerEnabled      Boolean       @default(false)
+  volunteerTargetCount  Int?
+  volunteerCurrentCount Int           @default(0)
+  volunteerStatus       SupportStatus @default(Open)
+  supportOptions        PostSupportOption[]
+  inKindItems           PostInKindItem[]
+}
 
-	model PostSupportOption {
-	  id             String        @id @default(uuid())
-	  postId         String
-	  post           Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-	  type           SupportType
+model PostSupportOption {
+  id             String        @id @default(uuid())
+  postId         String
+  post           Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type           SupportType
 
-	  //Monetary fields
-	  targetAmount   Float?
-	  currentAmount  Float         @default(0)
+  //Monetary fields
+  targetAmount   Float?
+  currentAmount  Float         @default(0)
 
-	  // Volunteer fields
-	  targetCount    Int?
-	  currentCount   Int           @default(0)
+  // Volunteer fields
+  targetCount    Int?
+  currentCount   Int           @default(0)
 
-	  status         SupportStatus @default(Open)
+  status         SupportStatus @default(Open)
 
-	  // Ensure a post can only have one Monetary and one Volunteer option
-	  @@unique([postId, type])
-	}
+  // Ensure a post can only have one Monetary and one Volunteer option
+  @@unique([postId, type])
+}
 
-	model PostInKindItem {
-	  id              String        @id @default(uuid())
-	  postId          String
-	  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-	  itemName        String
-	  targetQuantity  Float
-	  currentQuantity Float         @default(0)
-	  unit            String?
-	  status          SupportStatus @default(Open)
-	}
+model PostInKindItem {
+  id              String        @id @default(uuid())
+  postId          String
+  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  itemName        String
+  targetQuantity  Float
+  currentQuantity Float         @default(0)
+  unit            String?
+  status          SupportStatus @default(Open)
+}
 
-	enum SupportType {
-	  Monetary
-	  Volunteer
-	}
+enum SupportType {
+  Monetary
+  Volunteer
+}
 
-	enum CauseEnum {
-	  educationAndChildren
-	  healthAndMedical
-	  disasterRelief
-	  environmentAndClimate
-	  povertyAndHunger
-	  communityDevelopment
-	  livelihoodAndSkillsTraining
-	  animalWelfare
-	  others
-	}
+enum CauseEnum {
+  educationAndChildren
+  healthAndMedical
+  disasterRelief
+  environmentAndClimate
+  povertyAndHunger
+  communityDevelopment
+  livelihoodAndSkillsTraining
+  animalWelfare
+  others
+}
 
-	enum Priority {
-	  High
-	  Medium
-	  Low
-	}
+enum Priority {
+  High
+  Medium
+  Low
+}
 
-	enum PostStatus {
-	  Pending
-	  Approved
-	  Unapproved
-	  Edited
-	  Deleted
-	}
+enum PostStatus {
+  Pending
+  Approved
+  Unapproved
+  Edited
+  Deleted
+}
 
-	enum SupportStatus {
-	  Open
-	  Closed
-	}
+enum SupportStatus {
+  Open
+  Closed
+}
+
+enum UserRole {
+  donor
+  ngo
+  admin
+}
+
+enum AccountStatus {
+  pending
+  approved
+  rejected
+  active
+}

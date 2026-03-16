@@ -5,6 +5,7 @@ export default function ViewProjects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -12,9 +13,10 @@ export default function ViewProjects() {
         setLoading(true);
         const { getApiUrl, apiFetch } = await import("../config/api");
         const data = await apiFetch(getApiUrl("/posts/admin/all"));
-        setProjects(data);
+        setProjects(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch projects:", err);
+        setError(err.message || "Failed to load projects.");
       } finally {
         setLoading(false);
       }
@@ -64,6 +66,8 @@ export default function ViewProjects() {
 
       {loading ? (
         <p>Loading projects...</p>
+      ) : error ? (
+        <p style={{ color: "#b91c1c" }}>{error}</p>
       ) : projects.length === 0 ? (
         <p>No projects found.</p>
       ) : (
@@ -103,7 +107,7 @@ export default function ViewProjects() {
                     #{project.id.slice(0, 8).toUpperCase()}
                   </td>
                   <td style={tdStyle}>{project.projectName}</td>
-                  <td style={tdStyle}>{project.orgName}</td>
+                  <td style={tdStyle}>{project.orgName || "-"}</td>
                   <td style={tdStyle}>
                     <span
                       style={{
