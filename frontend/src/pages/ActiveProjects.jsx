@@ -53,7 +53,8 @@ export default function ActiveProjects() {
       return;
 
     try {
-      const res = await fetch(`/posts/${projectId}/status`, {
+      const { getApiUrl } = await import("../config/api");
+      const res = await fetch(getApiUrl(`/posts/${projectId}/status`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ overallStatus: "Deleted" }),

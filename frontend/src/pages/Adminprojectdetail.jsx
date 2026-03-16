@@ -48,8 +48,8 @@ export default function AdminProjectDetail() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/posts/${id}`);
-        const data = await res.json();
+        const { getApiUrl, apiFetch } = await import("../config/api");
+        const data = await apiFetch(getApiUrl(`/posts/${id}`));
         if (res.ok) setProject(data);
         else setError(data.error || "Failed to load project.");
       } catch (err) {
@@ -64,7 +64,8 @@ export default function AdminProjectDetail() {
   const updateStatus = async (newStatus) => {
     setUpdating(true);
     try {
-      const res = await fetch(`http://localhost:3000/posts/${id}/status`, {
+      const { getApiUrl } = await import("../config/api");
+      const res = await fetch(getApiUrl(`/posts/${id}/status`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ overallStatus: newStatus }),
@@ -88,7 +89,8 @@ export default function AdminProjectDetail() {
       return;
     setUpdating(true);
     try {
-      const res = await fetch(`http://localhost:3000/posts/${id}/permanent`, {
+      const { getApiUrl } = await import("../config/api");
+      const res = await fetch(getApiUrl(`/posts/${id}/permanent`), {
         method: "DELETE",
       });
       if (res.ok) {

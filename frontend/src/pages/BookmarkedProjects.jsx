@@ -8,7 +8,7 @@ export default function BookmarkedProjects() {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("latest");
   const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
-    const saved = localStorage.getItem('bookmarkedProjects');
+    const saved = localStorage.getItem("bookmarkedProjects");
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -25,14 +25,14 @@ export default function BookmarkedProjects() {
 
     try {
       // fetch all approved posts
-      const response = await fetch("http://localhost:3000/posts/approved");
-      const data = await response.json();
-      
+      const { getApiUrl, apiFetch } = await import("../config/api");
+      const data = await apiFetch(getApiUrl("/posts/approved"));
+
       // filter only bookmarked ones
-      const bookmarked = data.filter(campaign => 
-        bookmarkedProjects.includes(campaign.id)
+      const bookmarked = data.filter((campaign) =>
+        bookmarkedProjects.includes(campaign.id),
       );
-      
+
       setBookmarkedCampaigns(sortCampaigns(bookmarked));
     } catch (error) {
       console.error("error fetching bookmarked campaigns:", error);
@@ -58,16 +58,16 @@ export default function BookmarkedProjects() {
       case "latest":
       default:
         return sorted.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
         );
     }
   };
 
   const toggleBookmark = (e, campaignId) => {
     e.stopPropagation();
-    setBookmarkedProjects(prev => {
-      const updated = prev.filter(id => id !== campaignId);
-      localStorage.setItem('bookmarkedProjects', JSON.stringify(updated));
+    setBookmarkedProjects((prev) => {
+      const updated = prev.filter((id) => id !== campaignId);
+      localStorage.setItem("bookmarkedProjects", JSON.stringify(updated));
       return updated;
     });
   };
@@ -112,7 +112,9 @@ export default function BookmarkedProjects() {
 
   const truncateText = (text, maxLength) => {
     if (!text) return "";
-    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
   };
 
   useEffect(() => {
@@ -150,10 +152,7 @@ export default function BookmarkedProjects() {
             <div className="empty-icon">☆</div>
             <h3>no bookmarked projects yet</h3>
             <p>bookmark campaigns to see them here for easy access</p>
-            <button 
-              className="browse-btn"
-              onClick={() => navigate("/donor")}
-            >
+            <button className="browse-btn" onClick={() => navigate("/donor")}>
               browse campaigns
             </button>
           </div>
@@ -161,7 +160,8 @@ export default function BookmarkedProjects() {
           <>
             <div className="bookmarked-controls">
               <p className="bookmarked-count">
-                {bookmarkedCampaigns.length} bookmarked project{bookmarkedCampaigns.length !== 1 ? "s" : ""}
+                {bookmarkedCampaigns.length} bookmarked project
+                {bookmarkedCampaigns.length !== 1 ? "s" : ""}
               </p>
               <select
                 value={sortBy}
@@ -176,12 +176,16 @@ export default function BookmarkedProjects() {
 
             <div className="campaigns-grid">
               {bookmarkedCampaigns.map((campaign) => {
-                const monetaryEnabled = campaign.supportTypes?.monetary?.enabled;
+                const monetaryEnabled =
+                  campaign.supportTypes?.monetary?.enabled;
                 const inKindEnabled = campaign.supportTypes?.inKind?.length > 0;
-                const volunteerEnabled = campaign.supportTypes?.volunteer?.enabled;
+                const volunteerEnabled =
+                  campaign.supportTypes?.volunteer?.enabled;
 
-                const raised = campaign.supportTypes?.monetary?.currentAmount || 0;
-                const target = campaign.supportTypes?.monetary?.targetAmount || 1;
+                const raised =
+                  campaign.supportTypes?.monetary?.currentAmount || 0;
+                const target =
+                  campaign.supportTypes?.monetary?.targetAmount || 1;
                 const remaining = Math.max(0, target - raised);
 
                 return (
@@ -201,7 +205,9 @@ export default function BookmarkedProjects() {
                             {getCauseDisplay(cause)}
                           </span>
                         ))}
-                        <span className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}>
+                        <span
+                          className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}
+                        >
                           {campaign.priority?.toLowerCase() || "medium"}
                         </span>
                       </div>
@@ -217,7 +223,10 @@ export default function BookmarkedProjects() {
                     <h4 className="campaign-title" title={campaign.projectName}>
                       {truncateText(campaign.projectName, 60)}
                     </h4>
-                    <p className="campaign-description" title={campaign.description}>
+                    <p
+                      className="campaign-description"
+                      title={campaign.description}
+                    >
                       {truncateText(campaign.description, 100)}
                     </p>
 
@@ -228,7 +237,9 @@ export default function BookmarkedProjects() {
                       </div>
                       <div className="meta-item">
                         <span className="meta-label">org:</span>
-                        <span>{truncateText(campaign.orgName || "organization", 30)}</span>
+                        <span>
+                          {truncateText(campaign.orgName || "organization", 30)}
+                        </span>
                       </div>
                     </div>
 
@@ -247,9 +258,12 @@ export default function BookmarkedProjects() {
                     {monetaryEnabled && (
                       <div className="resource-needs">
                         <div className="resource-section">
-                          <div className="resource-header">monetary support needed</div>
+                          <div className="resource-header">
+                            monetary support needed
+                          </div>
                           <div className="resource-amount">
-                            ₱{formatCurrency(remaining)} <span className="resource-unit">php</span>
+                            ₱{formatCurrency(remaining)}{" "}
+                            <span className="resource-unit">php</span>
                           </div>
                         </div>
                       </div>
