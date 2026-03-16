@@ -50,8 +50,7 @@ export default function AdminProjectDetail() {
       try {
         const { getApiUrl, apiFetch } = await import("../config/api");
         const data = await apiFetch(getApiUrl(`/posts/${id}`));
-        if (res.ok) setProject(data);
-        else setError(data.error || "Failed to load project.");
+        setProject(data);
       } catch (err) {
         setError("Network error. Please try again.");
       } finally {
