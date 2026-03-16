@@ -31,8 +31,8 @@ export default function ActiveProjects() {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/posts");
-        const data = await res.json();
+        const { getApiUrl, apiFetch } = await import("../config/api");
+        const data = await apiFetch(getApiUrl("/posts"));
         // Filter to only show Approved projects
         const approvedProjects = data.filter(
           (project) => project.overallStatus === "Approved",
