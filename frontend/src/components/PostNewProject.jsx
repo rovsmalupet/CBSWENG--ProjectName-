@@ -73,7 +73,7 @@ export default function PostNewProject({ onProjectCreated }) {
 
   const handleInKindChange = (id, field, value) =>
     setInKindItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
 
   const handleSubmit = async (e) => {
@@ -92,19 +92,29 @@ export default function PostNewProject({ onProjectCreated }) {
       return;
     }
 
-    if (!supportTypes.monetary && !supportTypes.inKind && !supportTypes.volunteer) {
+    if (
+      !supportTypes.monetary &&
+      !supportTypes.inKind &&
+      !supportTypes.volunteer
+    ) {
       setErrorMsg("At least one support type must be selected.");
       setStatus("error");
       return;
     }
 
-    if (supportTypes.monetary && (!form.monetarySupport || Number(form.monetarySupport) <= 0)) {
+    if (
+      supportTypes.monetary &&
+      (!form.monetarySupport || Number(form.monetarySupport) <= 0)
+    ) {
       setErrorMsg("Monetary support must be greater than 0.");
       setStatus("error");
       return;
     }
 
-    if (supportTypes.volunteer && (!form.volunteerQuantity || Number(form.volunteerQuantity) <= 0)) {
+    if (
+      supportTypes.volunteer &&
+      (!form.volunteerQuantity || Number(form.volunteerQuantity) <= 0)
+    ) {
       setErrorMsg("Volunteer quantity must be greater than 0.");
       setStatus("error");
       return;
@@ -118,7 +128,9 @@ export default function PostNewProject({ onProjectCreated }) {
           !item.targetQuantity ||
           Number(item.targetQuantity) <= 0
         ) {
-          setErrorMsg("All in-kind items must have a name, positive quantity, and unit.");
+          setErrorMsg(
+            "All in-kind items must have a name, positive quantity, and unit.",
+          );
           setStatus("error");
           return;
         }
@@ -139,7 +151,9 @@ export default function PostNewProject({ onProjectCreated }) {
       supportTypes: {
         monetary: {
           enabled: supportTypes.monetary && !!form.monetarySupport,
-          targetAmount: supportTypes.monetary ? Number(form.monetarySupport) : 0,
+          targetAmount: supportTypes.monetary
+            ? Number(form.monetarySupport)
+            : 0,
         },
         inKind: supportTypes.inKind
           ? inKindItems.map((i) => ({
@@ -150,7 +164,9 @@ export default function PostNewProject({ onProjectCreated }) {
           : [],
         volunteer: {
           enabled: supportTypes.volunteer && !!form.volunteerQuantity,
-          targetVolunteers: supportTypes.volunteer ? Number(form.volunteerQuantity) : 0,
+          targetVolunteers: supportTypes.volunteer
+            ? Number(form.volunteerQuantity)
+            : 0,
         },
       },
     };
@@ -159,7 +175,8 @@ export default function PostNewProject({ onProjectCreated }) {
 
     setStatus("loading");
     try {
-      const res = await fetch("http://localhost:3000/posts", {
+      const { getApiUrl } = await import("../config/api");
+      const res = await fetch(getApiUrl("/posts"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(project),
@@ -212,7 +229,6 @@ export default function PostNewProject({ onProjectCreated }) {
         <form onSubmit={handleSubmit} className="postProjectForm">
           {/* LEFT COLUMN */}
           <div className="postProjectCol">
-
             <div>
               <label className="postProjectLabel">
                 Campaign Title <span className="postProjectRequired">*</span>
@@ -250,11 +266,13 @@ export default function PostNewProject({ onProjectCreated }) {
                 onChange={(e) => addCause(e.target.value)}
               >
                 <option value="">Select a cause</option>
-                {CAUSES.filter((c) => !selectedCauses.includes(c.key)).map((c) => (
-                  <option key={c.key} value={c.key}>
-                    {c.label}
-                  </option>
-                ))}
+                {CAUSES.filter((c) => !selectedCauses.includes(c.key)).map(
+                  (c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.label}
+                    </option>
+                  ),
+                )}
               </select>
               {selectedCauses.length > 0 && (
                 <div className="postProjectChips">
@@ -291,117 +309,117 @@ export default function PostNewProject({ onProjectCreated }) {
               </select>
             </div>
 
-           {/* Date range with toggle */}
-<div>
-  <label className="postProjectLabel">
-    Date
-    <button
-      type="button"
-      onClick={() => setDateEnabled((v) => !v)}
-      style={{
-        marginLeft: 8,
-        width: 40,
-        height: 22,
-        borderRadius: 999,
-        border: "none",
-        cursor: "pointer",
-        backgroundColor: dateEnabled ? "#16a34a" : "#cbd5e0",
-        position: "relative",
-        transition: "background-color 0.2s",
-        verticalAlign: "middle",
-      }}
-    >
-      <span
-        style={{
-          position: "absolute",
-          top: 3,
-          left: dateEnabled ? 20 : 3,
-          width: 16,
-          height: 16,
-          borderRadius: "50%",
-          backgroundColor: "#fff",
-          transition: "left 0.2s",
-        }}
-      />
-    </button>
-  </label>
-  {dateEnabled && (
-    <div className="postProjectDateRow">
-      <span className="postProjectDateLabel">FROM</span>
-      <input
-        className="postProjectInput"
-        type="date"
-        name="startDate"
-        value={form.startDate}
-        onChange={handleChange}
-      />
-      <span className="postProjectDateLabel">TO</span>
-      <input
-        className="postProjectInput"
-        type="date"
-        name="endDate"
-        value={form.endDate}
-        onChange={handleChange}
-      />
-    </div>
-  )}
-</div>
+            {/* Date range with toggle */}
+            <div>
+              <label className="postProjectLabel">
+                Date
+                <button
+                  type="button"
+                  onClick={() => setDateEnabled((v) => !v)}
+                  style={{
+                    marginLeft: 8,
+                    width: 40,
+                    height: 22,
+                    borderRadius: 999,
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: dateEnabled ? "#16a34a" : "#cbd5e0",
+                    position: "relative",
+                    transition: "background-color 0.2s",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 3,
+                      left: dateEnabled ? 20 : 3,
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      backgroundColor: "#fff",
+                      transition: "left 0.2s",
+                    }}
+                  />
+                </button>
+              </label>
+              {dateEnabled && (
+                <div className="postProjectDateRow">
+                  <span className="postProjectDateLabel">FROM</span>
+                  <input
+                    className="postProjectInput"
+                    type="date"
+                    name="startDate"
+                    value={form.startDate}
+                    onChange={handleChange}
+                  />
+                  <span className="postProjectDateLabel">TO</span>
+                  <input
+                    className="postProjectInput"
+                    type="date"
+                    name="endDate"
+                    value={form.endDate}
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
+            </div>
 
-{/* Time range with toggle */}
-<div>
-  <label className="postProjectLabel">
-    Time
-    <button
-      type="button"
-      onClick={() => setTimeEnabled((v) => !v)}
-      style={{
-        marginLeft: 8,
-        width: 40,
-        height: 22,
-        borderRadius: 999,
-        border: "none",
-        cursor: "pointer",
-        backgroundColor: timeEnabled ? "#16a34a" : "#cbd5e0",
-        position: "relative",
-        transition: "background-color 0.2s",
-        verticalAlign: "middle",
-      }}
-    >
-      <span
-        style={{
-          position: "absolute",
-          top: 3,
-          left: timeEnabled ? 20 : 3,
-          width: 16,
-          height: 16,
-          borderRadius: "50%",
-          backgroundColor: "#fff",
-          transition: "left 0.2s",
-        }}
-      />
-    </button>
-  </label>
-  {timeEnabled && (
-    <div className="postProjectDateRow">
-      <span className="postProjectDateLabel">FROM</span>
-      <input
-        className="postProjectInput"
-        type="time"
-        name="startTime"
-        value={form.startTime}
-        onChange={handleChange}
-      />
-      <span className="postProjectDateLabel">TO</span>
-      <input
-        className="postProjectInput"
-        type="time"
-        name="endTime"
-        value={form.endTime}
-        onChange={handleChange}
-      />
-    </div>
-  )}
-</div>
+            {/* Time range with toggle */}
+            <div>
+              <label className="postProjectLabel">
+                Time
+                <button
+                  type="button"
+                  onClick={() => setTimeEnabled((v) => !v)}
+                  style={{
+                    marginLeft: 8,
+                    width: 40,
+                    height: 22,
+                    borderRadius: 999,
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: timeEnabled ? "#16a34a" : "#cbd5e0",
+                    position: "relative",
+                    transition: "background-color 0.2s",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 3,
+                      left: timeEnabled ? 20 : 3,
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      backgroundColor: "#fff",
+                      transition: "left 0.2s",
+                    }}
+                  />
+                </button>
+              </label>
+              {timeEnabled && (
+                <div className="postProjectDateRow">
+                  <span className="postProjectDateLabel">FROM</span>
+                  <input
+                    className="postProjectInput"
+                    type="time"
+                    name="startTime"
+                    value={form.startTime}
+                    onChange={handleChange}
+                  />
+                  <span className="postProjectDateLabel">TO</span>
+                  <input
+                    className="postProjectInput"
+                    type="time"
+                    name="endTime"
+                    value={form.endTime}
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Support Types */}
             <div>
@@ -421,12 +439,10 @@ export default function PostNewProject({ onProjectCreated }) {
                 </label>
               ))}
             </div>
-
           </div>
 
           {/* RIGHT COLUMN */}
           <div className="postProjectCol">
-
             <div>
               <label className="postProjectLabel">Project Description</label>
               <textarea
@@ -440,7 +456,9 @@ export default function PostNewProject({ onProjectCreated }) {
 
             {supportTypes.monetary && (
               <div>
-                <label className="postProjectLabel">Monetary Support (PHP)</label>
+                <label className="postProjectLabel">
+                  Monetary Support (PHP)
+                </label>
                 <div className="postProjectInputWrapper">
                   <input
                     className="postProjectInput"
@@ -464,7 +482,9 @@ export default function PostNewProject({ onProjectCreated }) {
                   <button
                     type="button"
                     className="postProjectAddBtn"
-                    onClick={() => setInKindItems((prev) => [...prev, newRow()])}
+                    onClick={() =>
+                      setInKindItems((prev) => [...prev, newRow()])
+                    }
                     title="Add item"
                   >
                     +
@@ -478,7 +498,11 @@ export default function PostNewProject({ onProjectCreated }) {
                         placeholder="Enter item"
                         value={item.itemName}
                         onChange={(e) =>
-                          handleInKindChange(item.id, "itemName", e.target.value)
+                          handleInKindChange(
+                            item.id,
+                            "itemName",
+                            e.target.value,
+                          )
                         }
                       />
                       <input
@@ -487,7 +511,11 @@ export default function PostNewProject({ onProjectCreated }) {
                         placeholder="Enter quantity"
                         value={item.targetQuantity}
                         onChange={(e) =>
-                          handleInKindChange(item.id, "targetQuantity", e.target.value)
+                          handleInKindChange(
+                            item.id,
+                            "targetQuantity",
+                            e.target.value,
+                          )
                         }
                       />
                       <input
@@ -503,7 +531,7 @@ export default function PostNewProject({ onProjectCreated }) {
                         className="postProjectDeleteRowBtn"
                         onClick={() =>
                           setInKindItems((prev) =>
-                            prev.filter((i) => i.id !== item.id)
+                            prev.filter((i) => i.id !== item.id),
                           )
                         }
                         title="Remove item"
@@ -514,7 +542,9 @@ export default function PostNewProject({ onProjectCreated }) {
                     </div>
                   ))}
                   {inKindItems.filter((i) => i.itemName).length === 0 && (
-                    <p className="postProjectInKindEmpty">No item entered yet</p>
+                    <p className="postProjectInKindEmpty">
+                      No item entered yet
+                    </p>
                   )}
                 </div>
               </div>
@@ -541,9 +571,10 @@ export default function PostNewProject({ onProjectCreated }) {
               className="postProjectSubmitBtn"
               disabled={status === "loading"}
             >
-              {status === "loading" ? "Publishing..." : "Publish Verified Project"}
+              {status === "loading"
+                ? "Publishing..."
+                : "Publish Verified Project"}
             </button>
-
           </div>
         </form>
       </div>

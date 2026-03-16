@@ -10,8 +10,8 @@ export default function ViewProjects() {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:3000/posts/admin/all");
-        const data = await res.json();
+        const { getApiUrl, apiFetch } = await import("../config/api");
+        const data = await apiFetch(getApiUrl("/posts/admin/all"));
         setProjects(data);
       } catch (err) {
         console.error("Failed to fetch projects:", err);
@@ -23,7 +23,14 @@ export default function ViewProjects() {
   }, []);
 
   return (
-    <div style={{ padding: "24px", fontFamily: "sans-serif", background: "#f0f4ff", minHeight: "100vh" }}>
+    <div
+      style={{
+        padding: "24px",
+        fontFamily: "sans-serif",
+        background: "#f0f4ff",
+        minHeight: "100vh",
+      }}
+    >
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -38,21 +45,42 @@ export default function ViewProjects() {
           gap: "4px",
         }}
       >
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <svg
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
           <path d="M19 12H5M12 5l-7 7 7 7" />
         </svg>
         Back
       </button>
 
-      <h1 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "16px" }}>View all Posts</h1>
+      <h1 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "16px" }}>
+        View all Posts
+      </h1>
 
       {loading ? (
         <p>Loading projects...</p>
       ) : projects.length === 0 ? (
         <p>No projects found.</p>
       ) : (
-        <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #cbd5e1" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff" }}>
+        <div
+          style={{
+            borderRadius: "8px",
+            overflow: "hidden",
+            border: "1px solid #cbd5e1",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              background: "#fff",
+            }}
+          >
             <thead>
               <tr style={{ background: "#5b7fbf", color: "#fff" }}>
                 <th style={thStyle}>Project ID</th>
@@ -77,14 +105,16 @@ export default function ViewProjects() {
                   <td style={tdStyle}>{project.projectName}</td>
                   <td style={tdStyle}>{project.orgName}</td>
                   <td style={tdStyle}>
-                    <span style={{
-                      padding: "2px 10px",
-                      borderRadius: "999px",
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      background: statusColor(project.overallStatus).bg,
-                      color: statusColor(project.overallStatus).color,
-                    }}>
+                    <span
+                      style={{
+                        padding: "2px 10px",
+                        borderRadius: "999px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        background: statusColor(project.overallStatus).bg,
+                        color: statusColor(project.overallStatus).color,
+                      }}
+                    >
                       {project.overallStatus}
                     </span>
                   </td>
@@ -115,11 +145,17 @@ const tdStyle = {
 
 function statusColor(status) {
   switch (status) {
-    case "Approved":   return { bg: "#dcfce7", color: "#15803d" };
-    case "Pending":    return { bg: "#fef9c3", color: "#92400e" };
-    case "Unapproved": return { bg: "#fee2e2", color: "#b91c1c" };
-    case "Edited":     return { bg: "#e0e7ff", color: "#3730a3" };
-    case "Deleted":    return { bg: "#f3f4f6", color: "#374151" };
-    default:           return { bg: "#f3f4f6", color: "#374151" };
+    case "Approved":
+      return { bg: "#dcfce7", color: "#15803d" };
+    case "Pending":
+      return { bg: "#fef9c3", color: "#92400e" };
+    case "Unapproved":
+      return { bg: "#fee2e2", color: "#b91c1c" };
+    case "Edited":
+      return { bg: "#e0e7ff", color: "#3730a3" };
+    case "Deleted":
+      return { bg: "#f3f4f6", color: "#374151" };
+    default:
+      return { bg: "#f3f4f6", color: "#374151" };
   }
 }

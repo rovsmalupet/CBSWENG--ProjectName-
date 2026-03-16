@@ -9,9 +9,17 @@ const pct = (current, target) =>
 const fmtPHP = (n) =>
   "₱" + Number(n ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
 
-const newMonetaryRow = () => ({ id: Date.now() + Math.random(), amount: "", donor: "" });
-const newInKindRow   = () => ({ id: Date.now() + Math.random(), quantity: "", donor: "" });
-const newVolRow      = () => ({
+const newMonetaryRow = () => ({
+  id: Date.now() + Math.random(),
+  amount: "",
+  donor: "",
+});
+const newInKindRow = () => ({
+  id: Date.now() + Math.random(),
+  quantity: "",
+  donor: "",
+});
+const newVolRow = () => ({
   id: Date.now() + Math.random(),
   count: "",
   donor: "",
@@ -24,7 +32,12 @@ const newVolRow      = () => ({
 // ── AddBtn ───────────────────────────────────────────────────────────────────
 function AddBtn({ onClick, title }) {
   return (
-    <button className="ac-add-row-btn" onClick={onClick} title={title} type="button">
+    <button
+      className="ac-add-row-btn"
+      onClick={onClick}
+      title={title}
+      type="button"
+    >
       +
     </button>
   );
@@ -33,7 +46,12 @@ function AddBtn({ onClick, title }) {
 // ── RemoveBtn ─────────────────────────────────────────────────────────────────
 function RemoveBtn({ onClick }) {
   return (
-    <button className="ac-remove-row-btn" onClick={onClick} type="button" title="Remove row">
+    <button
+      className="ac-remove-row-btn"
+      onClick={onClick}
+      type="button"
+      title="Remove row"
+    >
       ×
     </button>
   );
@@ -47,7 +65,10 @@ function ProgressBar({ current, target, label, type }) {
       <div className="ac-progress-meta">
         <span>{label} collected</span>
         <span>
-          {p}% &nbsp;·&nbsp; {target > 0 ? `Target: ${label.includes("₱") ? fmtPHP(target) : target}` : "No target set"}
+          {p}% &nbsp;·&nbsp;{" "}
+          {target > 0
+            ? `Target: ${label.includes("₱") ? fmtPHP(target) : target}`
+            : "No target set"}
         </span>
       </div>
       <div className="ac-progress-track">
@@ -65,22 +86,22 @@ export default function AddContribution() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [project, setProject]   = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [saving, setSaving]     = useState(false);
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
   // Entry state
   const [monetaryRows, setMonetaryRows] = useState([newMonetaryRow()]);
-  const [inKindRows, setInKindRows]     = useState({});   // { itemId: [row, ...] }
-  const [volRows, setVolRows]           = useState([newVolRow()]);
+  const [inKindRows, setInKindRows] = useState({}); // { itemId: [row, ...] }
+  const [volRows, setVolRows] = useState([newVolRow()]);
 
   // ── fetch project ──
   useEffect(() => {
     const load = async () => {
       try {
-        const res  = await fetch(`/posts/${id}`);
-        const data = await res.json();
+        const { getApiUrl, apiFetch } = await import("../config/api");
+        const data = await apiFetch(getApiUrl(`/posts/${id}`));
         setProject(data);
 
         // initialise one empty row per in-kind item
@@ -101,7 +122,7 @@ export default function AddContribution() {
   // ── row mutators ──
   const updateMonetary = useCallback((rowId, field, value) => {
     setMonetaryRows((prev) =>
-      prev.map((r) => (r.id === rowId ? { ...r, [field]: value } : r))
+      prev.map((r) => (r.id === rowId ? { ...r, [field]: value } : r)),
     );
   }, []);
 
@@ -109,14 +130,14 @@ export default function AddContribution() {
     setInKindRows((prev) => ({
       ...prev,
       [itemId]: prev[itemId].map((r) =>
-        r.id === rowId ? { ...r, [field]: value } : r
+        r.id === rowId ? { ...r, [field]: value } : r,
       ),
     }));
   }, []);
 
   const updateVol = useCallback((rowId, field, value) => {
     setVolRows((prev) =>
-      prev.map((r) => (r.id === rowId ? { ...r, [field]: value } : r))
+      prev.map((r) => (r.id === rowId ? { ...r, [field]: value } : r)),
     );
   }, []);
 
@@ -126,28 +147,36 @@ export default function AddContribution() {
     try {
       const monetaryDelta = monetaryRows.reduce(
         (sum, r) => sum + (parseFloat(r.amount) || 0),
-        0
+        0,
       );
 
       const inKindDeltas = Object.entries(inKindRows)
         .map(([itemId, rows]) => ({
           itemId,
-          quantityDelta: rows.reduce((sum, r) => sum + (parseFloat(r.quantity) || 0), 0),
+          quantityDelta: rows.reduce(
+            (sum, r) => sum + (parseFloat(r.quantity) || 0),
+            0,
+          ),
         }))
         .filter((d) => d.quantityDelta > 0);
 
       const volunteerDelta = volRows.reduce(
         (sum, r) => sum + (parseInt(r.count) || 0),
-        0
+        0,
       );
 
-      if (monetaryDelta === 0 && inKindDeltas.length === 0 && volunteerDelta === 0) {
+      if (
+        monetaryDelta === 0 &&
+        inKindDeltas.length === 0 &&
+        volunteerDelta === 0
+      ) {
         alert("Please enter at least one contribution before saving.");
         setSaving(false);
         return;
       }
 
-      const res = await fetch(`/posts/${id}/contribute`, {
+      const { getApiUrl } = await import("../config/api");
+      const res = await fetch(getApiUrl(`/posts/${id}/contribute`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ monetaryDelta, inKindDeltas, volunteerDelta }),
@@ -185,7 +214,9 @@ export default function AddContribution() {
     return (
       <div className="ac-page">
         <main className="ac-main">
-          <div className="ac-empty"><p>Loading project…</p></div>
+          <div className="ac-empty">
+            <p>Loading project…</p>
+          </div>
         </main>
       </div>
     );
@@ -195,15 +226,17 @@ export default function AddContribution() {
     return (
       <div className="ac-page">
         <main className="ac-main">
-          <div className="ac-empty"><p>Project not found.</p></div>
+          <div className="ac-empty">
+            <p>Project not found.</p>
+          </div>
         </main>
       </div>
     );
   }
 
   const { supportTypes } = project;
-  const monetary  = supportTypes?.monetary  ?? {};
-  const inKind    = supportTypes?.inKind    ?? [];
+  const monetary = supportTypes?.monetary ?? {};
+  const inKind = supportTypes?.inKind ?? [];
   const volunteer = supportTypes?.volunteer ?? {};
 
   const anySection = monetary.enabled || inKind.length > 0 || volunteer.enabled;
@@ -212,7 +245,10 @@ export default function AddContribution() {
     <div className="ac-page">
       <main className="ac-main">
         {/* Back */}
-        <button className="ac-back-btn" onClick={() => navigate("/project-ledger")}>
+        <button
+          className="ac-back-btn"
+          onClick={() => navigate("/project-ledger")}
+        >
           ← Back to Active Projects
         </button>
 
@@ -220,16 +256,23 @@ export default function AddContribution() {
         <div className="ac-header">
           <h1 className="ac-title">{project.projectName}</h1>
         </div>
-        <p className="ac-subtitle">Record new contributions and update progress</p>
+        <p className="ac-subtitle">
+          Record new contributions and update progress
+        </p>
 
-        {successMsg && (
-          <div className="ac-success">✓ {successMsg}</div>
-        )}
+        {successMsg && <div className="ac-success">✓ {successMsg}</div>}
 
         {!anySection && (
           <div className="ac-section">
-            <p style={{ fontSize: "0.85rem", color: "#6b7280", fontStyle: "italic" }}>
-              This project has no support types enabled. Edit the project to add monetary, in-kind, or volunteer goals.
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "#6b7280",
+                fontStyle: "italic",
+              }}
+            >
+              This project has no support types enabled. Edit the project to add
+              monetary, in-kind, or volunteer goals.
             </p>
           </div>
         )}
@@ -251,7 +294,9 @@ export default function AddContribution() {
                 <div className="ac-row" key={row.id}>
                   <AddBtn
                     title="Add another monetary donation"
-                    onClick={() => setMonetaryRows((p) => [...p, newMonetaryRow()])}
+                    onClick={() =>
+                      setMonetaryRows((p) => [...p, newMonetaryRow()])
+                    }
                   />
                   <input
                     className="ac-input ac-input-amount"
@@ -259,7 +304,9 @@ export default function AddContribution() {
                     min="0"
                     placeholder="Enter amount"
                     value={row.amount}
-                    onChange={(e) => updateMonetary(row.id, "amount", e.target.value)}
+                    onChange={(e) =>
+                      updateMonetary(row.id, "amount", e.target.value)
+                    }
                   />
                   <span className="ac-unit">PHP</span>
                   <span className="ac-lbl">From</span>
@@ -268,7 +315,9 @@ export default function AddContribution() {
                     type="text"
                     placeholder="Donor name"
                     value={row.donor}
-                    onChange={(e) => updateMonetary(row.id, "donor", e.target.value)}
+                    onChange={(e) =>
+                      updateMonetary(row.id, "donor", e.target.value)
+                    }
                   />
                   {monetaryRows.length > 1 && (
                     <RemoveBtn
@@ -312,7 +361,10 @@ export default function AddContribution() {
                           onClick={() =>
                             setInKindRows((p) => ({
                               ...p,
-                              [item.id]: [...(p[item.id] ?? []), newInKindRow()],
+                              [item.id]: [
+                                ...(p[item.id] ?? []),
+                                newInKindRow(),
+                              ],
                             }))
                           }
                         />
@@ -323,10 +375,17 @@ export default function AddContribution() {
                           placeholder={`Enter ${unitLabel} donated`}
                           value={row.quantity}
                           onChange={(e) =>
-                            updateInKind(item.id, row.id, "quantity", e.target.value)
+                            updateInKind(
+                              item.id,
+                              row.id,
+                              "quantity",
+                              e.target.value,
+                            )
                           }
                         />
-                        <span className="ac-unit">{unitLabel.toUpperCase()}</span>
+                        <span className="ac-unit">
+                          {unitLabel.toUpperCase()}
+                        </span>
                         <span className="ac-lbl">From</span>
                         <input
                           className="ac-input ac-input-donor"
@@ -334,7 +393,12 @@ export default function AddContribution() {
                           placeholder="Donor name"
                           value={row.donor}
                           onChange={(e) =>
-                            updateInKind(item.id, row.id, "donor", e.target.value)
+                            updateInKind(
+                              item.id,
+                              row.id,
+                              "donor",
+                              e.target.value,
+                            )
                           }
                         />
                         {rows.length > 1 && (
@@ -342,7 +406,9 @@ export default function AddContribution() {
                             onClick={() =>
                               setInKindRows((p) => ({
                                 ...p,
-                                [item.id]: p[item.id].filter((r) => r.id !== row.id),
+                                [item.id]: p[item.id].filter(
+                                  (r) => r.id !== row.id,
+                                ),
                               }))
                             }
                           />
@@ -399,28 +465,36 @@ export default function AddContribution() {
                     className="ac-input ac-input-date"
                     type="date"
                     value={row.startDate}
-                    onChange={(e) => updateVol(row.id, "startDate", e.target.value)}
+                    onChange={(e) =>
+                      updateVol(row.id, "startDate", e.target.value)
+                    }
                   />
                   <span className="ac-lbl">to</span>
                   <input
                     className="ac-input ac-input-date"
                     type="date"
                     value={row.endDate}
-                    onChange={(e) => updateVol(row.id, "endDate", e.target.value)}
+                    onChange={(e) =>
+                      updateVol(row.id, "endDate", e.target.value)
+                    }
                   />
                   <span className="ac-lbl">At</span>
                   <input
                     className="ac-input ac-input-time"
                     type="time"
                     value={row.startTime}
-                    onChange={(e) => updateVol(row.id, "startTime", e.target.value)}
+                    onChange={(e) =>
+                      updateVol(row.id, "startTime", e.target.value)
+                    }
                   />
                   <span className="ac-lbl">to</span>
                   <input
                     className="ac-input ac-input-time"
                     type="time"
                     value={row.endTime}
-                    onChange={(e) => updateVol(row.id, "endTime", e.target.value)}
+                    onChange={(e) =>
+                      updateVol(row.id, "endTime", e.target.value)
+                    }
                   />
                   {volRows.length > 1 && (
                     <RemoveBtn
@@ -437,7 +511,11 @@ export default function AddContribution() {
 
         {anySection && (
           <div className="ac-save-row">
-            <button className="ac-save-btn" onClick={handleSave} disabled={saving}>
+            <button
+              className="ac-save-btn"
+              onClick={handleSave}
+              disabled={saving}
+            >
               {saving ? "SAVING…" : "SAVE"}
             </button>
           </div>

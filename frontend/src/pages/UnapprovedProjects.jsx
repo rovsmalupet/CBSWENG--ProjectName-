@@ -34,8 +34,8 @@ export default function UnapprovedProjects() {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:3000/posts");
-        const data = await res.json();
+        const { getApiUrl, apiFetch } = await import("../config/api");
+        const data = await apiFetch(getApiUrl("/posts"));
         // Filter for Pending, Edited, and Unapproved projects
         const unapprovedProjects = data.filter(
           (project) =>
@@ -59,14 +59,12 @@ export default function UnapprovedProjects() {
       return;
 
     try {
-      const res = await fetch(
-        `http://localhost:3000/posts/${projectId}/status`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ overallStatus: "Deleted" }),
-        },
-      );
+      const { getApiUrl } = await import("../config/api");
+      const res = await fetch(getApiUrl(`/posts/${projectId}/status`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ overallStatus: "Deleted" }),
+      });
       if (res.ok) {
         setProjects((prev) => prev.filter((p) => p.id !== projectId));
       } else {

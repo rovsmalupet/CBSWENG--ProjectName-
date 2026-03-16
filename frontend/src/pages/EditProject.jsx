@@ -58,7 +58,8 @@ export default function EditProject() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/posts/${id}`);
+        const { getApiUrl, apiFetch } = await import("../config/api");
+        const res = await apiFetch(getApiUrl(`/posts/${id}`));
         const data = await res.json();
         if (res.ok) {
           setForm({
@@ -235,7 +236,8 @@ export default function EditProject() {
     setStatus("loading");
 
     try {
-      const res = await fetch(`http://localhost:3000/posts/${id}`, {
+      const { getApiUrl } = await import("../config/api");
+      const res = await fetch(getApiUrl(`/posts/${id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

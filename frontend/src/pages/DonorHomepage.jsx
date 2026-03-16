@@ -9,7 +9,7 @@ export default function DonorHomepage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("latest");
   const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
-    const saved = localStorage.getItem('bookmarkedProjects');
+    const saved = localStorage.getItem("bookmarkedProjects");
     return saved ? JSON.parse(saved) : [];
   });
   const [filters, setFilters] = useState({
@@ -28,8 +28,8 @@ export default function DonorHomepage() {
 
   const fetchCampaigns = async () => {
     try {
-      const response = await fetch("http://localhost:3000/posts/approved");
-      const data = await response.json();
+      const { getApiUrl, apiFetch } = await import("../config/api");
+      const data = await apiFetch(getApiUrl("/posts/approved"));
       setCampaigns(data);
     } catch (error) {
       console.error("error fetching campaigns:", error);
@@ -46,21 +46,21 @@ export default function DonorHomepage() {
         (campaign) =>
           campaign.projectName?.toLowerCase().includes(query) ||
           campaign.description?.toLowerCase().includes(query) ||
-          campaign.location?.toLowerCase().includes(query)
+          campaign.location?.toLowerCase().includes(query),
       );
     }
 
     // apply cause filter
     if (filters.cause !== "Any") {
       filtered = filtered.filter((campaign) =>
-        campaign.causes?.includes(filters.cause)
+        campaign.causes?.includes(filters.cause),
       );
     }
 
     // apply urgency filter
     if (filters.urgency !== "Any") {
       filtered = filtered.filter(
-        (campaign) => campaign.priority === filters.urgency
+        (campaign) => campaign.priority === filters.urgency,
       );
     }
 
@@ -68,45 +68,127 @@ export default function DonorHomepage() {
     if (filters.region !== "Any") {
       filtered = filtered.filter((campaign) => {
         const location = campaign.location?.toLowerCase() || "";
-        
+
         // Define region mappings
         const regionMap = {
           luzon: [
-            "batangas", "manila", "quezon city", "caloocan", "pasig", "taguig", 
-            "makati", "muntinlupa", "parañaque", "las piñas", "valenzuela", 
-            "malabon", "navotas", "san juan", "mandaluyong", "marikina", "pasay",
-            "laguna", "cavite", "rizal", "bulacan", "pampanga", "tarlac", 
-            "nueva ecija", "pangasinan", "la union", "ilocos norte", "ilocos sur",
-            "abra", "benguet", "ifugao", "kalinga", "mountain province", "apayao",
-            "cagayan", "isabela", "nueva vizcaya", "quirino", "aurora", "zambales",
-            "bataan", "albay", "camarines norte", "camarines sur", "catanduanes",
-            "masbate", "sorsogon", "marinduque", "occidental mindoro", 
-            "oriental mindoro", "palawan", "romblon", "metro manila", "ncr"
+            "batangas",
+            "manila",
+            "quezon city",
+            "caloocan",
+            "pasig",
+            "taguig",
+            "makati",
+            "muntinlupa",
+            "parañaque",
+            "las piñas",
+            "valenzuela",
+            "malabon",
+            "navotas",
+            "san juan",
+            "mandaluyong",
+            "marikina",
+            "pasay",
+            "laguna",
+            "cavite",
+            "rizal",
+            "bulacan",
+            "pampanga",
+            "tarlac",
+            "nueva ecija",
+            "pangasinan",
+            "la union",
+            "ilocos norte",
+            "ilocos sur",
+            "abra",
+            "benguet",
+            "ifugao",
+            "kalinga",
+            "mountain province",
+            "apayao",
+            "cagayan",
+            "isabela",
+            "nueva vizcaya",
+            "quirino",
+            "aurora",
+            "zambales",
+            "bataan",
+            "albay",
+            "camarines norte",
+            "camarines sur",
+            "catanduanes",
+            "masbate",
+            "sorsogon",
+            "marinduque",
+            "occidental mindoro",
+            "oriental mindoro",
+            "palawan",
+            "romblon",
+            "metro manila",
+            "ncr",
           ],
           visayas: [
-            "cebu", "aklan", "antique", "capiz", "guimaras", "iloilo", 
-            "negros occidental", "bohol", "negros oriental", "siquijor",
-            "biliran", "eastern samar", "leyte", "northern samar", "samar",
-            "southern leyte", "tacloban", "bacolod", "iloilo city", "dumaguete"
+            "cebu",
+            "aklan",
+            "antique",
+            "capiz",
+            "guimaras",
+            "iloilo",
+            "negros occidental",
+            "bohol",
+            "negros oriental",
+            "siquijor",
+            "biliran",
+            "eastern samar",
+            "leyte",
+            "northern samar",
+            "samar",
+            "southern leyte",
+            "tacloban",
+            "bacolod",
+            "iloilo city",
+            "dumaguete",
           ],
           mindanao: [
-            "davao", "zamboanga", "cagayan de oro", "general santos", "cotabato",
-            "bukidnon", "camiguin", "lanao del norte", "misamis occidental",
-            "misamis oriental", "compostela valley", "davao del norte", 
-            "davao del sur", "davao oriental", "davao occidental", "sarangani",
-            "south cotabato", "sultan kudarat", "lanao del sur", "maguindanao",
-            "basilan", "sulu", "tawi-tawi", "zamboanga del norte", 
-            "zamboanga del sur", "zamboanga sibugay", "agusan del norte",
-            "agusan del sur", "surigao del norte", "surigao del sur", 
-            "dinagat islands"
-          ]
+            "davao",
+            "zamboanga",
+            "cagayan de oro",
+            "general santos",
+            "cotabato",
+            "bukidnon",
+            "camiguin",
+            "lanao del norte",
+            "misamis occidental",
+            "misamis oriental",
+            "compostela valley",
+            "davao del norte",
+            "davao del sur",
+            "davao oriental",
+            "davao occidental",
+            "sarangani",
+            "south cotabato",
+            "sultan kudarat",
+            "lanao del sur",
+            "maguindanao",
+            "basilan",
+            "sulu",
+            "tawi-tawi",
+            "zamboanga del norte",
+            "zamboanga del sur",
+            "zamboanga sibugay",
+            "agusan del norte",
+            "agusan del sur",
+            "surigao del norte",
+            "surigao del sur",
+            "dinagat islands",
+          ],
         };
-        
+
         const selectedRegion = filters.region.toLowerCase();
         const provinces = regionMap[selectedRegion] || [];
-        
+
         // Check if location matches any province in the selected region
-        return provinces.some(province => location.includes(province));
+        return provinces.some((province) => location.includes(province));
       });
     }
 
@@ -128,11 +210,11 @@ export default function DonorHomepage() {
         return sorted.sort((a, b) => {
           const progressA = calculateProgress(
             a.supportTypes.monetary.currentAmount,
-            a.supportTypes.monetary.targetAmount
+            a.supportTypes.monetary.targetAmount,
           );
           const progressB = calculateProgress(
             b.supportTypes.monetary.currentAmount,
-            b.supportTypes.monetary.targetAmount
+            b.supportTypes.monetary.targetAmount,
           );
           return progressB - progressA;
         });
@@ -140,7 +222,7 @@ export default function DonorHomepage() {
         return sorted.sort(
           (a, b) =>
             (b.supportTypes.monetary.targetAmount || 0) -
-            (a.supportTypes.monetary.targetAmount || 0)
+            (a.supportTypes.monetary.targetAmount || 0),
         );
       case "date":
         return sorted.sort((a, b) => {
@@ -151,7 +233,7 @@ export default function DonorHomepage() {
       case "latest":
       default:
         return sorted.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
         );
     }
   };
@@ -162,12 +244,12 @@ export default function DonorHomepage() {
 
   const toggleBookmark = (e, campaignId) => {
     e.stopPropagation();
-    setBookmarkedProjects(prev => {
+    setBookmarkedProjects((prev) => {
       const isBookmarked = prev.includes(campaignId);
       const updated = isBookmarked
-        ? prev.filter(id => id !== campaignId)
+        ? prev.filter((id) => id !== campaignId)
         : [...prev, campaignId];
-      localStorage.setItem('bookmarkedProjects', JSON.stringify(updated));
+      localStorage.setItem("bookmarkedProjects", JSON.stringify(updated));
       return updated;
     });
   };
@@ -218,9 +300,9 @@ export default function DonorHomepage() {
     <div className="donor-homepage">
       <div className="donor-header">
         <h2 className="greeting">Hello, Isa!</h2>
-        <button 
+        <button
           className="bookmarks-nav-btn"
-          onClick={() => navigate('/donor/bookmarks')}
+          onClick={() => navigate("/donor/bookmarks")}
         >
           BOOKMARKS
         </button>
@@ -312,23 +394,30 @@ export default function DonorHomepage() {
               const monetaryEnabled = campaign.supportTypes?.monetary?.enabled;
               const volunteerEnabled =
                 campaign.supportTypes?.volunteer?.enabled;
-              const inKindEnabled =
-                campaign.supportTypes?.inKind?.length > 0;
+              const inKindEnabled = campaign.supportTypes?.inKind?.length > 0;
 
-              const raised = campaign.supportTypes?.monetary?.currentAmount || 0;
+              const raised =
+                campaign.supportTypes?.monetary?.currentAmount || 0;
               const target = campaign.supportTypes?.monetary?.targetAmount || 1;
               const remaining = Math.max(0, target - raised);
               const progress = calculateProgress(raised, target);
 
               const inKindItems = campaign.supportTypes?.inKind || [];
-              const volunteerTarget = campaign.supportTypes?.volunteer?.targetVolunteers || 0;
-              const volunteerCurrent = campaign.supportTypes?.volunteer?.currentVolunteers || 0;
-              const volunteerRemaining = Math.max(0, volunteerTarget - volunteerCurrent);
+              const volunteerTarget =
+                campaign.supportTypes?.volunteer?.targetVolunteers || 0;
+              const volunteerCurrent =
+                campaign.supportTypes?.volunteer?.currentVolunteers || 0;
+              const volunteerRemaining = Math.max(
+                0,
+                volunteerTarget - volunteerCurrent,
+              );
 
               // truncate title and description
               const truncateText = (text, maxLength) => {
                 if (!text) return "";
-                return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+                return text.length > maxLength
+                  ? text.substring(0, maxLength) + "..."
+                  : text;
               };
 
               return (
@@ -348,23 +437,32 @@ export default function DonorHomepage() {
                           {getCauseDisplay(cause)}
                         </span>
                       ))}
-                      <span className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}>
+                      <span
+                        className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}
+                      >
                         {campaign.priority?.toLowerCase() || "medium"}
                       </span>
                     </div>
                     <button
-                      className={`bookmark-btn ${bookmarkedProjects.includes(campaign.id) ? 'bookmarked' : ''}`}
+                      className={`bookmark-btn ${bookmarkedProjects.includes(campaign.id) ? "bookmarked" : ""}`}
                       onClick={(e) => toggleBookmark(e, campaign.id)}
-                      title={bookmarkedProjects.includes(campaign.id) ? "Remove bookmark" : "Bookmark project"}
+                      title={
+                        bookmarkedProjects.includes(campaign.id)
+                          ? "Remove bookmark"
+                          : "Bookmark project"
+                      }
                     >
-                      {bookmarkedProjects.includes(campaign.id) ? '★' : '☆'}
+                      {bookmarkedProjects.includes(campaign.id) ? "★" : "☆"}
                     </button>
                   </div>
 
                   <h4 className="campaign-title" title={campaign.projectName}>
                     {truncateText(campaign.projectName, 60)}
                   </h4>
-                  <p className="campaign-description" title={campaign.description}>
+                  <p
+                    className="campaign-description"
+                    title={campaign.description}
+                  >
                     {truncateText(campaign.description, 100)}
                   </p>
 
@@ -375,14 +473,20 @@ export default function DonorHomepage() {
                     </div>
                     <div className="meta-item">
                       <span className="meta-label">org:</span>
-                      <span>{truncateText(campaign.orgName || "organization", 30)}</span>
+                      <span>
+                        {truncateText(campaign.orgName || "organization", 30)}
+                      </span>
                     </div>
                     {(campaign.startDate || campaign.endDate) && (
                       <div className="meta-item">
                         <span className="meta-label">dates:</span>
                         <span>
-                          {campaign.startDate ? new Date(campaign.startDate).toLocaleDateString() : ""}
-                          {campaign.endDate ? ` - ${new Date(campaign.endDate).toLocaleDateString()}` : ""}
+                          {campaign.startDate
+                            ? new Date(campaign.startDate).toLocaleDateString()
+                            : ""}
+                          {campaign.endDate
+                            ? ` - ${new Date(campaign.endDate).toLocaleDateString()}`
+                            : ""}
                         </span>
                       </div>
                     )}
@@ -404,12 +508,16 @@ export default function DonorHomepage() {
                   {monetaryEnabled && (
                     <div className="resource-needs">
                       <div className="resource-section">
-                        <div className="resource-header">monetary support needed</div>
+                        <div className="resource-header">
+                          monetary support needed
+                        </div>
                         <div className="resource-amount">
-                          ₱{formatCurrency(remaining)} <span className="resource-unit">php</span>
+                          ₱{formatCurrency(remaining)}{" "}
+                          <span className="resource-unit">php</span>
                         </div>
                         <div className="resource-detail">
-                          target: ₱{formatCurrency(target)} • raised: ₱{formatCurrency(raised)} ({progress}%)
+                          target: ₱{formatCurrency(target)} • raised: ₱
+                          {formatCurrency(raised)} ({progress}%)
                         </div>
                       </div>
                     </div>
@@ -419,18 +527,26 @@ export default function DonorHomepage() {
                   {inKindEnabled && inKindItems.length > 0 && (
                     <div className="resource-needs">
                       <div className="resource-section">
-                        <div className="resource-header">in-kind items needed</div>
+                        <div className="resource-header">
+                          in-kind items needed
+                        </div>
                         <ul className="inkind-list">
                           {inKindItems.slice(0, 3).map((item) => {
-                            const itemRemaining = Math.max(0, item.targetQuantity - (item.currentQuantity || 0));
+                            const itemRemaining = Math.max(
+                              0,
+                              item.targetQuantity - (item.currentQuantity || 0),
+                            );
                             return (
                               <li key={item.id} className="inkind-item">
-                                <strong>{item.itemName}</strong>: {itemRemaining} {item.unit || "units"}
+                                <strong>{item.itemName}</strong>:{" "}
+                                {itemRemaining} {item.unit || "units"}
                               </li>
                             );
                           })}
                           {inKindItems.length > 3 && (
-                            <li className="inkind-more">+{inKindItems.length - 3} more items</li>
+                            <li className="inkind-more">
+                              +{inKindItems.length - 3} more items
+                            </li>
                           )}
                         </ul>
                       </div>
@@ -443,14 +559,17 @@ export default function DonorHomepage() {
                       <div className="resource-section">
                         <div className="resource-header">volunteers needed</div>
                         <div className="resource-amount">
-                          {volunteerRemaining} <span className="resource-unit">volunteers</span>
+                          {volunteerRemaining}{" "}
+                          <span className="resource-unit">volunteers</span>
                         </div>
                         <div className="resource-detail">
-                          target: {volunteerTarget} • committed: {volunteerCurrent}
+                          target: {volunteerTarget} • committed:{" "}
+                          {volunteerCurrent}
                         </div>
                         {(campaign.startTime || campaign.endTime) && (
                           <div className="resource-schedule">
-                            time: {campaign.startTime || ""} {campaign.endTime ? `- ${campaign.endTime}` : ""}
+                            time: {campaign.startTime || ""}{" "}
+                            {campaign.endTime ? `- ${campaign.endTime}` : ""}
                           </div>
                         )}
                       </div>
