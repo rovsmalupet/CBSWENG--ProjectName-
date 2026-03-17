@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiUrl } from "../config/api.js";
 import "../css/NgoRegistration.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -12,8 +13,6 @@ export default function NgoRegistration() {
     surname: "",
     email: "",
     password: "",
-    affiliation: "",
-    representativePerson: "",
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -30,7 +29,7 @@ export default function NgoRegistration() {
     const nextErrors = {};
 
     if (!formData.firstName.trim()) {
-      nextErrors.firstName = "First Name is required.";
+      nextErrors.firstName = "First name is required.";
     }
 
     if (!formData.surname.trim()) {
@@ -38,21 +37,13 @@ export default function NgoRegistration() {
     }
 
     if (!formData.email.trim()) {
-      nextErrors.email = "Email Address is required.";
+      nextErrors.email = "Email address is required.";
     } else if (!EMAIL_REGEX.test(formData.email.trim())) {
       nextErrors.email = "Enter a valid email address.";
     }
 
     if (!formData.password || formData.password.length < 6) {
       nextErrors.password = "Password must be at least 6 characters.";
-    }
-
-    if (!formData.affiliation.trim()) {
-      nextErrors.affiliation = "Affiliation is required.";
-    }
-
-    if (!formData.representativePerson.trim()) {
-      nextErrors.representativePerson = "Representative Person is required.";
     }
 
     setErrors(nextErrors);
@@ -67,7 +58,9 @@ export default function NgoRegistration() {
     setServerMessage("");
 
     try {
-      const response = await fetch("http://localhost:3000/register", {
+      // getApiUrl reads from VITE_API_URL env variable so this works
+      // both locally (localhost:3000) and on the deployed backend (Railway)
+      const response = await fetch(getApiUrl("/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -77,8 +70,6 @@ export default function NgoRegistration() {
           surname: formData.surname.trim(),
           email: formData.email.trim(),
           password: formData.password,
-          affiliation: formData.affiliation.trim(),
-          representativePerson: formData.representativePerson.trim(),
         }),
       });
 
@@ -88,12 +79,8 @@ export default function NgoRegistration() {
         throw new Error(data.error || "Registration failed.");
       }
 
-      localStorage.setItem("userFirstName", formData.firstName.trim());
       setServerMessage("Registration submitted. Waiting for admin approval.");
-
-      setTimeout(() => {
-        navigate("/auth/ngo");
-      }, 1000);
+      setTimeout(() => navigate("/auth/ngo"), 1500);
     } catch (error) {
       setServerMessage(error.message || "Unable to submit registration.");
     } finally {
@@ -119,7 +106,7 @@ export default function NgoRegistration() {
             type="text"
             value={formData.orgName}
             onChange={handleChange}
-            placeholder="Optional"
+            placeholder="e.g. Philippine Red Cross"
           />
 
           <label htmlFor="firstName">First Name</label>
@@ -169,32 +156,6 @@ export default function NgoRegistration() {
             aria-invalid={Boolean(errors.password)}
           />
           {errors.password && <span className="field-error">{errors.password}</span>}
-
-          <label htmlFor="affiliation">Affiliation</label>
-          <input
-            id="affiliation"
-            name="affiliation"
-            type="text"
-            value={formData.affiliation}
-            onChange={handleChange}
-            placeholder="Example: Red Cross Chapter"
-            aria-invalid={Boolean(errors.affiliation)}
-          />
-          {errors.affiliation && <span className="field-error">{errors.affiliation}</span>}
-
-          <label htmlFor="representativePerson">Representative Person</label>
-          <input
-            id="representativePerson"
-            name="representativePerson"
-            type="text"
-            value={formData.representativePerson}
-            onChange={handleChange}
-            placeholder="Full representative name"
-            aria-invalid={Boolean(errors.representativePerson)}
-          />
-          {errors.representativePerson && (
-            <span className="field-error">{errors.representativePerson}</span>
-          )}
 
           <button type="submit" className="submit-btn" disabled={submitting}>
             {submitting ? "Submitting..." : "Register NGO"}

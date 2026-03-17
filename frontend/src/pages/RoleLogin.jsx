@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getApiUrl } from "../config/api.js";
 import "../css/RoleLogin.css";
 
+// Metadata for each role — controls the UI text and redirect destination
 const roleMeta = {
   donor: {
     title: "Donor Login",
@@ -26,7 +28,10 @@ const roleMeta = {
 export default function RoleLogin() {
   const navigate = useNavigate();
   const { role } = useParams();
+
+  // If the URL role is invalid, default to "donor"
   const currentRole = useMemo(() => (roleMeta[role] ? role : "donor"), [role]);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -38,7 +43,8 @@ export default function RoleLogin() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:3000/login", {
+      // getApiUrl reads VITE_API_URL so this works on both localhost and deployed
+      const response = await fetch(getApiUrl("/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -49,12 +55,17 @@ export default function RoleLogin() {
       });
 
       const data = await response.json();
+
       if (!response.ok) {
         throw new Error(data.error || "Login failed.");
       }
 
+      // Store user info in localStorage so other pages can read it
       localStorage.setItem("userFirstName", data.user.firstName || "User");
-      localStorage.setItem("userRole", data.user.role || currentRole);
+      localStorage.setItem("userRole", currentRole);
+      localStorage.setItem("userId", data.user.id);
+
+      // Redirect to the correct dashboard based on role
       navigate(roleMeta[currentRole].nextRoute);
     } catch (submitError) {
       setError(submitError.message || "Login failed.");
@@ -71,6 +82,7 @@ export default function RoleLogin() {
         <button className="role-login-back" onClick={() => navigate("/login")}>
           Back
         </button>
+
         <h1>{meta.title}</h1>
         <p>{meta.helper}</p>
 
@@ -114,7 +126,7 @@ export default function RoleLogin() {
             className="role-register-link"
             onClick={() => navigate("/ngo/register")}
           >
-            New ngo? Create an account
+            New NGO? Create an account
           </button>
         )}
 

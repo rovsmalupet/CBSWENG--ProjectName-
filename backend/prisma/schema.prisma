@@ -1,109 +1,207 @@
-	generator client {
-	  provider = "prisma-client-js"
-	}
-
-	datasource db {
-	  provider  = "postgresql"
-	  url       = env("DATABASE_URL")
-	  directUrl = env("DIRECT_URL")
-	}
-
-model User {
-  id                   String        @id @default(uuid())
-  firstName            String
-  surname              String
-  email                String        @unique
-  password             String
-  role                 UserRole
-  status               AccountStatus @default(active)
-  affiliation          String?
-  representativePerson String?
-  isVerified           Boolean       @default(false)
-  createdAt            DateTime      @default(now())
+generator client {
+  provider = "prisma-client-js"
 }
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── ORGANIZATION ────────────────────────────────────────────────────────────
 
 model Organization {
-  id                   String   @id @default(uuid())
-  orgName              String
-  firstName            String
-  surname              String
-  email                String   @unique
-  isVerified           Boolean  @default(false)
-  status               String   @default("pending")
-  createdAt            DateTime @default(now())
-  posts                Post[]
+  id            String        @id @default(uuid())
+  orgName       String
+  firstName     String
+  surname       String
+  email         String        @unique
+  password      String        // always store hashed, never plain text
+  country       ASEANCountry  @default(Philippines)
+  isVerified    Boolean       @default(false)
+  status        AccountStatus @default(Pending)
+  createdAt     DateTime      @default(now())
+
+  posts         Post[]
+  donorPartners DonorOrganizationPartner[]
 }
+
+// ─── DONOR ───────────────────────────────────────────────────────────────────
+
+model Donor {
+  id            String        @id @default(uuid())
+  firstName     String
+  lastName      String
+  email         String        @unique
+  password      String        // always store hashed, never plain text
+  isVerified    Boolean       @default(false)
+  status        AccountStatus @default(Pending)
+  createdAt     DateTime      @default(now())
+
+  contributions Contribution[]
+  partnerOrgs   DonorOrganizationPartner[]
+}
+
+// ─── ADMIN ───────────────────────────────────────────────────────────────────
+
+// Admin accounts are seeded manually — there is no public sign up for admins
+model Admin {
+  id        String   @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  password  String   // always store hashed, never plain text
+  createdAt DateTime @default(now())
+}
+
+// ─── POST ────────────────────────────────────────────────────────────────────
 
 model Post {
-  id                    String        @id @default(uuid())
-  orgId                 String
-  organization          Organization  @relation(fields: [orgId], references: [id])
-  projectName           String
-  description           String?
-  causes                CauseEnum[]
-  location              String?
-  priority              Priority      @default(Medium)
-  overallStatus         PostStatus    @default(Pending)
-  createdAt             DateTime      @default(now())
-  startDate             String?
-  endDate               String?
-  monetaryEnabled       Boolean       @default(false)
-  monetaryTargetAmount  Float?
-  monetaryCurrentAmount Float         @default(0)
-  monetaryStatus        SupportStatus @default(Open)
-  volunteerEnabled      Boolean       @default(false)
-  volunteerTargetCount  Int?
-  volunteerCurrentCount Int           @default(0)
-  volunteerStatus       SupportStatus @default(Open)
-  supportOptions        PostSupportOption[]
-  inKindItems           PostInKindItem[]
+  id             String              @id @default(uuid())
+  orgId          String
+  organization   Organization        @relation(fields: [orgId], references: [id])
+  projectName    String
+  description    String?
+  causes         CauseEnum[]
+  location       String?
+  priority       Priority            @default(Medium)
+  overallStatus  PostStatus          @default(Pending)
+  createdAt      DateTime            @default(now())
+
+  // DateTime instead of String so the DB can sort, filter, and validate dates properly
+  startDate      DateTime?
+  endDate        DateTime?
+
+  supportOptions PostSupportOption[]
+  inKindItems    PostInKindItem[]
+  contributions  Contribution[]
 }
 
+// ─── POST SUPPORT OPTION ─────────────────────────────────────────────────────
+
+// Replaces the old flat monetary/volunteer fields on Post.
+// Each row represents one support type (Monetary or Volunteer) for a post.
+// A post can only have one row per type, enforced by @@unique.
 model PostSupportOption {
-  id             String        @id @default(uuid())
-  postId         String
-  post           Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  type           SupportType
+  id            String        @id @default(uuid())
+  postId        String
+  post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type          SupportType
 
-  //Monetary fields
-  targetAmount   Float?
-  currentAmount  Float         @default(0)
+  // Monetary fields — Float is correct: monetary amounts can have decimals (e.g. ₱50,000.50)
+  targetAmount  Float?
+  currentAmount Float         @default(0)
 
-  // Volunteer fields
-  targetCount    Int?
-  currentCount   Int           @default(0)
+  // Volunteer fields — Int is correct: you cannot have a fractional number of volunteers
+  targetCount   Int?
+  currentCount  Int           @default(0)
 
-  status         SupportStatus @default(Open)
+  status        SupportStatus @default(Open)
 
-  // Ensure a post can only have one Monetary and one Volunteer option
   @@unique([postId, type])
 }
 
+// ─── POST IN-KIND ITEM ────────────────────────────────────────────────────────
+
 model PostInKindItem {
-  id              String        @id @default(uuid())
+  id              String         @id @default(uuid())
   postId          String
-  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post            Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
   itemName        String
   targetQuantity  Float
-  currentQuantity Float         @default(0)
+  currentQuantity Float          @default(0)
   unit            String?
-  status          SupportStatus @default(Open)
+  status          SupportStatus  @default(Open)
+
+  contributions   Contribution[]
 }
 
+// ─── CONTRIBUTION ─────────────────────────────────────────────────────────────
+
+// Records every donor contribution.
+// Status starts as Pending until the organization confirms or declines it.
+// For Monetary: created automatically when Stripe confirms a payment.
+// For Volunteer/InKind: created when a donor submits a pledge.
+model Contribution {
+  id             String             @id @default(uuid())
+  donorId        String
+  donor          Donor              @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  postId         String
+  post           Post               @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type           SupportType
+
+  // Monetary — only populated when type = Monetary
+  amount         Float?
+
+  // Volunteer — only populated when type = Volunteer
+  volunteerCount Int?
+
+  // InKind — only populated when type = InKind
+  // links to the specific PostInKindItem being contributed to
+  inKindItemId   String?
+  inKindItem     PostInKindItem?    @relation(fields: [inKindItemId], references: [id], onDelete: SetNull)
+  quantity       Float?
+
+  status         ContributionStatus @default(Pending)
+  createdAt      DateTime           @default(now())
+}
+
+// ─── DONOR ORGANIZATION PARTNER ──────────────────────────────────────────────
+
+// Join table for Donor <-> Organization many-to-many relationship.
+// A donor can follow/partner with multiple orgs,
+// and an org can have multiple donor partners.
+// @@unique prevents the same donor-org pair from being recorded twice.
+model DonorOrganizationPartner {
+  id           String       @id @default(uuid())
+  donorId      String
+  donor        Donor        @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+
+  @@unique([donorId, orgId])
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum ASEANCountry {
+  Brunei
+  Cambodia
+  Indonesia
+  Laos
+  Malaysia
+  Myanmar
+  Philippines
+  Singapore
+  Thailand
+  Vietnam
+}
+
+// Monetary and Volunteer use PostSupportOption.
+// InKind uses PostInKindItem directly but SupportType.InKind
+// is used in Contribution to record what type of contribution was made.
 enum SupportType {
   Monetary
   Volunteer
+  InKind
 }
 
+// Only includes causes directly actionable through community-driven
+// donations, volunteerism, and in-kind support.
+// SDGs requiring systemic policy change (e.g. SDG 5, SDG 7, SDG 16)
+// are intentionally excluded as they are beyond the scope of NGO fundraising.
 enum CauseEnum {
-  educationAndChildren
-  healthAndMedical
-  disasterRelief
-  environmentAndClimate
-  povertyAndHunger
-  communityDevelopment
-  livelihoodAndSkillsTraining
-  animalWelfare
+  educationAndChildren        // SDG 4  — Quality Education
+  healthAndMedical            // SDG 3  — Good Health and Well-being
+  disasterRelief              // SDG 11 — Sustainable Cities and Communities
+  environmentAndClimate       // SDG 13 — Climate Action
+  poverty                     // SDG 1  — No Poverty
+  hunger                      // SDG 2  — Zero Hunger
+  communityDevelopment        // SDG 17 — Partnerships for the Goals
+  cleanWater                  // SDG 6  — Clean Water and Sanitation
+  livelihoodAndSkillsTraining // SDG 8  — Decent Work and Economic Growth
+  animalWelfare               // SDG 15 — Life on Land
   others
 }
 
@@ -126,15 +224,15 @@ enum SupportStatus {
   Closed
 }
 
-enum UserRole {
-  donor
-  ngo
-  admin
+enum AccountStatus {
+  Pending   // just registered, not yet reviewed
+  Approved  // verified and active
+  Rejected  // denied by admin
+  Active    // approved and currently active
 }
 
-enum AccountStatus {
-  pending
-  approved
-  rejected
-  active
+enum ContributionStatus {
+  Pending    // payment made, waiting for org to confirm
+  Confirmed  // org verified the contribution
+  Declined   // org rejected the contribution
 }

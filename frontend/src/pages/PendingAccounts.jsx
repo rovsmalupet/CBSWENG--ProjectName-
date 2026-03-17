@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiUrl } from "../config/api.js";
 import "../css/PendingAccounts.css";
 
 export default function PendingAccounts() {
@@ -15,10 +16,9 @@ export default function PendingAccounts() {
   const fetchPendingAccounts = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:3000/organizations/pending");
-      if (!response.ok) {
-        throw new Error("Failed to fetch pending accounts");
-      }
+      // getApiUrl reads VITE_API_URL so this works on both localhost and deployed
+      const response = await fetch(getApiUrl("/organizations/pending"));
+      if (!response.ok) throw new Error("Failed to fetch pending accounts");
       const data = await response.json();
       setPendingAccounts(data);
     } catch (err) {
@@ -31,18 +31,18 @@ export default function PendingAccounts() {
 
   const handleApprove = async (accountId) => {
     try {
-      const response = await fetch(`http://localhost:3000/organizations/${accountId}/approve`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        getApiUrl(`/organizations/${accountId}/approve`),
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
         },
-      });
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to approve account");
-      }
+      if (!response.ok) throw new Error("Failed to approve account");
 
-      // Remove the approved account from the list
+      // Remove the approved account from the list optimistically
+      // so the admin doesn't need to refresh the page
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
       alert("Account approved successfully!");
     } catch (err) {
@@ -53,26 +53,23 @@ export default function PendingAccounts() {
 
   const handleReject = async (accountId) => {
     const confirmed = window.confirm(
-      "Are you sure you want to reject this account? This action cannot be undone."
+      "Are you sure you want to reject this account?",
     );
-
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/organizations/${accountId}/reject`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        getApiUrl(`/organizations/${accountId}/reject`),
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
         },
-      });
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to reject account");
-      }
+      if (!response.ok) throw new Error("Failed to reject account");
 
-      // Remove the rejected account from the list
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
-      alert("Account rejected successfully.");
+      alert("Account rejected.");
     } catch (err) {
       console.error("Error rejecting account:", err);
       alert("Failed to reject account. Please try again.");
@@ -134,7 +131,7 @@ export default function PendingAccounts() {
             <tbody>
               {pendingAccounts.map((account) => (
                 <tr key={account.id}>
-                  <td className="org-name">{account.orgName || account.affiliation || "-"}</td>
+                  <td className="org-name">{account.orgName || "-"}</td>
                   <td>{account.firstName}</td>
                   <td>{account.surname}</td>
                   <td>{account.email}</td>

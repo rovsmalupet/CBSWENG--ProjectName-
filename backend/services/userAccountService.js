@@ -1,227 +1,265 @@
-import { randomUUID, createHash } from "crypto";
+import bcrypt from "bcrypt";
 import prisma from "../prisma/client.js";
 
+// How many times bcrypt re-hashes the password — 10 is the industry standard balance
+// between security and performance. Higher = slower but more secure.
+const SALT_ROUNDS = 10;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const hashPassword = (password) => createHash("sha256").update(password).digest("hex");
-
-export const ensureUserAccountTable = async () => {
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "UserAccount" (
-      "id" TEXT PRIMARY KEY,
-      "firstName" TEXT NOT NULL,
-      "surname" TEXT NOT NULL,
-      "email" TEXT NOT NULL UNIQUE,
-      "password" TEXT NOT NULL,
-      "role" TEXT NOT NULL,
-      "status" TEXT NOT NULL DEFAULT 'active',
-      "affiliation" TEXT,
-      "representativePerson" TEXT,
-      "isVerified" BOOLEAN NOT NULL DEFAULT false,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+/**
+ * sanitizeUser: Strips the password before sending user data to the frontend.
+ * NEVER send a password (even hashed) in an API response.
+ */
+const sanitizeUser = (user, role) => {
+  const { password, ...rest } = user;
+  return { ...rest, role };
 };
 
-const sanitizeUser = (row) => ({
-  id: row.id,
-  firstName: row.firstName,
-  surname: row.surname,
-  email: row.email,
-  role: row.role,
-  status: row.status,
-  affiliation: row.affiliation,
-  representativePerson: row.representativePerson,
-  isVerified: row.isVerified,
-  createdAt: row.createdAt,
-});
-
+/**
+ * seedDefaultUsers: Creates default admin and donor accounts on server start.
+ * Uses upsert so it's safe to call multiple times — won't create duplicates.
+ *
+ * Why bcrypt instead of the old sha256?
+ * SHA256 is a fast hashing algorithm — fast is bad for passwords because
+ * attackers can try billions of combinations per second.
+ * bcrypt is intentionally slow and adds a random salt, making brute force
+ * attacks much harder.
+ */
 export const seedDefaultUsers = async () => {
-  await ensureUserAccountTable();
+  // Seed default admin
+  const adminExists = await prisma.admin.findUnique({
+    where: { email: "admin@bayanihub.local" },
+  });
 
-  const adminEmail = "admin@bayanihub.local";
-  const donorEmail = "donor@bayanihub.local";
-
-  const existingAdmin = await prisma.$queryRaw`
-    SELECT "id" FROM "UserAccount" WHERE "email" = ${adminEmail} LIMIT 1
-  `;
-
-  if (existingAdmin.length === 0) {
-    await prisma.$executeRaw`
-      INSERT INTO "UserAccount"
-      ("id", "firstName", "surname", "email", "password", "role", "status", "isVerified")
-      VALUES
-      (${randomUUID()}, ${"System"}, ${"Admin"}, ${adminEmail}, ${hashPassword("admin123")}, ${"admin"}, ${"active"}, ${true})
-    `;
+  if (!adminExists) {
+    await prisma.admin.create({
+      data: {
+        firstName: "System",
+        lastName: "Admin",
+        email: "admin@bayanihub.local",
+        password: await bcrypt.hash("admin123", SALT_ROUNDS),
+      },
+    });
+    console.log("Default admin seeded: admin@bayanihub.local / admin123");
   }
 
-  const existingDonor = await prisma.$queryRaw`
-    SELECT "id" FROM "UserAccount" WHERE "email" = ${donorEmail} LIMIT 1
-  `;
+  // Seed default donor
+  const donorExists = await prisma.donor.findUnique({
+    where: { email: "donor@bayanihub.local" },
+  });
 
-  if (existingDonor.length === 0) {
-    await prisma.$executeRaw`
-      INSERT INTO "UserAccount"
-      ("id", "firstName", "surname", "email", "password", "role", "status", "isVerified")
-      VALUES
-      (${randomUUID()}, ${"Demo"}, ${"Donor"}, ${donorEmail}, ${hashPassword("donor123")}, ${"donor"}, ${"active"}, ${true})
-    `;
+  if (!donorExists) {
+    await prisma.donor.create({
+      data: {
+        firstName: "Demo",
+        lastName: "Donor",
+        email: "donor@bayanihub.local",
+        password: await bcrypt.hash("donor123", SALT_ROUNDS),
+        isVerified: true,
+        status: "Approved",
+      },
+    });
+    console.log("Default donor seeded: donor@bayanihub.local / donor123");
   }
 };
 
+/**
+ * registerUser: Handles registration for both Donor and NGO roles.
+ *
+ * Why separate models instead of one UserAccount table?
+ * Donor and Organization have different fields and different approval flows.
+ * Keeping them separate means cleaner queries and no nullable columns
+ * that only apply to one type.
+ */
 export const registerUser = async ({
   firstName,
-  surname,
+  surname,   // frontend sends surname, we map to lastName for Donor
   email,
   password,
   role,
-  affiliation,
-  representativePerson,
+  orgName,
 }) => {
-  await ensureUserAccountTable();
-
+  // ── Validation ──────────────────────────────────────────────────────────────
   if (!firstName?.trim() || !surname?.trim()) {
-    return { status: 400, body: { error: "First Name and Surname are required." } };
+    return { status: 400, body: { error: "First name and surname are required." } };
   }
 
   if (!email?.trim() || !EMAIL_REGEX.test(email.trim())) {
-    return { status: 400, body: { error: "Valid Email Address is required." } };
+    return { status: 400, body: { error: "Valid email address is required." } };
   }
 
   if (!password || password.length < 6) {
     return { status: 400, body: { error: "Password must be at least 6 characters." } };
   }
 
-  const normalizedRole = (role || "ngo").toLowerCase();
-  if (!["donor", "ngo", "admin"].includes(normalizedRole)) {
+  const normalizedRole = (role || "donor").toLowerCase();
+  if (!["donor", "ngo"].includes(normalizedRole)) {
     return { status: 400, body: { error: "Invalid role." } };
   }
 
-  if (normalizedRole === "ngo" && (!affiliation?.trim() || !representativePerson?.trim())) {
-    return {
-      status: 400,
-      body: { error: "Affiliation and Representative Person are required for NGO." },
-    };
-  }
-
   const normalizedEmail = email.trim().toLowerCase();
-  const existing = await prisma.$queryRaw`
-    SELECT "id" FROM "UserAccount" WHERE "email" = ${normalizedEmail} LIMIT 1
-  `;
 
-  if (existing.length > 0) {
+  // ── Check for duplicate email across both tables ─────────────────────────
+  // We check both Donor and Organization since email must be unique platform-wide
+  const existingDonor = await prisma.donor.findUnique({ where: { email: normalizedEmail } });
+  const existingOrg = await prisma.organization.findUnique({ where: { email: normalizedEmail } });
+
+  if (existingDonor || existingOrg) {
     return { status: 409, body: { error: "Email already registered." } };
   }
 
-  const status = normalizedRole === "ngo" ? "pending" : "active";
-  const isVerified = normalizedRole !== "ngo";
+  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-  const id = randomUUID();
+  // ── Create the appropriate model based on role ───────────────────────────
+  if (normalizedRole === "donor") {
+    const donor = await prisma.donor.create({
+      data: {
+        firstName: firstName.trim(),
+        lastName: surname.trim(),  // frontend uses surname, Donor model uses lastName
+        email: normalizedEmail,
+        password: hashedPassword,
+        isVerified: true,           // donors are auto-verified
+        status: "Approved",         // donors don't need admin approval
+      },
+    });
 
-  await prisma.$executeRaw`
-    INSERT INTO "UserAccount"
-    ("id", "firstName", "surname", "email", "password", "role", "status", "affiliation", "representativePerson", "isVerified")
-    VALUES
-    (
-      ${id},
-      ${firstName.trim()},
-      ${surname.trim()},
-      ${normalizedEmail},
-      ${hashPassword(password)},
-      ${normalizedRole},
-      ${status},
-      ${affiliation?.trim() || null},
-      ${representativePerson?.trim() || null},
-      ${isVerified}
-    )
-  `;
+    return {
+      status: 201,
+      body: {
+        message: "Registration successful.",
+        user: sanitizeUser(donor, "donor"),
+      },
+    };
+  }
 
-  const created = await prisma.$queryRaw`
-    SELECT * FROM "UserAccount" WHERE "id" = ${id} LIMIT 1
-  `;
+  if (normalizedRole === "ngo") {
+    const org = await prisma.organization.create({
+      data: {
+        orgName: orgName?.trim() || `${firstName.trim()} ${surname.trim()}`,
+        firstName: firstName.trim(),
+        surname: surname.trim(),
+        email: normalizedEmail,
+        password: hashedPassword,
+        isVerified: false,          // NGOs must be approved by admin first
+        status: "Pending",
+      },
+    });
 
-  return {
-    status: 201,
-    body: {
-      message:
-        normalizedRole === "ngo"
-          ? "Registration submitted. Account is pending admin approval."
-          : "Registration successful.",
-      user: sanitizeUser(created[0]),
-    },
-  };
+    return {
+      status: 201,
+      body: {
+        message: "Registration submitted. Account is pending admin approval.",
+        user: sanitizeUser(org, "ngo"),
+      },
+    };
+  }
 };
 
+/**
+ * loginUser: Checks credentials across Admin, Donor, and Organization tables.
+ *
+ * Why check three tables?
+ * We have no single User table — each role has its own model.
+ * We check in order: Admin → Donor → Organization.
+ * If the role param is provided, we only check the matching table.
+ */
 export const loginUser = async ({ email, password, role }) => {
-  await ensureUserAccountTable();
-
-  const normalizedEmail = (email || "").trim().toLowerCase();
-  if (!normalizedEmail || !password) {
-    return { status: 400, body: { error: "Email and Password are required." } };
+  if (!email?.trim() || !password) {
+    return { status: 400, body: { error: "Email and password are required." } };
   }
 
-  const rows = await prisma.$queryRaw`
-    SELECT * FROM "UserAccount" WHERE "email" = ${normalizedEmail} LIMIT 1
-  `;
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedRole = (role || "").toLowerCase();
 
-  if (rows.length === 0) {
+  let user = null;
+  let userRole = null;
+
+  // ── Look up user in the correct table based on role ──────────────────────
+  if (normalizedRole === "admin") {
+    user = await prisma.admin.findUnique({ where: { email: normalizedEmail } });
+    userRole = "admin";
+  } else if (normalizedRole === "donor") {
+    user = await prisma.donor.findUnique({ where: { email: normalizedEmail } });
+    userRole = "donor";
+  } else if (normalizedRole === "ngo") {
+    user = await prisma.organization.findUnique({ where: { email: normalizedEmail } });
+    userRole = "ngo";
+  } else {
+    // No role provided — check all three tables in order
+    user = await prisma.admin.findUnique({ where: { email: normalizedEmail } });
+    if (user) { userRole = "admin"; }
+
+    if (!user) {
+      user = await prisma.donor.findUnique({ where: { email: normalizedEmail } });
+      if (user) { userRole = "donor"; }
+    }
+
+    if (!user) {
+      user = await prisma.organization.findUnique({ where: { email: normalizedEmail } });
+      if (user) { userRole = "ngo"; }
+    }
+  }
+
+  if (!user) {
     return { status: 401, body: { error: "Invalid credentials." } };
   }
 
-  const user = rows[0];
-  const roleMatch = !role || user.role === role;
-  if (!roleMatch) {
-    return { status: 403, body: { error: "Role mismatch for this account." } };
-  }
-
-  if (user.password !== hashPassword(password)) {
+  // ── Verify password using bcrypt.compare ─────────────────────────────────
+  // bcrypt.compare handles the salt automatically — you never need to salt manually
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  if (!passwordMatch) {
     return { status: 401, body: { error: "Invalid credentials." } };
   }
 
-  if (user.role === "ngo" && user.status !== "approved") {
-    return { status: 403, body: { error: "NGO account is still pending approval." } };
+  // ── NGO-specific check: must be approved before logging in ───────────────
+  if (userRole === "ngo" && user.status !== "Approved") {
+    return {
+      status: 403,
+      body: { error: "NGO account is still pending admin approval." },
+    };
   }
 
   return {
     status: 200,
     body: {
       message: "Login successful.",
-      user: sanitizeUser(user),
+      user: sanitizeUser(user, userRole),
     },
   };
 };
 
+/**
+ * getPendingNgoUsers: Returns all organizations with Pending status.
+ * Used by the admin panel to review and approve/reject NGO registrations.
+ */
 export const getPendingNgoUsers = async () => {
-  await ensureUserAccountTable();
-  const rows = await prisma.$queryRaw`
-    SELECT *
-    FROM "UserAccount"
-    WHERE "role" = ${"ngo"} AND "status" = ${"pending"}
-    ORDER BY "createdAt" DESC
-  `;
-  return rows.map(sanitizeUser);
+  const orgs = await prisma.organization.findMany({
+    where: { status: "Pending" },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Remove passwords before returning
+  return orgs.map((org) => {
+    const { password, ...rest } = org;
+    return rest;
+  });
 };
 
+/**
+ * updateNgoApproval: Approves or rejects an NGO account.
+ * Called by the admin when reviewing pending accounts.
+ */
 export const updateNgoApproval = async (id, action) => {
-  await ensureUserAccountTable();
-
   const isApprove = action === "approve";
-  const nextStatus = isApprove ? "approved" : "rejected";
-  const nextVerified = isApprove;
 
-  await prisma.$executeRaw`
-    UPDATE "UserAccount"
-    SET "status" = ${nextStatus}, "isVerified" = ${nextVerified}
-    WHERE "id" = ${id} AND "role" = ${"ngo"}
-  `;
+  const updated = await prisma.organization.update({
+    where: { id },
+    data: {
+      status: isApprove ? "Approved" : "Rejected",
+      isVerified: isApprove,
+    },
+  });
 
-  const rows = await prisma.$queryRaw`
-    SELECT * FROM "UserAccount" WHERE "id" = ${id} LIMIT 1
-  `;
-
-  if (rows.length === 0) {
-    return null;
-  }
-
-  return sanitizeUser(rows[0]);
+  const { password, ...rest } = updated;
+  return rest;
 };

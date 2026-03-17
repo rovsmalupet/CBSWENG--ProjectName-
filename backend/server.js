@@ -11,12 +11,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// CORS Configuration - Support both local development and production
+// CORS — allow requests from local dev and the deployed frontend
+// VITE_API_URL should be set in your Railway environment variables
 const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5173", // Vite default
-  process.env.FRONTEND_URL, // Production frontend URL from env
-].filter(Boolean);
+  "http://localhost:5173", // Vite local dev
+  process.env.FRONTEND_URL, // deployed Vercel frontend URL
+].filter(Boolean); // filter out undefined if FRONTEND_URL isn't set yet
 
 app.use(
   cors({
@@ -25,40 +25,42 @@ app.use(
   }),
 );
 
-// Middleware
+// Parse JSON and URL-encoded request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+// authRoutes is mounted at "/" so /login and /register work at root level
 app.use("/", authRoutes);
 app.use("/posts", postRoutes);
 app.use("/organizations", organizationRoutes);
 
-// Health check endpoint for deployment verification
+// Health check — useful for Railway and deployment verification
 app.get("/health", (req, res) => {
-  res
-    .status(200)
-    .json({ status: "OK", environment: process.env.NODE_ENV || "development" });
+  res.status(200).json({
+    status: "OK",
+    environment: process.env.NODE_ENV || "development",
+  });
 });
 
-// Error handling middleware
+// Global error handler — catches any unhandled errors from controllers
 app.use((err, req, res, next) => {
-  console.error("Error:", err.message);
+  console.error("Unhandled error:", err.message);
   res.status(500).json({ error: "Internal server error" });
 });
 
-// 404 handler
+// 404 handler — catches any route that doesn't match
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// Start server
 app.listen(port, async () => {
   try {
+    // Seeds default admin and donor accounts if they don't exist yet.
+    // Safe to run on every restart — uses findUnique before creating.
     await seedDefaultUsers();
-    console.log("Auth seed ready: admin@bayanihub.local / donor@bayanihub.local");
   } catch (error) {
-    console.error("Auth bootstrap warning:", error.message);
+    console.error("Seed warning:", error.message);
   }
   console.log(`Server running on port ${port}`);
 });

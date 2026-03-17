@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiUrl } from "../config/api.js";
 import "../css/DonorRegistration.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,11 +27,11 @@ export default function DonorRegistration() {
   const validate = () => {
     const next = {};
 
-    if (!formData.firstName.trim()) next.firstName = "First Name is required.";
+    if (!formData.firstName.trim()) next.firstName = "First name is required.";
     if (!formData.surname.trim()) next.surname = "Surname is required.";
 
     if (!formData.email.trim()) {
-      next.email = "Email Address is required.";
+      next.email = "Email address is required.";
     } else if (!EMAIL_REGEX.test(formData.email.trim())) {
       next.email = "Enter a valid email address.";
     }
@@ -50,7 +51,8 @@ export default function DonorRegistration() {
     setSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:3000/register", {
+      // getApiUrl reads VITE_API_URL so this works on both localhost and deployed
+      const response = await fetch(getApiUrl("/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,9 +69,10 @@ export default function DonorRegistration() {
         throw new Error(data.error || "Donor registration failed.");
       }
 
+      // Store first name so the app can greet the user after login
       localStorage.setItem("userFirstName", formData.firstName.trim());
-      setServerMessage("Donor account created. You can now sign in.");
-      setTimeout(() => navigate("/auth/donor"), 1000);
+      setServerMessage("Account created. You can now sign in.");
+      setTimeout(() => navigate("/auth/donor"), 1500);
     } catch (error) {
       setServerMessage(error.message || "Unable to register donor.");
     } finally {
@@ -80,7 +83,10 @@ export default function DonorRegistration() {
   return (
     <div className="donor-register-page">
       <div className="donor-register-card">
-        <button className="donor-register-back" onClick={() => navigate("/auth/donor")}>
+        <button
+          className="donor-register-back"
+          onClick={() => navigate("/auth/donor")}
+        >
           Back to Donor Login
         </button>
 
@@ -97,7 +103,9 @@ export default function DonorRegistration() {
             onChange={handleChange}
             aria-invalid={Boolean(errors.firstName)}
           />
-          {errors.firstName && <span className="field-error">{errors.firstName}</span>}
+          {errors.firstName && (
+            <span className="field-error">{errors.firstName}</span>
+          )}
 
           <label htmlFor="surname">Surname</label>
           <input
@@ -108,7 +116,9 @@ export default function DonorRegistration() {
             onChange={handleChange}
             aria-invalid={Boolean(errors.surname)}
           />
-          {errors.surname && <span className="field-error">{errors.surname}</span>}
+          {errors.surname && (
+            <span className="field-error">{errors.surname}</span>
+          )}
 
           <label htmlFor="email">Email Address</label>
           <input
@@ -130,14 +140,18 @@ export default function DonorRegistration() {
             onChange={handleChange}
             aria-invalid={Boolean(errors.password)}
           />
-          {errors.password && <span className="field-error">{errors.password}</span>}
+          {errors.password && (
+            <span className="field-error">{errors.password}</span>
+          )}
 
           <button type="submit" className="submit-btn" disabled={submitting}>
             {submitting ? "Creating account..." : "Register Donor"}
           </button>
         </form>
 
-        {serverMessage && <div className="server-message">{serverMessage}</div>}
+        {serverMessage && (
+          <div className="server-message">{serverMessage}</div>
+        )}
       </div>
     </div>
   );

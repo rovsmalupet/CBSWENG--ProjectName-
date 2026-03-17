@@ -1,18 +1,59 @@
 import prisma from "./client.js";
+import bcrypt from "bcrypt";
+
+const SALT_ROUNDS = 10;
 
 async function main() {
-  const org = await prisma.organization.create({
-    data: {
+
+  // ── Organization ──────────────────────────────────────────────────────────
+  // upsert: creates if not exists, updates if it does
+  // This makes the seed safe to run multiple times without crashing
+  const org = await prisma.organization.upsert({
+    where: { email: "mary.angela@redcross.ph" },
+    update: {},
+    create: {
       id: "tempID",
       orgName: "Philippine Red Cross",
       firstName: "Mary Angela",
       surname: "Cruz",
       email: "mary.angela@redcross.ph",
-      isVerified: false,
-      status: "pending",
+      password: await bcrypt.hash("redcross123", SALT_ROUNDS),
+      country: "Philippines",
+      isVerified: true,
+      status: "Approved",
     },
   });
-  console.log("Created organization:", org);
+  console.log("Seeded organization:", org.orgName);
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+  const admin = await prisma.admin.upsert({
+    where: { email: "admin@bayanihub.local" },
+    update: {},
+    create: {
+      firstName: "System",
+      lastName: "Admin",
+      email: "admin@bayanihub.local",
+      password: await bcrypt.hash("admin123", SALT_ROUNDS),
+    },
+  });
+  console.log("Seeded admin:", admin.email);
+
+  // ── Donor ─────────────────────────────────────────────────────────────────
+  const donor = await prisma.donor.upsert({
+    where: { email: "donor@bayanihub.local" },
+    update: {},
+    create: {
+      firstName: "Demo",
+      lastName: "Donor",
+      email: "donor@bayanihub.local",
+      password: await bcrypt.hash("donor123", SALT_ROUNDS),
+      isVerified: true,
+      status: "Approved",
+    },
+  });
+  console.log("Seeded donor:", donor.email);
+
+  // ── Posts ─────────────────────────────────────────────────────────────────
 
   // Project 1 — Monetary + Volunteer + InKind
   const project1 = await prisma.post.create({
@@ -24,42 +65,29 @@ async function main() {
       priority: "High",
       overallStatus: "Approved",
       orgId: "tempID",
-	  
       supportOptions: {
         create: [
-          {
-            type: "Monetary",
-            targetAmount: 50000,
-            currentAmount: 0,
-          },
-          {
-            type: "Volunteer",
-            targetCount: 20,
-            currentCount: 0,
-          },
+          { type: "Monetary", targetAmount: 50000, currentAmount: 0 },
+          { type: "Volunteer", targetCount: 20, currentCount: 0 },
         ],
       },
       inKindItems: {
         create: [
-          {
-            itemName: "Medical Supplies",
-            targetQuantity: 100,
-            unit: "boxes",
-          },
+          { itemName: "Medical Supplies", targetQuantity: 100, unit: "boxes" },
         ],
       },
     },
     include: { inKindItems: true, supportOptions: true },
   });
-  console.log("Created project 1:", project1);
+  console.log("Seeded project 1:", project1.projectName);
 
-  // Project 2 — Monetary + InKind only (no volunteer)
+  // Project 2 — Monetary + InKind, with dates
   const project2 = await prisma.post.create({
     data: {
       projectName: "Batangas Typhoon Support Donation Drive",
       description: "Donate any monetary amount, food, and clothing for the victims of the Batangas Typhoon",
-      causes: ["healthAndMedical", "communityDevelopment"],
-      location: "Manila",
+      causes: ["disasterRelief", "poverty"],
+      location: "Batangas",
       priority: "High",
       overallStatus: "Approved",
       startDate: new Date("2026-03-23"),
@@ -67,11 +95,7 @@ async function main() {
       orgId: "tempID",
       supportOptions: {
         create: [
-          {
-            type: "Monetary",
-            targetAmount: 50000,
-            currentAmount: 0,
-          },
+          { type: "Monetary", targetAmount: 50000, currentAmount: 0 },
         ],
       },
       inKindItems: {
@@ -85,61 +109,53 @@ async function main() {
     },
     include: { inKindItems: true, supportOptions: true },
   });
-  console.log("Created project 2:", project2);
+  console.log("Seeded project 2:", project2.projectName);
 
   // Project 3 — Monetary only, Pending status
   const project3 = await prisma.post.create({
     data: {
       projectName: "Clean Water Initiative",
       description: "Building water wells in rural areas",
-      causes: ["povertyAndHunger", "environmentAndClimate"],
+      causes: ["cleanWater", "communityDevelopment"],
       location: "Mindanao",
       priority: "Medium",
       overallStatus: "Pending",
       orgId: "tempID",
       supportOptions: {
         create: [
-          {
-            type: "Monetary",
-            targetAmount: 75000,
-            currentAmount: 0,
-          },
+          { type: "Monetary", targetAmount: 75000, currentAmount: 0 },
         ],
       },
     },
     include: { inKindItems: true, supportOptions: true },
   });
-  console.log("Created project 3:", project3);
+  console.log("Seeded project 3:", project3.projectName);
 
   // Project 4 — Volunteer only, Edited status
   const project4 = await prisma.post.create({
     data: {
       projectName: "Batangas Typhoon Support Day 1",
       description: "Help us bag our donated materials and deliver them to the victims",
-      causes: ["healthAndMedical", "povertyAndHunger"],
+      causes: ["disasterRelief", "poverty"],
       location: "Batangas",
       priority: "High",
       overallStatus: "Edited",
       orgId: "tempID",
       supportOptions: {
         create: [
-          {
-            type: "Volunteer",
-            targetCount: 50,
-            currentCount: 0,
-          },
+          { type: "Volunteer", targetCount: 50, currentCount: 0 },
         ],
       },
     },
     include: { inKindItems: true, supportOptions: true },
   });
-  console.log("Created project 4:", project4);
+  console.log("Seeded project 4:", project4.projectName);
 
   // Project 5 — InKind only, Unapproved status
   const project5 = await prisma.post.create({
     data: {
       projectName: "Donate-A-Book",
-      description: "Help us collect 200 children's books to be given away during Paaralang Elementarya's back to school program.",
+      description: "Help us collect 300 children's books to be given away during Paaralang Elementarya's back to school program.",
       causes: ["educationAndChildren"],
       location: "Quezon City",
       priority: "High",
@@ -153,7 +169,13 @@ async function main() {
     },
     include: { inKindItems: true, supportOptions: true },
   });
-  console.log("Created project 5:", project5);
+  console.log("Seeded project 5:", project5.projectName);
+
+  console.log("\nSeed complete.");
+  console.log("Login credentials:");
+  console.log("  Admin:  admin@bayanihub.local / admin123");
+  console.log("  Donor:  donor@bayanihub.local / donor123");
+  console.log("  NGO:    mary.angela@redcross.ph / redcross123");
 }
 
 main()
