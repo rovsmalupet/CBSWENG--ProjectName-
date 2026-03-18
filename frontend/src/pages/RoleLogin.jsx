@@ -29,7 +29,6 @@ export default function RoleLogin() {
   const navigate = useNavigate();
   const { role } = useParams();
 
-  // If the URL role is invalid, default to "donor"
   const currentRole = useMemo(() => (roleMeta[role] ? role : "donor"), [role]);
 
   const [email, setEmail] = useState("");
@@ -46,15 +45,10 @@ export default function RoleLogin() {
       const response = await fetch(getApiUrl("/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          role: currentRole,
-        }),
+        body: JSON.stringify({ email, password, role: currentRole }),
       });
 
       const data = await response.json();
-	  console.log("login response:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Login failed.");
@@ -62,11 +56,11 @@ export default function RoleLogin() {
 
       // Store user info in localStorage so other pages can read it
       localStorage.setItem("userFirstName", data.user.firstName || "User");
-	  localStorage.setItem("userRole", currentRole);
-	  localStorage.setItem("userId", data.user.id);
-	  localStorage.setItem("token", data.token); // ✅ add this
+      localStorage.setItem("userRole", currentRole);
+      localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userCountry", data.user.country || "Philippines");
 
-      // Redirect to the correct dashboard based on role
       navigate(roleMeta[currentRole].nextRoute);
     } catch (submitError) {
       setError(submitError.message || "Login failed.");

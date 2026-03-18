@@ -14,6 +14,7 @@ const formatPost = (post) => {
     ...post,
     orgName: post.organization?.orgName ?? null,
     orgEmail: post.organization?.email ?? null,
+    orgCountry: post.organization?.country ?? null,
     orgRepresentative:
       post.organization?.firstName && post.organization?.surname
         ? `${post.organization.firstName} ${post.organization.surname}`
@@ -142,15 +143,47 @@ export const createPost = async (req, res) => {
 
 /**
  * GET /posts/admin/all
- * Returns all posts (for admin use).
+ * Returns all posts (for admin use), including the most recent audit log entry.
  */
 export const getAllPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       orderBy: { createdAt: "desc" },
-      include: { inKindItems: true, supportOptions: true, organization: true },
+      include: {
+        inKindItems: true,
+        supportOptions: true,
+        organization: true,
+        auditLogs: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { admin: { select: { firstName: true, lastName: true } } },
+        },
+      },
     });
-    res.json(posts.map(formatPost));
+    res.json(posts.map((post) => ({
+      ...formatPost(post),
+      lastAudit: post.auditLogs[0] ?? null,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * GET /posts/:postId/audit
+ * Returns the full audit log for a single post.
+ */
+export const getPostAuditLog = async (req, res) => {
+  try {
+    const logs = await prisma.postAuditLog.findMany({
+      where: { postId: req.params.postId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        admin: { select: { firstName: true, lastName: true } },
+      },
+    });
+    res.json(logs);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -294,7 +327,7 @@ export const permanentDeletePost = async (req, res) => {
 
 /**
  * PATCH /posts/:postId/status
- * Updates only the overallStatus field of a post.
+ * Updates only the overallStatus field of a post and logs the action.
  */
 export const updatePostStatus = async (req, res) => {
   try {
@@ -309,6 +342,15 @@ export const updatePostStatus = async (req, res) => {
     const updated = await prisma.post.update({
       where: { id: postId },
       data: { overallStatus },
+    });
+
+    // Log the action to the audit trail
+    await prisma.postAuditLog.create({
+      data: {
+        postId,
+        adminId: req.user.id,
+        action: overallStatus,
+      },
     });
 
     res.json({ message: "Status updated successfully", post: updated });

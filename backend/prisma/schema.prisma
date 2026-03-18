@@ -33,7 +33,8 @@ model Donor {
   firstName     String
   lastName      String
   email         String        @unique
-  password      String        // always store hashed, never plain text
+  password      String
+  country       ASEANCountry  @default(Philippines)
   isVerified    Boolean       @default(false)
   status        AccountStatus @default(Pending)
   createdAt     DateTime      @default(now())
@@ -44,12 +45,14 @@ model Donor {
 // ADMIN
 
 model Admin {
-  id        String   @id @default(uuid())
+  id        String         @id @default(uuid())
   firstName String
   lastName  String
-  email     String   @unique
-  password  String   // always store hashed, never plain text
-  createdAt DateTime @default(now())
+  email     String         @unique
+  password  String         // always store hashed, never plain text
+  createdAt DateTime       @default(now())
+
+  auditLogs PostAuditLog[]
 }
 
 // POST
@@ -73,6 +76,19 @@ model Post {
   supportOptions PostSupportOption[]
   inKindItems    PostInKindItem[]
   contributions  Contribution[]
+  auditLogs      PostAuditLog[]
+}
+
+// POST AUDIT LOG
+// Records every admin action taken on a post.
+model PostAuditLog {
+  id        String     @id @default(uuid())
+  postId    String
+  post      Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  adminId   String
+  admin     Admin      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action    PostStatus // the status that was set
+  createdAt DateTime   @default(now())
 }
 
 // POST SUPPORT OPTION
@@ -114,11 +130,10 @@ model PostInKindItem {
 }
 
 // CONTRIBUTION
-
 // Records every donation, whether submitted by a registered donor or manually
 // logged by the org on behalf of a walk-in/unregistered donor.
 // - donorName is always filled (org types this in for manual entries)
-// - partnershipId is null for manual/anonymous entries, populated for registered donors
+// - partnershipId is null for manual entries, populated for registered donors
 model Contribution {
   id             String                    @id @default(uuid())
   donorName      String                    // always filled
@@ -144,7 +159,6 @@ model Contribution {
 }
 
 // DONOR ORGANIZATION PARTNER
-
 // Represents an ongoing relationship between a registered donor and an org.
 // Created when a registered donor's contribution is confirmed.
 // contributions[] holds all confirmed contributions made by this donor to this org.
@@ -176,9 +190,6 @@ enum ASEANCountry {
   Vietnam
 }
 
-// Monetary and Volunteer use PostSupportOption.
-// InKind uses PostInKindItem directly but SupportType.InKind
-// is used in Contribution to record what type of contribution was made.
 enum SupportType {
   Monetary
   Volunteer
@@ -186,15 +197,23 @@ enum SupportType {
 }
 
 enum CauseEnum {
-  educationAndChildren        // SDG 4  — Quality Education
-  healthAndMedical            // SDG 3  — Good Health and Well-being
-  disasterRelief              // SDG 11 — Sustainable Cities and Communities
-  environmentAndClimate       // SDG 13 — Climate Action
-  povertyAndHunger            // SDG 1 & 2 — No Poverty / Zero Hunger
-  communityDevelopment        // SDG 17 — Partnerships for the Goals
+  noPoverty                   // SDG 1  — No Poverty
+  zeroHunger                  // SDG 2  — Zero Hunger
+  goodHealth                  // SDG 3  — Good Health and Well-being
+  qualityEducation            // SDG 4  — Quality Education
+  genderEquality              // SDG 5  — Gender Equality
   cleanWater                  // SDG 6  — Clean Water and Sanitation
-  livelihoodAndSkillsTraining // SDG 8  — Decent Work and Economic Growth
-  animalWelfare               // SDG 15 — Life on Land
+  affordableEnergy            // SDG 7  — Affordable and Clean Energy
+  decentWork                  // SDG 8  — Decent Work and Economic Growth
+  industry                    // SDG 9  — Industry, Innovation and Infrastructure
+  reducedInequalities         // SDG 10 — Reduced Inequalities
+  sustainableCities           // SDG 11 — Sustainable Cities and Communities
+  responsibleConsumption      // SDG 12 — Responsible Consumption and Production
+  climateAction               // SDG 13 — Climate Action
+  lifeBelowWater              // SDG 14 — Life Below Water
+  lifeOnLand                  // SDG 15 — Life on Land
+  peaceAndJustice             // SDG 16 — Peace, Justice and Strong Institutions
+  partnerships                // SDG 17 — Partnerships for the Goals
   others
 }
 

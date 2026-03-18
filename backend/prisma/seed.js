@@ -6,13 +6,10 @@ const SALT_ROUNDS = 10;
 async function main() {
 
   // ── Organization ──────────────────────────────────────────────────────────
-  // upsert: creates if not exists, updates if it does
-  // This makes the seed safe to run multiple times without crashing
   const org = await prisma.organization.upsert({
     where: { email: "mary.angela@redcross.ph" },
     update: {},
     create: {
-      id: "tempID",
       orgName: "Philippine Red Cross",
       firstName: "Mary Angela",
       surname: "Cruz",
@@ -47,6 +44,7 @@ async function main() {
       lastName: "Donor",
       email: "donor@bayanihub.local",
       password: await bcrypt.hash("donor123", SALT_ROUNDS),
+      country: "Philippines",
       isVerified: true,
       status: "Approved",
     },
@@ -60,11 +58,11 @@ async function main() {
     data: {
       projectName: "Community Medical Mission",
       description: "Free medical checkup and health awareness campaign for the community",
-      causes: ["healthAndMedical", "communityDevelopment"],
+      causes: ["goodHealth", "sustainableCities"],
       location: "Manila",
       priority: "High",
       overallStatus: "Approved",
-      orgId: "tempID",
+      orgId: org.id,
       supportOptions: {
         create: [
           { type: "Monetary", targetAmount: 50000, currentAmount: 0 },
@@ -86,13 +84,13 @@ async function main() {
     data: {
       projectName: "Batangas Typhoon Support Donation Drive",
       description: "Donate any monetary amount, food, and clothing for the victims of the Batangas Typhoon",
-      causes: ["disasterRelief", "poverty"],
+      causes: ["sustainableCities", "noPoverty"],
       location: "Batangas",
       priority: "High",
       overallStatus: "Approved",
       startDate: new Date("2026-03-23"),
       endDate: new Date("2026-03-28"),
-      orgId: "tempID",
+      orgId: org.id,
       supportOptions: {
         create: [
           { type: "Monetary", targetAmount: 50000, currentAmount: 0 },
@@ -116,11 +114,11 @@ async function main() {
     data: {
       projectName: "Clean Water Initiative",
       description: "Building water wells in rural areas",
-      causes: ["cleanWater", "communityDevelopment"],
+      causes: ["cleanWater", "sustainableCities"],
       location: "Mindanao",
       priority: "Medium",
       overallStatus: "Pending",
-      orgId: "tempID",
+      orgId: org.id,
       supportOptions: {
         create: [
           { type: "Monetary", targetAmount: 75000, currentAmount: 0 },
@@ -136,11 +134,11 @@ async function main() {
     data: {
       projectName: "Batangas Typhoon Support Day 1",
       description: "Help us bag our donated materials and deliver them to the victims",
-      causes: ["disasterRelief", "poverty"],
+      causes: ["sustainableCities", "noPoverty"],
       location: "Batangas",
       priority: "High",
       overallStatus: "Edited",
-      orgId: "tempID",
+      orgId: org.id,
       supportOptions: {
         create: [
           { type: "Volunteer", targetCount: 50, currentCount: 0 },
@@ -156,11 +154,11 @@ async function main() {
     data: {
       projectName: "Donate-A-Book",
       description: "Help us collect 300 children's books to be given away during Paaralang Elementarya's back to school program.",
-      causes: ["educationAndChildren"],
+      causes: ["qualityEducation"],
       location: "Quezon City",
       priority: "High",
       overallStatus: "Unapproved",
-      orgId: "tempID",
+      orgId: org.id,
       inKindItems: {
         create: [
           { itemName: "Children's Book", targetQuantity: 300, unit: "pieces" },

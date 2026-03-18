@@ -5,6 +5,19 @@ import "../css/NgoRegistration.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const ASEAN_COUNTRIES = [
+  "Brunei",
+  "Cambodia",
+  "Indonesia",
+  "Laos",
+  "Malaysia",
+  "Myanmar",
+  "Philippines",
+  "Singapore",
+  "Thailand",
+  "Vietnam",
+];
+
 export default function NgoRegistration() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -13,6 +26,7 @@ export default function NgoRegistration() {
     surname: "",
     email: "",
     password: "",
+    country: "Philippines",
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -46,6 +60,10 @@ export default function NgoRegistration() {
       nextErrors.password = "Password must be at least 6 characters.";
     }
 
+    if (!formData.country) {
+      nextErrors.country = "Please select your country.";
+    }
+
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -58,8 +76,6 @@ export default function NgoRegistration() {
     setServerMessage("");
 
     try {
-      // getApiUrl reads from VITE_API_URL env variable so this works
-      // both locally (localhost:3000) and on the deployed backend (Railway)
       const response = await fetch(getApiUrl("/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -70,6 +86,7 @@ export default function NgoRegistration() {
           surname: formData.surname.trim(),
           email: formData.email.trim(),
           password: formData.password,
+          country: formData.country,
         }),
       });
 
@@ -156,6 +173,20 @@ export default function NgoRegistration() {
             aria-invalid={Boolean(errors.password)}
           />
           {errors.password && <span className="field-error">{errors.password}</span>}
+
+          <label htmlFor="country">Country</label>
+          <select
+            id="country"
+            name="country"
+            value={formData.country}
+            onChange={handleChange}
+            aria-invalid={Boolean(errors.country)}
+          >
+            {ASEAN_COUNTRIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          {errors.country && <span className="field-error">{errors.country}</span>}
 
           <button type="submit" className="submit-btn" disabled={submitting}>
             {submitting ? "Submitting..." : "Register NGO"}

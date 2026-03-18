@@ -24,6 +24,15 @@ export default function ViewProjects() {
     fetchProjects();
   }, []);
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   return (
     <div
       style={{
@@ -91,6 +100,7 @@ export default function ViewProjects() {
                 <th style={thStyle}>Campaign Name</th>
                 <th style={thStyle}>Organization</th>
                 <th style={thStyle}>Status</th>
+                <th style={thStyle}>Last Action</th>
               </tr>
             </thead>
             <tbody>
@@ -107,7 +117,7 @@ export default function ViewProjects() {
                     #{project.id.slice(0, 8).toUpperCase()}
                   </td>
                   <td style={tdStyle}>{project.projectName}</td>
-                  <td style={tdStyle}>{project.orgName || "-"}</td>
+                  <td style={tdStyle}>{project.orgName || "—"}</td>
                   <td style={tdStyle}>
                     <span
                       style={{
@@ -121,6 +131,22 @@ export default function ViewProjects() {
                     >
                       {project.overallStatus}
                     </span>
+                  </td>
+                  <td style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}>
+                    {project.lastAudit ? (
+                      <>
+                        <span style={{ fontWeight: "600", color: "#374151" }}>
+                          {project.lastAudit.action}
+                        </span>
+                        {" by "}
+                        {project.lastAudit.admin.firstName}{" "}
+                        {project.lastAudit.admin.lastName}
+                        <br />
+                        {formatDate(project.lastAudit.createdAt)}
+                      </>
+                    ) : (
+                      "No actions yet"
+                    )}
                   </td>
                 </tr>
               ))}

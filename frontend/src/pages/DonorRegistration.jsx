@@ -5,6 +5,19 @@ import "../css/DonorRegistration.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const ASEAN_COUNTRIES = [
+  "Brunei",
+  "Cambodia",
+  "Indonesia",
+  "Laos",
+  "Malaysia",
+  "Myanmar",
+  "Philippines",
+  "Singapore",
+  "Thailand",
+  "Vietnam",
+];
+
 export default function DonorRegistration() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -12,6 +25,7 @@ export default function DonorRegistration() {
     surname: "",
     email: "",
     password: "",
+    country: "Philippines",
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -40,6 +54,8 @@ export default function DonorRegistration() {
       next.password = "Password must be at least 6 characters.";
     }
 
+    if (!formData.country) next.country = "Please select your country.";
+
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -51,7 +67,6 @@ export default function DonorRegistration() {
     setSubmitting(true);
 
     try {
-      // getApiUrl reads VITE_API_URL so this works on both localhost and deployed
       const response = await fetch(getApiUrl("/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,6 +76,7 @@ export default function DonorRegistration() {
           surname: formData.surname.trim(),
           email: formData.email.trim(),
           password: formData.password,
+          country: formData.country,
         }),
       });
 
@@ -69,7 +85,6 @@ export default function DonorRegistration() {
         throw new Error(data.error || "Donor registration failed.");
       }
 
-      // Store first name so the app can greet the user after login
       localStorage.setItem("userFirstName", formData.firstName.trim());
       setServerMessage("Account created. You can now sign in.");
       setTimeout(() => navigate("/auth/donor"), 1500);
@@ -142,6 +157,22 @@ export default function DonorRegistration() {
           />
           {errors.password && (
             <span className="field-error">{errors.password}</span>
+          )}
+
+          <label htmlFor="country">Country</label>
+          <select
+            id="country"
+            name="country"
+            value={formData.country}
+            onChange={handleChange}
+            aria-invalid={Boolean(errors.country)}
+          >
+            {ASEAN_COUNTRIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          {errors.country && (
+            <span className="field-error">{errors.country}</span>
           )}
 
           <button type="submit" className="submit-btn" disabled={submitting}>
