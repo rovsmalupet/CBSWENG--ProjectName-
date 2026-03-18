@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 export default function ViewProjects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -32,6 +33,24 @@ export default function ViewProjects() {
       year: "numeric",
     });
   };
+
+  const filteredProjects = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return projects;
+
+    return projects.filter((project) => {
+      const projectId = project.id?.slice(0, 8).toLowerCase() || "";
+      const projectName = project.projectName?.toLowerCase() || "";
+      const orgName = project.orgName?.toLowerCase() || "";
+      const status = project.overallStatus?.toLowerCase() || "";
+      return (
+        projectId.includes(query) ||
+        projectName.includes(query) ||
+        orgName.includes(query) ||
+        status.includes(query)
+      );
+    });
+  }, [projects, searchQuery]);
 
   return (
     <div
@@ -73,11 +92,28 @@ export default function ViewProjects() {
         View all Posts
       </h1>
 
+      <input
+        type="text"
+        placeholder="Search by project ID, campaign name, organization, or status"
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+        style={{
+          width: "100%",
+          maxWidth: "520px",
+          marginBottom: "16px",
+          padding: "10px 12px",
+          border: "1px solid #cbd5e1",
+          borderRadius: "8px",
+          fontSize: "14px",
+          background: "#fff",
+        }}
+      />
+
       {loading ? (
         <p>Loading projects...</p>
       ) : error ? (
         <p style={{ color: "#b91c1c" }}>{error}</p>
-      ) : projects.length === 0 ? (
+      ) : filteredProjects.length === 0 ? (
         <p>No projects found.</p>
       ) : (
         <div
@@ -104,7 +140,7 @@ export default function ViewProjects() {
               </tr>
             </thead>
             <tbody>
-              {projects.map((project, index) => (
+              {filteredProjects.map((project, index) => (
                 <tr
                   key={project.id}
                   style={{

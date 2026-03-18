@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getApiUrl } from "../config/api.js";
+import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/PendingAccounts.css";
 
 export default function PendingAccounts() {
   const navigate = useNavigate();
   const [pendingAccounts, setPendingAccounts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -16,11 +17,7 @@ export default function PendingAccounts() {
   const fetchPendingAccounts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(getApiUrl("/organizations/pending"));
-      if (!response.ok) {
-        throw new Error("Failed to fetch pending accounts");
-      }
-      const data = await response.json();
+      const data = await apiFetch(getApiUrl("/organizations/pending"));
       setPendingAccounts(data);
     } catch (err) {
       setError(err.message);
@@ -32,19 +29,9 @@ export default function PendingAccounts() {
 
   const handleApprove = async (accountId) => {
     try {
-      const response = await fetch(
-        getApiUrl(`/organizations/${accountId}/approve`),
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to approve account");
-      }
+      await apiFetch(getApiUrl(`/organizations/${accountId}/approve`), {
+        method: "PATCH",
+      });
 
       // Remove the approved account from the list
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
@@ -63,19 +50,9 @@ export default function PendingAccounts() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(
-        getApiUrl(`/organizations/${accountId}/reject`),
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to reject account");
-      }
+      await apiFetch(getApiUrl(`/organizations/${accountId}/reject`), {
+        method: "PATCH",
+      });
 
       // Remove the rejected account from the list
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
@@ -85,6 +62,25 @@ export default function PendingAccounts() {
       alert("Failed to reject account. Please try again.");
     }
   };
+
+  const filteredAccounts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return pendingAccounts;
+
+    return pendingAccounts.filter((account) => {
+      const orgName = (account.orgName || account.affiliation || "").toLowerCase();
+      const firstName = account.firstName?.toLowerCase() || "";
+      const surname = account.surname?.toLowerCase() || "";
+      const email = account.email?.toLowerCase() || "";
+
+      return (
+        orgName.includes(query) ||
+        firstName.includes(query) ||
+        surname.includes(query) ||
+        email.includes(query)
+      );
+    });
+  }, [pendingAccounts, searchQuery]);
 
   if (loading) {
     return (
@@ -121,9 +117,21 @@ export default function PendingAccounts() {
       <h1 className="page-title">Pending Accounts</h1>
       <p className="page-subtitle">Review and approve NGO registrations</p>
 
-      {pendingAccounts.length === 0 ? (
+      <input
+        type="text"
+        className="accounts-search"
+        placeholder="Search by organization, name, or email"
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+      />
+
+      {filteredAccounts.length === 0 ? (
         <div className="empty-state">
-          <p>No pending accounts at this time.</p>
+          <p>
+            {pendingAccounts.length === 0
+              ? "No pending accounts at this time."
+              : "No matching accounts found."}
+          </p>
         </div>
       ) : (
         <div className="accounts-table-container">
@@ -139,7 +147,7 @@ export default function PendingAccounts() {
               </tr>
             </thead>
             <tbody>
-              {pendingAccounts.map((account) => (
+              {filteredAccounts.map((account) => (
                 <tr key={account.id}>
                   <td className="org-name">
                     {account.orgName || account.affiliation || "-"}

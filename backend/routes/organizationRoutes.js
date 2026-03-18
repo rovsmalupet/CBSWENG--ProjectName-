@@ -1,4 +1,5 @@
 import express from "express";
+import { authenticate, authorizeRoles } from "../middleware/authMiddleware.js";
 import {
   registerOrganization,
   getPendingOrganizations,
@@ -12,12 +13,12 @@ const router = express.Router();
 router.post("/register", registerOrganization);
 
 // GET /organizations/pending - Get all pending organizations
-router.get("/pending", getPendingOrganizations);
+router.get("/pending", authenticate, authorizeRoles("admin"), getPendingOrganizations);
 
 // PATCH /organizations/:id/approve - Approve an organization
-router.patch("/:id/approve", approveOrganization);
+router.patch("/:id/approve", authenticate, authorizeRoles("admin"), approveOrganization);
 
 // PATCH /organizations/:id/reject - Reject an organization
-router.patch("/:id/reject", rejectOrganization);
+router.patch("/:id/reject", authenticate, authorizeRoles("admin"), rejectOrganization);
 
 export default router;

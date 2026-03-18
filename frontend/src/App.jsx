@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import ActiveProjects from "./pages/ActiveProjects.jsx";
@@ -14,8 +14,18 @@ import ViewProjects from "./pages/viewProjects.jsx";
 import AdminProjectDetail from "./pages/Adminprojectdetail.jsx";
 import PendingAccounts from "./pages/PendingAccounts.jsx";
 import NgoRegistration from "./pages/NgoRegistration.jsx";
-import RoleLogin from "./pages/RoleLogin.jsx";
 import DonorRegistration from "./pages/DonorRegistration.jsx";
+
+function RequireRole({ allowedRoles, children }) {
+  const token = localStorage.getItem("token");
+  const userRole = localStorage.getItem("userRole");
+
+  if (!token || !allowedRoles.includes(userRole)) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 export default function App() {
   return (
@@ -25,20 +35,20 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/ngo/register" element={<NgoRegistration />} />
         <Route path="/donor/register" element={<DonorRegistration />} />
-        <Route path="/auth/:role" element={<RoleLogin />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/project-ledger" element={<ActiveProjects />} />
-        <Route path="/unposted-projects" element={<UnapprovedProjects />} />
-        <Route path="/post-project" element={<PostNewProject />} />
-        <Route path="/edit-project/:id" element={<EditProject />} />
-        <Route path="/add-contribution/:id" element={<AddContribution />} />]
-        <Route path="/donor" element={<DonorHomepage />} />
-        <Route path="/donor/bookmarks" element={<BookmarkedProjects />} />
-        <Route path="/project/:id" element={<ProjectDetailPage />} />
-        <Route path="/admin" element={<AdminHomepage />} />
-        <Route path="/viewProjects" element={<ViewProjects />} />
-        <Route path="/admin/project/:id" element={<AdminProjectDetail />} />
-        <Route path="/admin/pending-accounts" element={<PendingAccounts />} />
+        <Route path="/auth/:role" element={<Navigate to="/login" replace />} />
+        <Route path="/dashboard" element={<RequireRole allowedRoles={["ngo"]}><Dashboard /></RequireRole>} />
+        <Route path="/project-ledger" element={<RequireRole allowedRoles={["ngo"]}><ActiveProjects /></RequireRole>} />
+        <Route path="/unposted-projects" element={<RequireRole allowedRoles={["ngo"]}><UnapprovedProjects /></RequireRole>} />
+        <Route path="/post-project" element={<RequireRole allowedRoles={["ngo"]}><PostNewProject /></RequireRole>} />
+        <Route path="/edit-project/:id" element={<RequireRole allowedRoles={["ngo"]}><EditProject /></RequireRole>} />
+        <Route path="/add-contribution/:id" element={<RequireRole allowedRoles={["donor"]}><AddContribution /></RequireRole>} />
+        <Route path="/donor" element={<RequireRole allowedRoles={["donor"]}><DonorHomepage /></RequireRole>} />
+        <Route path="/donor/bookmarks" element={<RequireRole allowedRoles={["donor"]}><BookmarkedProjects /></RequireRole>} />
+        <Route path="/project/:id" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><ProjectDetailPage /></RequireRole>} />
+        <Route path="/admin" element={<RequireRole allowedRoles={["admin"]}><AdminHomepage /></RequireRole>} />
+        <Route path="/viewProjects" element={<RequireRole allowedRoles={["admin"]}><ViewProjects /></RequireRole>} />
+        <Route path="/admin/project/:id" element={<RequireRole allowedRoles={["admin"]}><AdminProjectDetail /></RequireRole>} />
+        <Route path="/admin/pending-accounts" element={<RequireRole allowedRoles={["admin"]}><PendingAccounts /></RequireRole>} />
       </Routes>
     </BrowserRouter>
   );

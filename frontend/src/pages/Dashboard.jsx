@@ -1,5 +1,5 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Handshake } from "lucide-react";
 import Navbar from "../components/Navbar.jsx";
 import "../css/Dashboard.css";
 
@@ -51,6 +51,25 @@ const cards = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [searchText, setSearchText] = useState("");
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const query = searchText.trim();
+    if (!query) return;
+
+    const normalizedQuery = query.toLowerCase();
+    const isUnpostedQuery = ["unposted", "pending", "edited", "rejected", "unapproved"].some((keyword) =>
+      normalizedQuery.includes(keyword),
+    );
+
+    if (isUnpostedQuery) {
+      navigate(`/unposted-projects?search=${encodeURIComponent(query)}`);
+      return;
+    }
+
+    navigate(`/project-ledger?search=${encodeURIComponent(query)}`);
+  };
 
   return (
     <div className="dashboard-page">
@@ -71,6 +90,19 @@ export default function Dashboard() {
         </button>
 
         <h1 className="dashboard-title">My Impact Dashboard</h1>
+
+        <form className="portal-search-form" onSubmit={handleSearch}>
+          <input
+            type="text"
+            className="portal-search-input"
+            placeholder="Search NGO projects (active, unposted, pending...)"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+          />
+          <button type="submit" className="portal-search-btn">Search</button>
+        </form>
+
+        <p className="portal-search-empty">Use search to jump to matching project lists.</p>
 
         <div className="dashboard-cards">
           {cards.map((card) => (

@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
 import "../css/ActiveProjects.css";
 
 const CAUSE_STYLES = {
@@ -24,7 +24,11 @@ const CAUSE_STYLES = {
 
 export default function ActiveProjects() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSearch = searchParams.get("search") || "";
   const [projects, setProjects] = useState([]);
+  const [searchText, setSearchText] = useState(initialSearch);
+  const [searchQuery, setSearchQuery] = useState(initialSearch.toLowerCase());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,6 +51,43 @@ export default function ActiveProjects() {
 
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    const queryFromUrl = searchParams.get("search") || "";
+    setSearchText(queryFromUrl);
+    setSearchQuery(queryFromUrl.toLowerCase());
+  }, [searchParams]);
+
+  const filteredProjects = useMemo(() => {
+    const query = searchQuery.trim();
+    if (!query) return projects;
+
+    return projects.filter((project) => {
+      const projectName = project.projectName?.toLowerCase() || "";
+      const description = project.description?.toLowerCase() || "";
+      const location = project.location?.toLowerCase() || "";
+      const status = project.overallStatus?.toLowerCase() || "";
+      const causes = (project.causes || []).join(" ").toLowerCase();
+      return (
+        projectName.includes(query) ||
+        description.includes(query) ||
+        location.includes(query) ||
+        status.includes(query) ||
+        causes.includes(query)
+      );
+    });
+  }, [projects, searchQuery]);
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const trimmed = searchText.trim();
+    setSearchQuery(trimmed.toLowerCase());
+    if (trimmed) {
+      setSearchParams({ search: trimmed });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const handleDelete = async (projectId) => {
     if (!window.confirm("Are you sure you want to delete this project?"))
@@ -96,11 +137,22 @@ export default function ActiveProjects() {
           </button>
         </div>
 
+        <form className="project-search-form" onSubmit={handleSearch}>
+          <input
+            type="text"
+            className="project-search-input"
+            placeholder="Search active projects"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+          />
+          <button type="submit" className="project-search-btn">Search</button>
+        </form>
+
         {loading ? (
           <div className="ledger-empty">
             <p>Loading projects...</p>
           </div>
-        ) : projects.length === 0 ? (
+        ) : filteredProjects.length === 0 ? (
           <div className="ledger-empty">
             <svg
               width="48"
@@ -115,14 +167,11 @@ export default function ActiveProjects() {
               <circle cx="4" cy="12" r="1" fill="#9ca3af" stroke="none" />
               <line x1="8" y1="17" x2="20" y2="17" />
             </svg>
-            <p>
-              No projects yet. Click <strong>Add New Project</strong> to get
-              started.
-            </p>
+            <p>{projects.length === 0 ? "No projects yet. Click Add New Project to get started." : "No active projects match your search."}</p>
           </div>
         ) : (
           <div className="ledger-grid">
-            {projects.map((project) => {
+            {filteredProjects.map((project) => {
               const causes = project.causes?.length ? project.causes : [];
 
               return (

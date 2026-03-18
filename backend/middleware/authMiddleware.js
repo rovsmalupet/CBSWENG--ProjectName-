@@ -15,3 +15,15 @@ export const authenticate = (req, res, next) => {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 };
+
+export const authorizeRoles = (...allowedRoles) => {
+  return (req, res, next) => {
+    const userRole = req.user?.role;
+
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    next();
+  };
+};
