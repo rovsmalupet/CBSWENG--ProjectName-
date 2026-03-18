@@ -241,9 +241,6 @@ export default function UnapprovedProjects() {
                     <span
                       className={`pcard-status pcard-status-${project.overallStatus.toLowerCase()}`}
                     >
-                      {project.overallStatus === "Pending" ? "⏳" 
-						: project.overallStatus === "Edited" ? "🔄" 
-						: "❌"}{" "}
                       {project.overallStatus}
                     </span>
                   </div>
@@ -281,14 +278,14 @@ export default function UnapprovedProjects() {
                       }
                       title="Edit project"
                     >
-                      ✏️ Edit
+                      Edit
                     </button>
                     <button
                       className="delete-btn"
                       onClick={() => handleDelete(project.id)}
                       title="Delete project"
                     >
-                      🗑️ Delete
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -325,7 +322,7 @@ export default function UnapprovedProjects() {
             <h3
               style={{ marginTop: 0, marginBottom: "12px", fontSize: "18px" }}
             >
-              ⚠️ Status Change Notice
+              Status Change Notice
             </h3>
             <p
               style={{ marginBottom: "20px", color: "#555", lineHeight: "1.5" }}

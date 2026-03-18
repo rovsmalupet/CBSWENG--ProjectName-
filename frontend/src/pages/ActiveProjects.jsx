@@ -253,7 +253,7 @@ export default function ActiveProjects() {
                       onClick={() => navigate(`/edit-project/${project.id}`)}
                       title="Edit project"
                     >
-                      ✏️ Edit
+                      Edit
                     </button>
                     <button
                       className="contribution-btn"
@@ -262,14 +262,14 @@ export default function ActiveProjects() {
                       }
                       title="Add contribution"
                     >
-                      ➕ Add Contribution
+                      Add Contribution
                     </button>
                     <button
                       className="delete-btn"
                       onClick={() => handleDelete(project.id)}
                       title="Delete project"
                     >
-                      🗑️ Delete
+                      Delete
                     </button>
                   </div>
                 </div>
