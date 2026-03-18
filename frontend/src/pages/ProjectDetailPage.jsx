@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "../css/ProjectDetailPage.css";
+import { apiFetch, getApiUrl } from "../config/api.js";
 
 const CAUSE_STYLES = {
   educationAndChildren: { label: "education", bg: "#dbeafe", color: "#1d4ed8" },
@@ -69,26 +70,20 @@ export default function ProjectDetailPage() {
 
   const isBookmarked = bookmarkedProjects.includes(id);
 
-  useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        const data = await apiFetch(getApiUrl(`/posts/${id}`));
-		setProject(data);
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "failed to load project");
-          return;
-        }
-        setProject(data);
-      } catch {
-        setError("network error. please try again");
-      } finally {
-        setLoading(false);
-      }
-    };
+	useEffect(() => {
+	  const fetchProject = async () => {
+		try {
+		  const data = await apiFetch(getApiUrl(`/posts/${id}`));
+		  setProject(data);
+		} catch (err) {
+		  setError(err.message || "failed to load project");
+		} finally {
+		  setLoading(false);
+		}
+	  };
 
-    fetchProject();
-  }, [id]);
+	  fetchProject();
+	}, [id]);
 
   if (loading)
     return (
