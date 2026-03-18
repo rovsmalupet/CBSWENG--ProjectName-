@@ -83,6 +83,7 @@ export default function ProjectDetailPage() {
     const fetchProject = async () => {
       try {
         const data = await apiFetch(getApiUrl(`/posts/${id}`));
+		console.log(data.causes);
         setProject(data);
       } catch (err) {
         setError(err.message || "failed to load project");

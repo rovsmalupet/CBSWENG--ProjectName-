@@ -30,8 +30,8 @@ export default function App() {
         <Route path="/project-ledger" element={<ActiveProjects />} />
         <Route path="/unposted-projects" element={<UnapprovedProjects />} />
         <Route path="/post-project" element={<PostNewProject />} />
-        <Route path="/edit-project/:id" element={<EditProject />} />{" "}
-        <Route path="/add-contribution/:id" element={<AddContribution />} />{" "}
+        <Route path="/edit-project/:id" element={<EditProject />} />
+        <Route path="/add-contribution/:id" element={<AddContribution />} />]
         <Route path="/donor" element={<DonorHomepage />} />
         <Route path="/donor/bookmarks" element={<BookmarkedProjects />} />
         <Route path="/project/:id" element={<ProjectDetailPage />} />
