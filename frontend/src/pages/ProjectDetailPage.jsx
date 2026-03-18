@@ -72,8 +72,8 @@ export default function ProjectDetailPage() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const { getApiUrl, apiFetch } = await import("../config/api");
-        const res = await apiFetch(getApiUrl(`/posts/${id}`));
+        const data = await apiFetch(getApiUrl(`/posts/${id}`));
+		setProject(data);
         const data = await res.json();
         if (!res.ok) {
           setError(data.error || "failed to load project");

@@ -24,21 +24,25 @@ export const getApiUrl = (path) => {
  */
 export const apiFetch = async (url, options = {}) => {
 	try {
+		const token = localStorage.getItem("token"); // change key to match your login page
+
 		const response = await fetch(url, {
+			...options,
 			headers: {
 				"Content-Type": "application/json",
+				...(token ? { Authorization: `Bearer ${token}` } : {}),
 				...options.headers,
 			},
-			...options,
-    });
+		});
 
-    if (!response.ok) {
-		throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
+		if (!response.ok) {
+			throw new Error(`API Error: ${response.status} ${response.statusText}`);
+		}
 
-    return await response.json();
-	} catch (error) {
-		console.error("API Fetch Error:", error);
-    throw error;
-  }
+		return await response.json();
+		
+		}catch (error) {
+			console.error("API Fetch Error:", error);
+			throw error;
+	}
 };
