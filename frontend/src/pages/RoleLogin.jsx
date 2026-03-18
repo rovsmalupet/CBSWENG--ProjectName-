@@ -43,7 +43,6 @@ export default function RoleLogin() {
     setIsSubmitting(true);
 
     try {
-      // getApiUrl reads VITE_API_URL so this works on both localhost and deployed
       const response = await fetch(getApiUrl("/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },

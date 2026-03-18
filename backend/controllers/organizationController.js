@@ -27,10 +27,6 @@ export const registerOrganization = async (req, res) => {
  * GET /organizations/pending
  * Returns all NGO accounts with status "Pending".
  * Used by the admin panel to review new NGO registrations.
- *
- * Why delegate to userAccountService instead of querying directly?
- * userAccountService handles password stripping and other sanitization.
- * Keeping that logic in one place means we don't accidentally leak passwords.
  */
 export const getPendingOrganizations = async (req, res) => {
   try {
@@ -72,10 +68,6 @@ export const approveOrganization = async (req, res) => {
 /**
  * PATCH /organizations/:id/reject
  * Sets the organization status to "Rejected".
- *
- * Why PATCH instead of DELETE?
- * We keep the record for audit purposes — the admin can see who was rejected.
- * A rejected org simply cannot log in.
  */
 export const rejectOrganization = async (req, res) => {
   const { id } = req.params;

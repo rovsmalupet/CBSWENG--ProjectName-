@@ -8,7 +8,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ─── ORGANIZATION ────────────────────────────────────────────────────────────
+// ORGANIZATION
 
 model Organization {
   id            String        @id @default(uuid())
@@ -26,7 +26,7 @@ model Organization {
   donorPartners DonorOrganizationPartner[]
 }
 
-// ─── DONOR ───────────────────────────────────────────────────────────────────
+// DONOR
 
 model Donor {
   id            String        @id @default(uuid())
@@ -42,9 +42,8 @@ model Donor {
   partnerOrgs   DonorOrganizationPartner[]
 }
 
-// ─── ADMIN ───────────────────────────────────────────────────────────────────
+// ADMIN
 
-// Admin accounts are seeded manually — there is no public sign up for admins
 model Admin {
   id        String   @id @default(uuid())
   firstName String
@@ -54,7 +53,7 @@ model Admin {
   createdAt DateTime @default(now())
 }
 
-// ─── POST ────────────────────────────────────────────────────────────────────
+// POST
 
 model Post {
   id             String              @id @default(uuid())
@@ -68,7 +67,7 @@ model Post {
   overallStatus  PostStatus          @default(Pending)
   createdAt      DateTime            @default(now())
 
-  // DateTime instead of String so the DB can sort, filter, and validate dates properly
+  // DateTime
   startDate      DateTime?
   endDate        DateTime?
 
@@ -77,9 +76,8 @@ model Post {
   contributions  Contribution[]
 }
 
-// ─── POST SUPPORT OPTION ─────────────────────────────────────────────────────
+// POST SUPPORT OPTION
 
-// Replaces the old flat monetary/volunteer fields on Post.
 // Each row represents one support type (Monetary or Volunteer) for a post.
 // A post can only have one row per type, enforced by @@unique.
 model PostSupportOption {
@@ -88,11 +86,11 @@ model PostSupportOption {
   post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
   type          SupportType
 
-  // Monetary fields — Float is correct: monetary amounts can have decimals (e.g. ₱50,000.50)
+  // Monetary fields
   targetAmount  Float?
   currentAmount Float         @default(0)
 
-  // Volunteer fields — Int is correct: you cannot have a fractional number of volunteers
+  // Volunteer fields
   targetCount   Int?
   currentCount  Int           @default(0)
 
@@ -101,7 +99,7 @@ model PostSupportOption {
   @@unique([postId, type])
 }
 
-// ─── POST IN-KIND ITEM ────────────────────────────────────────────────────────
+// POST IN-KIND ITEM 
 
 model PostInKindItem {
   id              String         @id @default(uuid())
@@ -116,12 +114,11 @@ model PostInKindItem {
   contributions   Contribution[]
 }
 
-// ─── CONTRIBUTION ─────────────────────────────────────────────────────────────
+// CONTRIBUTION
 
 // Records every donor contribution.
 // Status starts as Pending until the organization confirms or declines it.
-// For Monetary: created automatically when Stripe confirms a payment.
-// For Volunteer/InKind: created when a donor submits a pledge.
+
 model Contribution {
   id             String             @id @default(uuid())
   donorId        String
@@ -146,11 +143,9 @@ model Contribution {
   createdAt      DateTime           @default(now())
 }
 
-// ─── DONOR ORGANIZATION PARTNER ──────────────────────────────────────────────
+//DONOR ORGANIZATION PARTNER
 
-// Join table for Donor <-> Organization many-to-many relationship.
-// A donor can follow/partner with multiple orgs,
-// and an org can have multiple donor partners.
+// Join table for Donor <-> Organization (many-to-many relationship)
 // @@unique prevents the same donor-org pair from being recorded twice.
 model DonorOrganizationPartner {
   id           String       @id @default(uuid())
@@ -163,7 +158,7 @@ model DonorOrganizationPartner {
   @@unique([donorId, orgId])
 }
 
-// ─── ENUMS ────────────────────────────────────────────────────────────────────
+// ENUMS
 
 enum ASEANCountry {
   Brunei
@@ -187,10 +182,6 @@ enum SupportType {
   InKind
 }
 
-// Only includes causes directly actionable through community-driven
-// donations, volunteerism, and in-kind support.
-// SDGs requiring systemic policy change (e.g. SDG 5, SDG 7, SDG 16)
-// are intentionally excluded as they are beyond the scope of NGO fundraising.
 enum CauseEnum {
   educationAndChildren        // SDG 4  — Quality Education
   healthAndMedical            // SDG 3  — Good Health and Well-being
