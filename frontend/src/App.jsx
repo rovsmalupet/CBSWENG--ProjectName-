@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import OrganizationPartnershipOffers from "./pages/OrganizationPartnershipOffers.jsx";
 import ActiveProjects from "./pages/ActiveProjects.jsx";
 import UnapprovedProjects from "./pages/UnapprovedProjects.jsx";
 import DonorHomepage from "./pages/DonorHomepage.jsx";
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/donor/register" element={<DonorRegistration />} />
         <Route path="/auth/:role" element={<Navigate to="/login" replace />} />
         <Route path="/dashboard" element={<RequireRole allowedRoles={["ngo"]}><Dashboard /></RequireRole>} />
+        <Route path="/ngo/partnership-offers" element={<RequireRole allowedRoles={["ngo"]}><OrganizationPartnershipOffers /></RequireRole>} />
         <Route path="/project-ledger" element={<RequireRole allowedRoles={["ngo"]}><ActiveProjects /></RequireRole>} />
         <Route path="/unposted-projects" element={<RequireRole allowedRoles={["ngo"]}><UnapprovedProjects /></RequireRole>} />
         <Route path="/post-project" element={<RequireRole allowedRoles={["ngo"]}><PostNewProject /></RequireRole>} />

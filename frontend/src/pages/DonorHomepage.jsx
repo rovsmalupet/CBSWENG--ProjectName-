@@ -311,7 +311,7 @@ export default function DonorHomepage() {
                       onClick={(e) => toggleBookmark(e, campaign.id)}
                       title={bookmarkedProjects.includes(campaign.id) ? "Remove bookmark" : "Bookmark project"}
                     >
-                      {bookmarkedProjects.includes(campaign.id) ? "★" : "☆"}
+                      {bookmarkedProjects.includes(campaign.id) ? "BOOKMARKED" : "BOOKMARK"}
                     </button>
                   </div>
 

@@ -120,7 +120,7 @@ export default function ProjectDetailPage() {
               </span>
             )}
             <button className={`apd-save-btn ${isBookmarked ? "saved" : ""}`} onClick={toggleBookmark}>
-              {isBookmarked ? "★ SAVED" : "☆ SAVE"}
+              {isBookmarked ? "SAVED" : "SAVE"}
             </button>
           </div>
         </div>

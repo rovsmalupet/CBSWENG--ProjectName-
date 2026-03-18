@@ -47,6 +47,26 @@ const cards = [
     ),
     style: "card active",
   },
+  {
+    key: "partnership-offers",
+    label: "Partnership Offers",
+    route: "/ngo/partnership-offers",
+    icon: (
+      <svg
+        width="52"
+        height="52"
+        fill="none"
+        stroke="#4b5563"
+        strokeWidth="1.4"
+        viewBox="0 0 24 24"
+      >
+        <path d="M8 12h8" />
+        <path d="M8 16h5" />
+        <path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+      </svg>
+    ),
+    style: "card active",
+  },
 ];
 
 export default function Dashboard() {
@@ -59,9 +79,17 @@ export default function Dashboard() {
     if (!query) return;
 
     const normalizedQuery = query.toLowerCase();
+    const isOfferQuery = ["partner", "partnership", "offer", "offers", "company", "companies", "corporate"].some(
+      (keyword) => normalizedQuery.includes(keyword),
+    );
     const isUnpostedQuery = ["unposted", "pending", "edited", "rejected", "unapproved"].some((keyword) =>
       normalizedQuery.includes(keyword),
     );
+
+    if (isOfferQuery) {
+      navigate(`/ngo/partnership-offers?search=${encodeURIComponent(query)}`);
+      return;
+    }
 
     if (isUnpostedQuery) {
       navigate(`/unposted-projects?search=${encodeURIComponent(query)}`);
@@ -95,7 +123,7 @@ export default function Dashboard() {
           <input
             type="text"
             className="portal-search-input"
-            placeholder="Search NGO projects (active, unposted, pending...)"
+            placeholder="Search NGO projects or partnership offers"
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
           />

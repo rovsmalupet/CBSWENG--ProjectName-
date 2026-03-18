@@ -153,7 +153,7 @@ export default function BookmarkedProjects() {
       <div className="bookmarked-main">
         {bookmarkedCampaigns.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">☆</div>
+            <div className="empty-icon">NONE</div>
             <h3>no bookmarked projects yet</h3>
             <p>bookmark campaigns to see them here for easy access</p>
             <button className="browse-btn" onClick={() => navigate("/donor")}>
@@ -220,7 +220,7 @@ export default function BookmarkedProjects() {
                         onClick={(e) => toggleBookmark(e, campaign.id)}
                         title="remove bookmark"
                       >
-                        ★
+                        BOOKMARKED
                       </button>
                     </div>
 

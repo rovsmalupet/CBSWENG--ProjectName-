@@ -129,8 +129,8 @@ export default function PostNewProject({ onProjectCreated }) {
       <div className="postProjectCard">
         <h2 className="postProjectHeading">Post New Project</h2>
 
-        {status === "success" && <div className="postProjectAlertSuccess">✅ Project posted successfully! Redirecting...</div>}
-        {status === "error" && <div className="postProjectAlertError">⚠️ {errorMsg}</div>}
+        {status === "success" && <div className="postProjectAlertSuccess">Project posted successfully! Redirecting...</div>}
+        {status === "error" && <div className="postProjectAlertError">Warning: {errorMsg}</div>}
 
         <form onSubmit={handleSubmit} className="postProjectForm">
           {/* LEFT COLUMN */}
