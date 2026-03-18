@@ -16,9 +16,10 @@ export default function PendingAccounts() {
   const fetchPendingAccounts = async () => {
     try {
       setLoading(true);
-      // getApiUrl reads VITE_API_URL so this works on both localhost and deployed
       const response = await fetch(getApiUrl("/organizations/pending"));
-      if (!response.ok) throw new Error("Failed to fetch pending accounts");
+      if (!response.ok) {
+        throw new Error("Failed to fetch pending accounts");
+      }
       const data = await response.json();
       setPendingAccounts(data);
     } catch (err) {
@@ -35,14 +36,17 @@ export default function PendingAccounts() {
         getApiUrl(`/organizations/${accountId}/approve`),
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
       );
 
-      if (!response.ok) throw new Error("Failed to approve account");
+      if (!response.ok) {
+        throw new Error("Failed to approve account");
+      }
 
-      // Remove the approved account from the list optimistically
-      // so the admin doesn't need to refresh the page
+      // Remove the approved account from the list
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
       alert("Account approved successfully!");
     } catch (err) {
@@ -53,8 +57,9 @@ export default function PendingAccounts() {
 
   const handleReject = async (accountId) => {
     const confirmed = window.confirm(
-      "Are you sure you want to reject this account?",
+      "Are you sure you want to reject this account? This action cannot be undone.",
     );
+
     if (!confirmed) return;
 
     try {
@@ -62,14 +67,19 @@ export default function PendingAccounts() {
         getApiUrl(`/organizations/${accountId}/reject`),
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
       );
 
-      if (!response.ok) throw new Error("Failed to reject account");
+      if (!response.ok) {
+        throw new Error("Failed to reject account");
+      }
 
+      // Remove the rejected account from the list
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
-      alert("Account rejected.");
+      alert("Account rejected successfully.");
     } catch (err) {
       console.error("Error rejecting account:", err);
       alert("Failed to reject account. Please try again.");
@@ -131,7 +141,9 @@ export default function PendingAccounts() {
             <tbody>
               {pendingAccounts.map((account) => (
                 <tr key={account.id}>
-                  <td className="org-name">{account.orgName || "-"}</td>
+                  <td className="org-name">
+                    {account.orgName || account.affiliation || "-"}
+                  </td>
                   <td>{account.firstName}</td>
                   <td>{account.surname}</td>
                   <td>{account.email}</td>

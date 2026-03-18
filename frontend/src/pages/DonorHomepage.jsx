@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiUrl } from "../config/api.js";
 import "../css/DonorHomepage.css";
 
 export default function DonorHomepage() {
@@ -26,7 +27,7 @@ export default function DonorHomepage() {
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
-        const response = await fetch("http://localhost:3000/posts/approved");
+        const response = await fetch(getApiUrl("/posts/approved"));
         if (!response.ok) {
           setCampaigns([]);
           return;
@@ -197,15 +198,21 @@ export default function DonorHomepage() {
     switch (sortBy) {
       case "urgency": {
         const priority = { High: 3, Medium: 2, Low: 1 };
-        filtered = sorted.sort((a, b) => priority[b.priority] - priority[a.priority]);
+        filtered = sorted.sort(
+          (a, b) => priority[b.priority] - priority[a.priority],
+        );
         break;
       }
       case "progress":
         filtered = sorted.sort((a, b) => {
           const aTarget = a.supportTypes.monetary.targetAmount || 1;
           const bTarget = b.supportTypes.monetary.targetAmount || 1;
-          const progressA = Math.round((a.supportTypes.monetary.currentAmount / aTarget) * 100);
-          const progressB = Math.round((b.supportTypes.monetary.currentAmount / bTarget) * 100);
+          const progressA = Math.round(
+            (a.supportTypes.monetary.currentAmount / aTarget) * 100,
+          );
+          const progressB = Math.round(
+            (b.supportTypes.monetary.currentAmount / bTarget) * 100,
+          );
           return progressB - progressA;
         });
         break;
@@ -225,7 +232,9 @@ export default function DonorHomepage() {
         break;
       case "latest":
       default:
-        filtered = sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        filtered = sorted.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+        );
         break;
     }
 
