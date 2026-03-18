@@ -54,6 +54,7 @@ export default function RoleLogin() {
       });
 
       const data = await response.json();
+	  console.log("login response:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Login failed.");
