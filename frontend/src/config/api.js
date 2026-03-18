@@ -39,10 +39,11 @@ export const apiFetch = async (url, options = {}) => {
 			throw new Error(`API Error: ${response.status} ${response.statusText}`);
 		}
 
-		return await response.json();
+		return await response.json();	
+	}
 		
-		}catch (error) {
-			console.error("API Fetch Error:", error);
-			throw error;
+	catch (error) {
+		console.error("API Fetch Error:", error);
+		throw error;
 	}
 };

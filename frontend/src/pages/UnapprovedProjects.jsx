@@ -189,7 +189,9 @@ export default function UnapprovedProjects() {
                     <span
                       className={`pcard-status pcard-status-${project.overallStatus.toLowerCase()}`}
                     >
-                      {project.overallStatus === "Pending" ? "⏳" : "❌"}{" "}
+                      {project.overallStatus === "Pending" ? "⏳" 
+						: project.overallStatus === "Edited" ? "🔄" 
+						: "❌"}{" "}
                       {project.overallStatus}
                     </span>
                   </div>

@@ -61,8 +61,9 @@ export default function RoleLogin() {
 
       // Store user info in localStorage so other pages can read it
       localStorage.setItem("userFirstName", data.user.firstName || "User");
-      localStorage.setItem("userRole", currentRole);
-      localStorage.setItem("userId", data.user.id);
+	  localStorage.setItem("userRole", currentRole);
+	  localStorage.setItem("userId", data.user.id);
+	  localStorage.setItem("token", data.token); // ✅ add this
 
       // Redirect to the correct dashboard based on role
       navigate(roleMeta[currentRole].nextRoute);

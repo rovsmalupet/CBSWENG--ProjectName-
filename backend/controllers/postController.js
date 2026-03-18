@@ -113,7 +113,7 @@ export const createPost = async (req, res) => {
     const post = await prisma.post.create({
       data: {
         ...postFields,
-        orgId: "tempID",          // placeholder
+        orgId: req.user.id,
         overallStatus: "Pending",
 
         inKindItems: { create: inKindItems },
@@ -157,7 +157,7 @@ export const getOrgPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       where: {
-        orgId: "tempID",
+        orgId: req.user.id,
         NOT: { overallStatus: "Deleted" },
       },
       orderBy: { createdAt: "desc" },
