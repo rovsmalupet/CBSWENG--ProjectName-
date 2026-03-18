@@ -184,9 +184,11 @@ export default function DonorHomepage() {
     });
   };
 
-  const handleSwitchAccount = () => {
+  const handleLogout = () => {
     localStorage.removeItem("userFirstName");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("token");
     localStorage.removeItem("userCountry");
     navigate("/login");
   };
@@ -207,7 +209,7 @@ export default function DonorHomepage() {
         <h2 className="greeting">Hello, {firstName}!</h2>
         <div className="donor-header-actions">
           <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/bookmarks")}>BOOKMARKS</button>
-          <button className="switch-account-btn" onClick={handleSwitchAccount}>SWITCH ACCOUNT / LOGOUT</button>
+          <button className="switch-account-btn" onClick={handleLogout}>LOGOUT</button>
         </div>
       </div>
 

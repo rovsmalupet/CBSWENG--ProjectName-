@@ -4,22 +4,36 @@ import "../css/adminHome.css";
 export default function AdminHomepage() {
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    localStorage.removeItem("userFirstName");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userCountry");
+    navigate("/login");
+  };
+
   return (
     <div className="dashboard-page">
       <main className="dashboard-main">
-        <button className="back-link" onClick={() => navigate(-1)}>
-          <svg
-            width="16"
-            height="16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path d="M19 12H5M12 5l-7 7 7 7" />
-          </svg>
-          Back
-        </button>
+        <div className="admin-top-actions">
+          <button className="back-link" onClick={() => navigate(-1)}>
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M19 12H5M12 5l-7 7 7 7" />
+            </svg>
+            Back
+          </button>
+          <button className="admin-logout-btn" onClick={handleLogout}>
+            LOGOUT
+          </button>
+        </div>
 
         <h1 className="dashboard-title">Admin Dashboard</h1>
 
