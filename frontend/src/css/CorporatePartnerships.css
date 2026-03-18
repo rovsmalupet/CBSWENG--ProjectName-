@@ -1,0 +1,108 @@
+.partnerships-page {
+  min-height: 100vh;
+  background: #f8fafc;
+  font-family: "DM Sans", sans-serif;
+}
+
+.partnerships-main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1.2rem 3rem;
+}
+
+.partnerships-title {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #0f172a;
+}
+
+.partnerships-subtitle {
+  margin: 0.5rem 0 1.3rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.partnerships-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.partnership-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.partnership-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.partnership-header h2 {
+  margin: 0;
+  font-size: 1.12rem;
+  color: #1e293b;
+}
+
+.partnership-meta {
+  background: #e0f2fe;
+  color: #0c4a6e;
+  border-radius: 999px;
+  padding: 0.22rem 0.62rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.partnership-org-details {
+  color: #64748b;
+  margin: 0.55rem 0 0.8rem;
+  font-size: 0.9rem;
+}
+
+.partnership-projects {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.partnership-project {
+  width: 100%;
+  text-align: left;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.72rem 0.78rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+
+.partnership-project:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.project-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.project-status {
+  color: #0369a1;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.partnerships-empty,
+.partnerships-error,
+.no-projects {
+  color: #64748b;
+}
+
+.partnerships-error {
+  color: #b91c1c;
+}

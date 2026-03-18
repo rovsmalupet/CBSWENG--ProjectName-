@@ -208,6 +208,7 @@ export default function DonorHomepage() {
       <div className="donor-header">
         <h2 className="greeting">Hello, {firstName}!</h2>
         <div className="donor-header-actions">
+          <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/partnerships")}>PARTNERSHIPS</button>
           <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/bookmarks")}>BOOKMARKS</button>
           <button className="switch-account-btn" onClick={handleLogout}>LOGOUT</button>
         </div>

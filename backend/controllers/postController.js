@@ -391,6 +391,31 @@ export const addContribution = async (req, res) => {
     });
     if (!post) return res.status(404).json({ error: "Post not found" });
 
+    let partnershipId = null;
+    let donorName = "Anonymous";
+
+    // registered donors create/maintain an org partnership when they contribute.
+    if (req.user?.role === "donor") {
+      const donor = await prisma.donor.findUnique({ where: { id: req.user.id } });
+      if (donor) {
+        donorName = `${donor.firstName} ${donor.lastName}`.trim();
+        const partnership = await prisma.donorOrganizationPartner.upsert({
+          where: {
+            donorId_orgId: {
+              donorId: donor.id,
+              orgId: post.orgId,
+            },
+          },
+          update: {},
+          create: {
+            donorId: donor.id,
+            orgId: post.orgId,
+          },
+        });
+        partnershipId = partnership.id;
+      }
+    }
+
     const monetaryOption = post.supportOptions.find((o) => o.type === "Monetary");
     const volunteerOption = post.supportOptions.find((o) => o.type === "Volunteer");
 
@@ -401,7 +426,8 @@ export const addContribution = async (req, res) => {
       if (!entry.amount || entry.amount <= 0) continue;
       await prisma.contribution.create({
         data: {
-          donorName: entry.donorName || "Anonymous",
+          donorName: entry.donorName || donorName,
+          partnershipId,
           postId,
           type: "Monetary",
           amount: parseFloat(entry.amount),
@@ -421,7 +447,8 @@ export const addContribution = async (req, res) => {
       if (!entry.quantity || entry.quantity <= 0) continue;
       await prisma.contribution.create({
         data: {
-          donorName: entry.donorName || "Anonymous",
+          donorName: entry.donorName || donorName,
+          partnershipId,
           postId,
           type: "InKind",
           inKindItemId: entry.itemId,
@@ -440,7 +467,8 @@ export const addContribution = async (req, res) => {
       if (!entry.count || entry.count <= 0) continue;
       await prisma.contribution.create({
         data: {
-          donorName: entry.donorName || "Anonymous",
+          donorName: entry.donorName || donorName,
+          partnershipId,
           postId,
           type: "Volunteer",
           volunteerCount: Math.round(entry.count),
@@ -465,6 +493,66 @@ export const addContribution = async (req, res) => {
       message: "Contributions recorded successfully",
       post: formatPost(finalPost),
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * GET /posts/partnerships/me
+ * Returns all current partnerships for the logged-in donor with project snapshots. :DDD
+ */
+export const getMyDonorPartnerships = async (req, res) => {
+  try {
+    const partnerships = await prisma.donorOrganizationPartner.findMany({
+      where: { donorId: req.user.id },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            orgName: true,
+            email: true,
+            country: true,
+          },
+        },
+        contributions: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            post: {
+              include: {
+                supportOptions: true,
+                inKindItems: true,
+                organization: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const result = partnerships.map((partnership) => {
+      const uniquePosts = [];
+      const seenPostIds = new Set();
+
+      for (const contribution of partnership.contributions) {
+        const post = contribution.post;
+        if (!post || seenPostIds.has(post.id)) continue;
+        seenPostIds.add(post.id);
+        uniquePosts.push(formatPost(post));
+      }
+
+      return {
+        id: partnership.id,
+        createdAt: partnership.createdAt,
+        organization: partnership.organization,
+        projects: uniquePosts,
+        totalContributions: partnership.contributions.length,
+      };
+    });
+
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
