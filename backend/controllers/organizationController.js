@@ -1,5 +1,27 @@
 import prisma from "../prisma/client.js";
-import { getPendingNgoUsers, updateNgoApproval } from "../services/userAccountService.js";
+import {
+  registerUser,
+  getPendingNgoUsers,
+  updateNgoApproval,
+} from "../services/userAccountService.js";
+
+/**
+ * POST /organizations/register
+ * Register a new NGO organization.
+ * Organization accounts are created with status "Pending" and require admin approval.
+ */
+export const registerOrganization = async (req, res) => {
+  try {
+    const result = await registerUser({
+      ...req.body,
+      role: "ngo", // Force role to ngo for this endpoint
+    });
+    res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error("Organization registration error:", error);
+    res.status(500).json({ error: "Failed to register organization." });
+  }
+};
 
 /**
  * GET /organizations/pending
@@ -35,7 +57,9 @@ export const approveOrganization = async (req, res) => {
       return res.status(404).json({ error: "Organization not found." });
     }
 
-    res.status(200).json({ message: "Organization approved.", organization: updated });
+    res
+      .status(200)
+      .json({ message: "Organization approved.", organization: updated });
   } catch (error) {
     if (error.code === "P2025") {
       return res.status(404).json({ error: "Organization not found." });
@@ -63,7 +87,9 @@ export const rejectOrganization = async (req, res) => {
       return res.status(404).json({ error: "Organization not found." });
     }
 
-    res.status(200).json({ message: "Organization rejected.", organization: updated });
+    res
+      .status(200)
+      .json({ message: "Organization rejected.", organization: updated });
   } catch (error) {
     if (error.code === "P2025") {
       return res.status(404).json({ error: "Organization not found." });
