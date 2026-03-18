@@ -1,10 +1,12 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 
 export default function ViewProjects() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSearch = searchParams.get("search") || "";
   const [projects, setProjects] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -24,6 +26,11 @@ export default function ViewProjects() {
     };
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    const queryFromUrl = searchParams.get("search") || "";
+    setSearchQuery(queryFromUrl);
+  }, [searchParams]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
@@ -96,7 +103,15 @@ export default function ViewProjects() {
         type="text"
         placeholder="Search by project ID, campaign name, organization, or status"
         value={searchQuery}
-        onChange={(event) => setSearchQuery(event.target.value)}
+        onChange={(event) => {
+          const value = event.target.value;
+          setSearchQuery(value);
+          if (value.trim()) {
+            setSearchParams({ search: value });
+          } else {
+            setSearchParams({});
+          }
+        }}
         style={{
           width: "100%",
           maxWidth: "520px",

@@ -1,18 +1,25 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/PendingAccounts.css";
 
 export default function PendingAccounts() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSearch = searchParams.get("search") || "";
   const [pendingAccounts, setPendingAccounts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchPendingAccounts();
   }, []);
+
+  useEffect(() => {
+    const queryFromUrl = searchParams.get("search") || "";
+    setSearchQuery(queryFromUrl);
+  }, [searchParams]);
 
   const fetchPendingAccounts = async () => {
     try {
@@ -122,7 +129,15 @@ export default function PendingAccounts() {
         className="accounts-search"
         placeholder="Search by organization, name, or email"
         value={searchQuery}
-        onChange={(event) => setSearchQuery(event.target.value)}
+        onChange={(event) => {
+          const value = event.target.value;
+          setSearchQuery(value);
+          if (value.trim()) {
+            setSearchParams({ search: value });
+          } else {
+            setSearchParams({});
+          }
+        }}
       />
 
       {filteredAccounts.length === 0 ? (

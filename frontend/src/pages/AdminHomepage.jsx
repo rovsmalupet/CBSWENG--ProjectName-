@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/adminHome.css";
 
@@ -49,12 +49,6 @@ const adminCards = [
 export default function AdminHomepage() {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredCards = useMemo(() => {
-    if (!searchQuery) return adminCards;
-    return adminCards.filter((card) => card.label.toLowerCase().includes(searchQuery));
-  }, [searchQuery]);
 
   const handleLogout = () => {
     localStorage.removeItem("userFirstName");
@@ -67,7 +61,20 @@ export default function AdminHomepage() {
 
   const handleSearch = (event) => {
     event.preventDefault();
-    setSearchQuery(searchText.trim().toLowerCase());
+    const query = searchText.trim();
+    if (!query) return;
+
+    const normalized = query.toLowerCase();
+    const isPendingAccountsQuery = ["pending", "account", "accounts", "ngo", "user", "users", "registration"].some(
+      (keyword) => normalized.includes(keyword),
+    );
+
+    if (isPendingAccountsQuery) {
+      navigate(`/admin/pending-accounts?search=${encodeURIComponent(query)}`);
+      return;
+    }
+
+    navigate(`/viewProjects?search=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -98,29 +105,27 @@ export default function AdminHomepage() {
           <input
             type="text"
             className="admin-search-input"
-            placeholder="Search portal options"
+            placeholder="Search projects or pending accounts"
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
           />
           <button type="submit" className="admin-search-btn">Search</button>
         </form>
 
-        {filteredCards.length === 0 ? (
-          <p className="admin-search-empty">No matching portal options found.</p>
-        ) : (
-          <div className="dashboard-cards">
-            {filteredCards.map((card) => (
-              <div
-                key={card.key}
-                className="card active"
-                onClick={() => navigate(card.route)}
-              >
-                <div className="card-icon">{card.icon}</div>
-                <span className="card-label">{card.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <p className="admin-search-empty">Search jumps to projects or pending accounts.</p>
+
+        <div className="dashboard-cards">
+          {adminCards.map((card) => (
+            <div
+              key={card.key}
+              className="card active"
+              onClick={() => navigate(card.route)}
+            >
+              <div className="card-icon">{card.icon}</div>
+              <span className="card-label">{card.label}</span>
+            </div>
+          ))}
+        </div>
       </main>
     </div>
   );
