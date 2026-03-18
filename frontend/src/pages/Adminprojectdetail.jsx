@@ -24,15 +24,14 @@ const CAUSE_STYLES = {
   others:                 { label: "Others",                 bg: "#6b7280", color: "#fff" },
 };
 
-const CAUSE_KEY_MAP = Object.fromEntries(
-  Object.keys(CAUSE_STYLES).map((key) => [key.toLowerCase(), key])
-);
-
 const normalizeCauseKey = (raw) => {
   if (!raw) return "others";
   if (CAUSE_STYLES[raw]) return raw;
   const normalized = raw.toLowerCase().replace(/[\s_\-]+/g, "");
-  return CAUSE_KEY_MAP[normalized] || "others";
+  const match = Object.keys(CAUSE_STYLES).find(
+    (key) => key.toLowerCase() === normalized
+  );
+  return match || "others";
 };
 
 const priorityClass = {

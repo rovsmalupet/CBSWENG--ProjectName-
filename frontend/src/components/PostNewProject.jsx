@@ -22,17 +22,7 @@ const CAUSES = [
 	{ label: "Others",                           key: "others" },
 ];
 
-const CAUSES = [
-  { label: "Education", key: "educationAndChildren" },
-  { label: "Health", key: "healthAndMedical" },
-  { label: "Relief", key: "disasterRelief" },
-  { label: "Environment", key: "environmentAndClimate" },
-  { label: "Poverty", key: "povertyAndHunger" },
-  { label: "Community", key: "communityDevelopment" },
-  { label: "Livelihood", key: "livelihoodAndSkillsTraining" },
-  { label: "Animals", key: "animalWelfare" },
-  { label: "Others", key: "others" },
-];
+
 
 const newRow = () => ({
   id: Date.now() + Math.random(),
