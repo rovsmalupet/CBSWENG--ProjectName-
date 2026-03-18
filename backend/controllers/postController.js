@@ -2,38 +2,50 @@ import prisma from "../prisma/client.js";
 
 // HELPERS
 
-/*
+/**
  * formatPost: Transforms a raw Prisma post object into the shape the frontend expects.
+ * Reads support types from PostSupportOption rows and inKindItems.
+ */
+const formatPost = (post) => {
+  const monetary = post.supportOptions?.find((o) => o.type === "Monetary");
+  const volunteer = post.supportOptions?.find((o) => o.type === "Volunteer");
+
+  return {
+    ...post,
+    orgName: post.organization?.orgName ?? null,
+    orgEmail: post.organization?.email ?? null,
+    orgRepresentative:
+      post.organization?.firstName && post.organization?.surname
+        ? `${post.organization.firstName} ${post.organization.surname}`
+        : null,
+    organization: undefined,
+    supportTypes: {
+      monetary: monetary
+        ? {
+            enabled: true,
+            targetAmount: monetary.targetAmount,
+            currentAmount: monetary.currentAmount,
+            status: monetary.status,
+          }
+        : { enabled: false },
+      volunteer: volunteer
+        ? {
+            enabled: true,
+            targetVolunteers: volunteer.targetCount,
+            currentVolunteers: volunteer.currentCount,
+            status: volunteer.status,
+          }
+        : { enabled: false },
+      inKind: post.inKindItems ?? [],
+    },
+    supportOptions: undefined,
+    inKindItems: undefined,
+  };
+};
+
+/**
  * buildPostData: Parses the request body into structured data ready for Prisma.
  */
-const formatPost = (post) => ({
-  ...post,
-  orgName: post.organization?.orgName ?? null,
-  orgEmail: post.organization?.email ?? null,
-  orgRepresentative:
-    post.organization?.firstName && post.organization?.surname
-      ? `${post.organization.firstName} ${post.organization.surname}`
-      : null,
-  organization: undefined,
-  supportTypes: {
-    monetary: {
-      enabled: post.monetaryEnabled,
-      targetAmount: post.monetaryTargetAmount,
-      currentAmount: post.monetaryCurrentAmount,
-      status: post.monetaryStatus,
-    },
-    volunteer: {
-      enabled: post.volunteerEnabled,
-      targetVolunteers: post.volunteerTargetCount,
-      currentVolunteers: post.volunteerCurrentCount,
-      status: post.volunteerStatus,
-    },
-    inKind: post.inKindItems ?? [],
-  },
-  supportOptions: undefined,
-  inKindItems: undefined,
-});
-
 const buildPostData = (body) => {
   const {
     projectName,
@@ -44,6 +56,8 @@ const buildPostData = (body) => {
     supportTypes,
     startDate,
     endDate,
+    startTime,
+    endTime,
   } = body;
 
   const monetary = supportTypes?.monetary;
@@ -54,16 +68,16 @@ const buildPostData = (body) => {
   if (monetary?.enabled) {
     supportOptionsData.push({
       type: "Monetary",
-      targetAmount: monetary.targetAmount ?? 0,  
-      currentAmount: 0,                          
+      targetAmount: monetary.targetAmount ?? 0,
+      currentAmount: 0,
     });
   }
 
   if (volunteer?.enabled) {
     supportOptionsData.push({
       type: "Volunteer",
-      targetCount: volunteer.targetVolunteers ?? 0, 
-      currentCount: 0,                               
+      targetCount: volunteer.targetVolunteers ?? 0,
+      currentCount: 0,
     });
   }
 
@@ -75,14 +89,8 @@ const buildPostData = (body) => {
     priority,
     startDate: startDate || null,
     endDate: endDate || null,
-    monetaryEnabled: monetary?.enabled ?? false,
-    monetaryTargetAmount: monetary?.enabled
-      ? (monetary.targetAmount ?? 0)
-      : null,
-    volunteerEnabled: volunteer?.enabled ?? false,
-    volunteerTargetCount: volunteer?.enabled
-      ? (volunteer.targetVolunteers ?? 0)
-      : null,
+    startTime: startTime || null,
+    endTime: endTime || null,
     inKindItems: inKind.map((i) => ({
       itemName: i.itemName,
       targetQuantity: i.targetQuantity,
@@ -94,7 +102,7 @@ const buildPostData = (body) => {
 
 // CONTROLLERS
 
-/*
+/**
  * POST /posts
  * Creates a new post with nested inKindItems and supportOptions.
  */
@@ -110,16 +118,16 @@ export const createPost = async (req, res) => {
 
     const data = buildPostData(req.body);
     const { inKindItems, supportOptionsData, ...postFields } = data;
+
     const post = await prisma.post.create({
       data: {
         ...postFields,
         orgId: req.user.id,
         overallStatus: "Pending",
-
         inKindItems: { create: inKindItems },
         supportOptions: { create: supportOptionsData },
       },
-      include: { inKindItems: true, supportOptions: true },
+      include: { inKindItems: true, supportOptions: true, organization: true },
     });
 
     res.status(201).json({
@@ -132,15 +140,15 @@ export const createPost = async (req, res) => {
   }
 };
 
-/*
- * GET /posts
- * Returns all posts (for admin use)
+/**
+ * GET /posts/admin/all
+ * Returns all posts (for admin use).
  */
 export const getAllPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       orderBy: { createdAt: "desc" },
-      include: { inKindItems: true, organization: true },
+      include: { inKindItems: true, supportOptions: true, organization: true },
     });
     res.json(posts.map(formatPost));
   } catch (err) {
@@ -149,8 +157,8 @@ export const getAllPosts = async (req, res) => {
   }
 };
 
-/*
- * GET /posts/org
+/**
+ * GET /posts
  * Returns all non-deleted posts for the current organization.
  */
 export const getOrgPosts = async (req, res) => {
@@ -170,16 +178,16 @@ export const getOrgPosts = async (req, res) => {
   }
 };
 
-/*
+/**
  * GET /posts/approved
- * Returns only approved posts (for donor homepage)
+ * Returns only approved posts (for donor homepage). Public route.
  */
 export const getApprovedPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       where: { overallStatus: "Approved" },
       orderBy: { createdAt: "desc" },
-      include: { inKindItems: true, organization: true },
+      include: { inKindItems: true, supportOptions: true, organization: true },
     });
     res.json(posts.map(formatPost));
   } catch (err) {
@@ -188,7 +196,7 @@ export const getApprovedPosts = async (req, res) => {
   }
 };
 
-/*
+/**
  * GET /posts/:postId
  * Returns a single post by its ID.
  */
@@ -208,8 +216,9 @@ export const getPostById = async (req, res) => {
   }
 };
 
-/*
+/**
  * PUT /posts/:postId
+ * Updates a post and replaces its support options and in-kind items.
  */
 export const updatePost = async (req, res) => {
   try {
@@ -222,18 +231,16 @@ export const updatePost = async (req, res) => {
       data: {
         ...postFields,
         overallStatus: req.body.overallStatus || "Edited",
-
         inKindItems: {
-          deleteMany: {}, 
+          deleteMany: {},
           create: inKindItems,
         },
-
         supportOptions: {
           deleteMany: {},
           create: supportOptionsData,
         },
       },
-      include: { inKindItems: true, supportOptions: true },
+      include: { inKindItems: true, supportOptions: true, organization: true },
     });
 
     res.json({ message: "Post updated successfully", post: formatPost(updated) });
@@ -246,9 +253,9 @@ export const updatePost = async (req, res) => {
   }
 };
 
-/*
+/**
  * DELETE /posts/:postId (soft delete)
- * Sets overallStatus to "Deleted"
+ * Sets overallStatus to "Deleted".
  */
 export const deletePost = async (req, res) => {
   try {
@@ -266,7 +273,7 @@ export const deletePost = async (req, res) => {
   }
 };
 
-/*
+/**
  * DELETE /posts/:postId/permanent
  * Permanently removes the post and all related rows from the database.
  */
@@ -285,9 +292,9 @@ export const permanentDeletePost = async (req, res) => {
   }
 };
 
-/*
+/**
  * PATCH /posts/:postId/status
- * Updates only the overallStatus field of a post (e.g. Approve or Unapprove).
+ * Updates only the overallStatus field of a post.
  */
 export const updatePostStatus = async (req, res) => {
   try {
@@ -316,61 +323,104 @@ export const updatePostStatus = async (req, res) => {
 
 /**
  * PATCH /posts/:postId/contribute
- * Increments currentAmount/currentCount for support options and inKind items.
+ * Creates Contribution records (status: Confirmed) for each donation entry
+ * and updates the current amounts/counts on the post's support options.
+ *
+ * Body shape:
+ * {
+ *   monetary: [{ donorName, amount }],
+ *   inKind:   [{ donorName, itemId, quantity }],
+ *   volunteer:[{ donorName, count }],
+ * }
  */
 export const addContribution = async (req, res) => {
   try {
     const { postId } = req.params;
     const {
-      monetaryDelta = 0,
-      inKindDeltas = [],
-      volunteerDelta = 0,
+      monetary = [],
+      inKind = [],
+      volunteer = [],
     } = req.body;
 
-    // Fetch post with all relations so we can read current values
+    // Fetch post with support options and in-kind items
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: { inKindItems: true, supportOptions: true },
     });
     if (!post) return res.status(404).json({ error: "Post not found" });
 
-    const monetary = post.supportOptions?.find((o) => o.type === "Monetary");
-    const volunteer = post.supportOptions?.find((o) => o.type === "Volunteer");
+    const monetaryOption = post.supportOptions.find((o) => o.type === "Monetary");
+    const volunteerOption = post.supportOptions.find((o) => o.type === "Volunteer");
 
-    if (monetaryDelta > 0 && monetary) {
-      await prisma.postSupportOption.update({
-        where: { id: monetary.id },
-        data: { currentAmount: monetary.currentAmount + monetaryDelta },
+    // ── Create Contribution records and update totals ──────────────────────
+
+    // Monetary
+    for (const entry of monetary) {
+      if (!entry.amount || entry.amount <= 0) continue;
+      await prisma.contribution.create({
+        data: {
+          donorName: entry.donorName || "Anonymous",
+          postId,
+          type: "Monetary",
+          amount: parseFloat(entry.amount),
+          status: "Confirmed",
+        },
       });
-    }
-
-    if (volunteerDelta > 0 && volunteer) {
-      await prisma.postSupportOption.update({
-        where: { id: volunteer.id },
-        data: { currentCount: volunteer.currentCount + Math.round(volunteerDelta) },
-      });
-    }
-
-    for (const { itemId, quantityDelta } of inKindDeltas) {
-      if (!quantityDelta || quantityDelta <= 0) continue;
-
-      const item = post.inKindItems.find((i) => i.id === itemId);
-      if (item) {
-        await prisma.postInKindItem.update({
-          where: { id: itemId },
-          data: { currentQuantity: item.currentQuantity + quantityDelta },
+      if (monetaryOption) {
+        await prisma.postSupportOption.update({
+          where: { id: monetaryOption.id },
+          data: { currentAmount: { increment: parseFloat(entry.amount) } },
         });
       }
     }
 
-    // Re-fetch the updated post so the response reflects all changes
+    // In-Kind
+    for (const entry of inKind) {
+      if (!entry.quantity || entry.quantity <= 0) continue;
+      await prisma.contribution.create({
+        data: {
+          donorName: entry.donorName || "Anonymous",
+          postId,
+          type: "InKind",
+          inKindItemId: entry.itemId,
+          quantity: parseFloat(entry.quantity),
+          status: "Confirmed",
+        },
+      });
+      await prisma.postInKindItem.update({
+        where: { id: entry.itemId },
+        data: { currentQuantity: { increment: parseFloat(entry.quantity) } },
+      });
+    }
+
+    // Volunteer
+    for (const entry of volunteer) {
+      if (!entry.count || entry.count <= 0) continue;
+      await prisma.contribution.create({
+        data: {
+          donorName: entry.donorName || "Anonymous",
+          postId,
+          type: "Volunteer",
+          volunteerCount: Math.round(entry.count),
+          status: "Confirmed",
+        },
+      });
+      if (volunteerOption) {
+        await prisma.postSupportOption.update({
+          where: { id: volunteerOption.id },
+          data: { currentCount: { increment: Math.round(entry.count) } },
+        });
+      }
+    }
+
+    // Re-fetch updated post
     const finalPost = await prisma.post.findUnique({
       where: { id: postId },
-      include: { inKindItems: true, supportOptions: true },
+      include: { inKindItems: true, supportOptions: true, organization: true },
     });
 
     res.json({
-      message: "Contribution recorded successfully",
+      message: "Contributions recorded successfully",
       post: formatPost(finalPost),
     });
   } catch (err) {

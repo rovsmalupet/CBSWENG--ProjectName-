@@ -12,17 +12,17 @@ const fmtPHP = (n) =>
 const newMonetaryRow = () => ({
   id: Date.now() + Math.random(),
   amount: "",
-  donor: "",
+  donorName: "",
 });
 const newInKindRow = () => ({
   id: Date.now() + Math.random(),
   quantity: "",
-  donor: "",
+  donorName: "",
 });
 const newVolRow = () => ({
   id: Date.now() + Math.random(),
   count: "",
-  donor: "",
+  donorName: "",
   startDate: "",
   endDate: "",
   startTime: "",
@@ -145,65 +145,53 @@ export default function AddContribution() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const monetaryDelta = monetaryRows.reduce(
-        (sum, r) => sum + (parseFloat(r.amount) || 0),
-        0,
+      // Build body in new schema shape
+      const monetary = monetaryRows
+        .filter((r) => parseFloat(r.amount) > 0)
+        .map((r) => ({ donorName: r.donorName || "Anonymous", amount: parseFloat(r.amount) }));
+
+      const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
+        rows
+          .filter((r) => parseFloat(r.quantity) > 0)
+          .map((r) => ({
+            donorName: r.donorName || "Anonymous",
+            itemId,
+            quantity: parseFloat(r.quantity),
+          })),
       );
 
-      const inKindDeltas = Object.entries(inKindRows)
-        .map(([itemId, rows]) => ({
-          itemId,
-          quantityDelta: rows.reduce(
-            (sum, r) => sum + (parseFloat(r.quantity) || 0),
-            0,
-          ),
-        }))
-        .filter((d) => d.quantityDelta > 0);
+      const volunteer = volRows
+        .filter((r) => parseInt(r.count) > 0)
+        .map((r) => ({ donorName: r.donorName || "Anonymous", count: parseInt(r.count) }));
 
-      const volunteerDelta = volRows.reduce(
-        (sum, r) => sum + (parseInt(r.count) || 0),
-        0,
-      );
-
-      if (
-        monetaryDelta === 0 &&
-        inKindDeltas.length === 0 &&
-        volunteerDelta === 0
-      ) {
+      if (monetary.length === 0 && inKind.length === 0 && volunteer.length === 0) {
         alert("Please enter at least one contribution before saving.");
         setSaving(false);
         return;
       }
 
-      const { getApiUrl } = await import("../config/api");
-      const res = await fetch(getApiUrl(`/posts/${id}/contribute`), {
+      const { getApiUrl, apiFetch } = await import("../config/api");
+      const updated = await apiFetch(getApiUrl(`/posts/${id}/contribute`), {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monetaryDelta, inKindDeltas, volunteerDelta }),
+        body: JSON.stringify({ monetary, inKind, volunteer }),
       });
 
-      if (res.ok) {
-        const updated = await res.json();
-        setProject(updated.post);
+      setProject(updated.post);
 
-        // re-init rows
-        setMonetaryRows([newMonetaryRow()]);
-        const resetInKind = {};
-        (updated.post.supportTypes?.inKind ?? []).forEach((item) => {
-          resetInKind[item.id] = [newInKindRow()];
-        });
-        setInKindRows(resetInKind);
-        setVolRows([newVolRow()]);
+      // re-init rows
+      setMonetaryRows([newMonetaryRow()]);
+      const resetInKind = {};
+      (updated.post.supportTypes?.inKind ?? []).forEach((item) => {
+        resetInKind[item.id] = [newInKindRow()];
+      });
+      setInKindRows(resetInKind);
+      setVolRows([newVolRow()]);
 
-        setSuccessMsg("Contributions saved successfully!");
-        setTimeout(() => setSuccessMsg(""), 3500);
-      } else {
-        const err = await res.json();
-        alert("Failed to save: " + (err.error ?? "Unknown error"));
-      }
+      setSuccessMsg("Contributions saved successfully!");
+      setTimeout(() => setSuccessMsg(""), 3500);
     } catch (err) {
       console.error(err);
-      alert("Error saving contributions.");
+      alert("Failed to save: " + (err.message ?? "Unknown error"));
     } finally {
       setSaving(false);
     }
@@ -238,44 +226,17 @@ export default function AddContribution() {
   const monetary = supportTypes?.monetary ?? {};
   const inKind = supportTypes?.inKind ?? [];
   const volunteer = supportTypes?.volunteer ?? {};
-
   const anySection = monetary.enabled || inKind.length > 0 || volunteer.enabled;
 
   return (
     <div className="ac-page">
       <main className="ac-main">
-        {/* Back */}
-        <button
-          className="ac-back-btn"
-          onClick={() => navigate("/project-ledger")}
-        >
-          ← Back to Active Projects
+        <button className="ac-back-btn" onClick={() => navigate(-1)} type="button">
+          ← Back
         </button>
 
-        {/* Title */}
-        <div className="ac-header">
-          <h1 className="ac-title">{project.projectName}</h1>
-        </div>
-        <p className="ac-subtitle">
-          Record new contributions and update progress
-        </p>
-
-        {successMsg && <div className="ac-success">✓ {successMsg}</div>}
-
-        {!anySection && (
-          <div className="ac-section">
-            <p
-              style={{
-                fontSize: "0.85rem",
-                color: "#6b7280",
-                fontStyle: "italic",
-              }}
-            >
-              This project has no support types enabled. Edit the project to add
-              monetary, in-kind, or volunteer goals.
-            </p>
-          </div>
-        )}
+        <h1 className="ac-title">{project.projectName}</h1>
+        {successMsg && <div className="ac-success">{successMsg}</div>}
 
         {/* ── MONETARY ──────────────────────────────────────────────────── */}
         {monetary.enabled && (
@@ -314,9 +275,9 @@ export default function AddContribution() {
                     className="ac-input ac-input-donor"
                     type="text"
                     placeholder="Donor name"
-                    value={row.donor}
+                    value={row.donorName}
                     onChange={(e) =>
-                      updateMonetary(row.id, "donor", e.target.value)
+                      updateMonetary(row.id, "donorName", e.target.value)
                     }
                   />
                   {monetaryRows.length > 1 && (
@@ -375,12 +336,7 @@ export default function AddContribution() {
                           placeholder={`Enter ${unitLabel} donated`}
                           value={row.quantity}
                           onChange={(e) =>
-                            updateInKind(
-                              item.id,
-                              row.id,
-                              "quantity",
-                              e.target.value,
-                            )
+                            updateInKind(item.id, row.id, "quantity", e.target.value)
                           }
                         />
                         <span className="ac-unit">
@@ -391,14 +347,9 @@ export default function AddContribution() {
                           className="ac-input ac-input-donor"
                           type="text"
                           placeholder="Donor name"
-                          value={row.donor}
+                          value={row.donorName}
                           onChange={(e) =>
-                            updateInKind(
-                              item.id,
-                              row.id,
-                              "donor",
-                              e.target.value,
-                            )
+                            updateInKind(item.id, row.id, "donorName", e.target.value)
                           }
                         />
                         {rows.length > 1 && (
@@ -457,8 +408,8 @@ export default function AddContribution() {
                     className="ac-input ac-input-donor"
                     type="text"
                     placeholder="Donor / org name"
-                    value={row.donor}
-                    onChange={(e) => updateVol(row.id, "donor", e.target.value)}
+                    value={row.donorName}
+                    onChange={(e) => updateVol(row.id, "donorName", e.target.value)}
                   />
                   <span className="ac-lbl">On</span>
                   <input

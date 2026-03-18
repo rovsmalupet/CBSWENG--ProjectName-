@@ -38,7 +38,6 @@ model Donor {
   status        AccountStatus @default(Pending)
   createdAt     DateTime      @default(now())
 
-  contributions Contribution[]
   partnerOrgs   DonorOrganizationPartner[]
 }
 
@@ -65,11 +64,11 @@ model Post {
   location       String?
   priority       Priority            @default(Medium)
   overallStatus  PostStatus          @default(Pending)
-  createdAt      DateTime            @default(now())
-
-  // DateTime
   startDate      DateTime?
   endDate        DateTime?
+  startTime      String?
+  endTime        String?
+  createdAt      DateTime            @default(now())
 
   supportOptions PostSupportOption[]
   inKindItems    PostInKindItem[]
@@ -99,7 +98,7 @@ model PostSupportOption {
   @@unique([postId, type])
 }
 
-// POST IN-KIND ITEM 
+// POST IN-KIND ITEM
 
 model PostInKindItem {
   id              String         @id @default(uuid())
@@ -116,15 +115,17 @@ model PostInKindItem {
 
 // CONTRIBUTION
 
-// Records every donor contribution.
-// Status starts as Pending until the organization confirms or declines it.
-
+// Records every donation, whether submitted by a registered donor or manually
+// logged by the org on behalf of a walk-in/unregistered donor.
+// - donorName is always filled (org types this in for manual entries)
+// - partnershipId is null for manual/anonymous entries, populated for registered donors
 model Contribution {
-  id             String             @id @default(uuid())
-  donorId        String
-  donor          Donor              @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  id             String                    @id @default(uuid())
+  donorName      String                    // always filled
+  partnershipId  String?                   // null for unregistered donors
+  partnership    DonorOrganizationPartner? @relation(fields: [partnershipId], references: [id], onDelete: SetNull)
   postId         String
-  post           Post               @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post           Post                      @relation(fields: [postId], references: [id], onDelete: Cascade)
   type           SupportType
 
   // Monetary — only populated when type = Monetary
@@ -134,26 +135,28 @@ model Contribution {
   volunteerCount Int?
 
   // InKind — only populated when type = InKind
-  // links to the specific PostInKindItem being contributed to
   inKindItemId   String?
-  inKindItem     PostInKindItem?    @relation(fields: [inKindItemId], references: [id], onDelete: SetNull)
+  inKindItem     PostInKindItem?           @relation(fields: [inKindItemId], references: [id], onDelete: SetNull)
   quantity       Float?
 
-  status         ContributionStatus @default(Pending)
-  createdAt      DateTime           @default(now())
+  status         ContributionStatus        @default(Pending)
+  createdAt      DateTime                  @default(now())
 }
 
-//DONOR ORGANIZATION PARTNER
+// DONOR ORGANIZATION PARTNER
 
-// Join table for Donor <-> Organization (many-to-many relationship)
-// @@unique prevents the same donor-org pair from being recorded twice.
+// Represents an ongoing relationship between a registered donor and an org.
+// Created when a registered donor's contribution is confirmed.
+// contributions[] holds all confirmed contributions made by this donor to this org.
 model DonorOrganizationPartner {
-  id           String       @id @default(uuid())
-  donorId      String
-  donor        Donor        @relation(fields: [donorId], references: [id], onDelete: Cascade)
-  orgId        String
-  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  createdAt    DateTime     @default(now())
+  id             String         @id @default(uuid())
+  donorId        String
+  donor          Donor          @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  orgId          String
+  organization   Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+
+  contributions  Contribution[]
 
   @@unique([donorId, orgId])
 }
@@ -187,8 +190,7 @@ enum CauseEnum {
   healthAndMedical            // SDG 3  — Good Health and Well-being
   disasterRelief              // SDG 11 — Sustainable Cities and Communities
   environmentAndClimate       // SDG 13 — Climate Action
-  poverty                     // SDG 1  — No Poverty
-  hunger                      // SDG 2  — Zero Hunger
+  povertyAndHunger            // SDG 1 & 2 — No Poverty / Zero Hunger
   communityDevelopment        // SDG 17 — Partnerships for the Goals
   cleanWater                  // SDG 6  — Clean Water and Sanitation
   livelihoodAndSkillsTraining // SDG 8  — Decent Work and Economic Growth
@@ -223,7 +225,7 @@ enum AccountStatus {
 }
 
 enum ContributionStatus {
-  Pending    // payment made, waiting for org to confirm
+  Pending    // logged, waiting for org to confirm
   Confirmed  // org verified the contribution
   Declined   // org rejected the contribution
 }

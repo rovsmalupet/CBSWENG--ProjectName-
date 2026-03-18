@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "../css/Adminprojectdetail.css";
+import { apiFetch, getApiUrl } from "../config/api.js";
 
 const CAUSE_STYLES = {
   educationAndChildren: { label: "Education", bg: "#dbeafe", color: "#1d4ed8" },
@@ -11,7 +12,7 @@ const CAUSE_STYLES = {
     bg: "#d1fae5",
     color: "#065f46",
   },
-  povertyAndHunger: { label: "Poverty", bg: "#fef9c3", color: "#92400e" },
+  povertyAndHunger: { label: "Poverty & Hunger", bg: "#fef9c3", color: "#92400e" },
   communityDevelopment: { label: "Community", bg: "#ede9fe", color: "#6d28d9" },
   livelihoodAndSkillsTraining: {
     label: "Livelihood",
@@ -19,7 +20,7 @@ const CAUSE_STYLES = {
     color: "#c2410c",
   },
   animalWelfare: { label: "Animals", bg: "#fce7f3", color: "#be185d" },
-  others: { label: "OTHERS", bg: "#f3f4f6", color: "#374151" },
+  others: { label: "Others", bg: "#f3f4f6", color: "#374151" },
 };
 
 const priorityClass = {
@@ -48,11 +49,10 @@ export default function AdminProjectDetail() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const { getApiUrl, apiFetch } = await import("../config/api");
         const data = await apiFetch(getApiUrl(`/posts/${id}`));
         setProject(data);
       } catch (err) {
-        setError("Network error. Please try again.");
+        setError(err.message || "Failed to load project.");
       } finally {
         setLoading(false);
       }
@@ -63,17 +63,13 @@ export default function AdminProjectDetail() {
   const updateStatus = async (newStatus) => {
     setUpdating(true);
     try {
-      const { getApiUrl } = await import("../config/api");
-      const res = await fetch(getApiUrl(`/posts/${id}/status`), {
+      await apiFetch(getApiUrl(`/posts/${id}/status`), {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ overallStatus: newStatus }),
       });
-      const data = await res.json();
-      if (res.ok) setProject((prev) => ({ ...prev, overallStatus: newStatus }));
-      else setError(data.error || "Failed to update status.");
+      setProject((prev) => ({ ...prev, overallStatus: newStatus }));
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(err.message || "Failed to update status.");
     } finally {
       setUpdating(false);
     }
@@ -88,18 +84,12 @@ export default function AdminProjectDetail() {
       return;
     setUpdating(true);
     try {
-      const { getApiUrl } = await import("../config/api");
-      const res = await fetch(getApiUrl(`/posts/${id}/permanent`), {
+      await apiFetch(getApiUrl(`/posts/${id}/permanent`), {
         method: "DELETE",
       });
-      if (res.ok) {
-        navigate(-1);
-      } else {
-        const data = await res.json();
-        setError(data.error || "Failed to permanently delete project.");
-      }
+      navigate(-1);
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(err.message || "Failed to permanently delete project.");
     } finally {
       setUpdating(false);
     }
@@ -125,6 +115,10 @@ export default function AdminProjectDetail() {
     project.overallStatus === "Unapproved";
   const isApproved = project.overallStatus === "Approved";
   const isDeleted = project.overallStatus === "Deleted";
+
+  const monetary = project.supportTypes?.monetary;
+  const inKind = project.supportTypes?.inKind ?? [];
+  const volunteer = project.supportTypes?.volunteer;
 
   return (
     <div className="apd-page">
@@ -229,7 +223,7 @@ export default function AdminProjectDetail() {
         {(project.startDate || project.endDate) && (
           <p className="apd-datetime">
             dates: {formatDate(project.startDate)}{" "}
-            {project.endDate ? `→${formatDate(project.endDate)}` : ""}
+            {project.endDate ? `→ ${formatDate(project.endDate)}` : ""}
             {(project.startTime || project.endTime) && (
               <>
                 {" "}
@@ -248,12 +242,12 @@ export default function AdminProjectDetail() {
         <hr className="apd-divider" />
 
         {/* Monetary */}
-        {project.supportTypes?.monetary?.enabled && (
+        {monetary?.enabled && (
           <>
             <div className="apd-monetary-row">
               <h2 className="apd-section-title">Monetary</h2>
               <span className="apd-monetary-amount">
-                {project.supportTypes.monetary.targetAmount?.toLocaleString()}{" "}
+                {monetary.targetAmount?.toLocaleString()}{" "}
                 <span className="apd-monetary-unit">PHP</span>
               </span>
             </div>
@@ -262,10 +256,10 @@ export default function AdminProjectDetail() {
         )}
 
         {/* In-Kind */}
-        {project.supportTypes?.inKind?.length > 0 && (
+        {inKind.length > 0 && (
           <>
             <h2 className="apd-section-title">In-Kind</h2>
-            {project.supportTypes.inKind.map((item) => (
+            {inKind.map((item) => (
               <p key={item.id} className="apd-inkind-item">
                 <strong>{item.itemName}</strong> — {item.targetQuantity}{" "}
                 {item.unit}
@@ -276,27 +270,26 @@ export default function AdminProjectDetail() {
         )}
 
         {/* Volunteer */}
-        {project.supportTypes?.volunteer?.enabled && (
+        {volunteer?.enabled && (
           <>
             <h2 className="apd-section-title">Volunteer</h2>
             <p className="apd-volunteer-text">
-              <strong>{project.supportTypes.volunteer.targetVolunteers}</strong>{" "}
-              volunteers
+              <strong>{volunteer.targetVolunteers}</strong> volunteers needed
               {project.startDate && (
                 <>
                   {" "}
-                  <strong>On</strong> {formatDate(project.startDate)}
+                  <strong>on</strong> {formatDate(project.startDate)}
                   {project.endDate && (
                     <>
                       {" "}
-                      <strong>to</strong> {formatDate.endDate}
+                      <strong>to</strong> {formatDate(project.endDate)}
                     </>
                   )}
                   {project.startTime && (
                     <>
                       {" "}
-                      <strong>At</strong> {project.startTime} to
-                      {project.endTime && <> {project.endTime}</>}
+                      <strong>at</strong> {project.startTime}
+                      {project.endTime && <> to {project.endTime}</>}
                     </>
                   )}
                 </>
