@@ -49,11 +49,14 @@ export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
 
+  const userId = localStorage.getItem("userId");
+  const bookmarkKey = `bookmarkedProjects_${userId}`;
+
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
-    const saved = localStorage.getItem("bookmarkedProjects");
+    const saved = localStorage.getItem(bookmarkKey);
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -63,27 +66,27 @@ export default function ProjectDetailPage() {
       const updated = isBookmarked
         ? prev.filter((projectId) => projectId !== id)
         : [...prev, id];
-      localStorage.setItem("bookmarkedProjects", JSON.stringify(updated));
+      localStorage.setItem(bookmarkKey, JSON.stringify(updated));
       return updated;
     });
   };
 
   const isBookmarked = bookmarkedProjects.includes(id);
 
-	useEffect(() => {
-	  const fetchProject = async () => {
-		try {
-		  const data = await apiFetch(getApiUrl(`/posts/${id}`));
-		  setProject(data);
-		} catch (err) {
-		  setError(err.message || "failed to load project");
-		} finally {
-		  setLoading(false);
-		}
-	  };
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const data = await apiFetch(getApiUrl(`/posts/${id}`));
+        setProject(data);
+      } catch (err) {
+        setError(err.message || "failed to load project");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-	  fetchProject();
-	}, [id]);
+    fetchProject();
+  }, [id]);
 
   if (loading)
     return (

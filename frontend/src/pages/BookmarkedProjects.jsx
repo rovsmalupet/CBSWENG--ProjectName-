@@ -4,11 +4,15 @@ import "../css/BookmarkedProjects.css";
 
 export default function BookmarkedProjects() {
   const navigate = useNavigate();
+
+  const userId = localStorage.getItem("userId");
+  const bookmarkKey = `bookmarkedProjects_${userId}`;
+
   const [bookmarkedCampaigns, setBookmarkedCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("latest");
   const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
-    const saved = localStorage.getItem("bookmarkedProjects");
+    const saved = localStorage.getItem(bookmarkKey);
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -67,7 +71,7 @@ export default function BookmarkedProjects() {
     e.stopPropagation();
     setBookmarkedProjects((prev) => {
       const updated = prev.filter((id) => id !== campaignId);
-      localStorage.setItem("bookmarkedProjects", JSON.stringify(updated));
+      localStorage.setItem(bookmarkKey, JSON.stringify(updated));
       return updated;
     });
   };
