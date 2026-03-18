@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import prisma from "../prisma/client.js";
 
 // How many times bcrypt re-hashes the password — 10 is the industry standard balance
@@ -219,11 +220,19 @@ export const loginUser = async ({ email, password, role }) => {
     };
   }
 
+  // ── Generate JWT token ───────────────────────────────────────────────────
+  const token = jwt.sign(
+    { id: user.id, role: userRole },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
   return {
     status: 200,
     body: {
       message: "Login successful.",
       user: sanitizeUser(user, userRole),
+      token,
     },
   };
 };
