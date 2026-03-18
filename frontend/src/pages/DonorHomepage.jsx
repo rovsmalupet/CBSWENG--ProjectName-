@@ -29,6 +29,17 @@ const CAUSE_STYLES = {
   others:                 { label: "Others",                 bg: "#6b7280", color: "#fff" },
 };
 
+const CAUSE_KEY_MAP = Object.fromEntries(
+  Object.keys(CAUSE_STYLES).map((key) => [key.toLowerCase(), key])
+);
+
+const normalizeCauseKey = (raw) => {
+  if (!raw) return "others";
+  if (CAUSE_STYLES[raw]) return raw;
+  const normalized = raw.toLowerCase().replace(/[\s_\-]+/g, "");
+  return CAUSE_KEY_MAP[normalized] || "others";
+};
+
 export default function DonorHomepage() {
   const navigate = useNavigate();
   const firstName = localStorage.getItem("userFirstName") || "Donor";
@@ -282,7 +293,7 @@ export default function DonorHomepage() {
                   <div className="card-header">
                     <div className="card-badges">
                       {campaign.causes?.map((causeKey, idx) => {
-                        const style = CAUSE_STYLES[causeKey] || CAUSE_STYLES.others;
+                        const style = CAUSE_STYLES[normalizeCauseKey(causeKey)];
                         return (
                           <span key={idx} className="category-badge" style={{ backgroundColor: style.bg, color: style.color }}>
                             {style.label}

@@ -24,6 +24,17 @@ const CAUSE_STYLES = {
   others:                 { label: "Others",                 bg: "#6b7280", color: "#fff" },
 };
 
+const CAUSE_KEY_MAP = Object.fromEntries(
+  Object.keys(CAUSE_STYLES).map((key) => [key.toLowerCase(), key])
+);
+
+const normalizeCauseKey = (raw) => {
+  if (!raw) return "others";
+  if (CAUSE_STYLES[raw]) return raw;
+  const normalized = raw.toLowerCase().replace(/[\s_\-]+/g, "");
+  return CAUSE_KEY_MAP[normalized] || "others";
+};
+
 const priorityClass = {
   High: "apd-priority-high",
   Medium: "apd-priority-medium",
@@ -173,7 +184,7 @@ export default function AdminProjectDetail() {
             </div>
           )}
           {project.causes?.map((causeKey) => {
-            const style = CAUSE_STYLES[causeKey] || CAUSE_STYLES.others;
+            const style = CAUSE_STYLES[normalizeCauseKey(causeKey)];
             return (
               <span key={causeKey} className="apd-cause-badge" style={{ background: style.bg, color: style.color }}>
                 {style.label}
