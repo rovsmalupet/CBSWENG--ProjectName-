@@ -47,8 +47,8 @@ export default function AdminHomepage() {
             </div>
             <span className="card-label">View Projects</span>
           </div>
-          
-         {/* <div
+
+          <div
             className="card active"
             onClick={() => navigate("/admin/pending-accounts")}
           >
@@ -67,8 +67,8 @@ export default function AdminHomepage() {
               </svg>
             </div>
             <span className="card-label">Pending Accounts</span>
-          </div> */}
-		</div>
+          </div>
+        </div>
       </main>
     </div>
   );
