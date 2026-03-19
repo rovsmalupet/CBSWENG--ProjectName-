@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import OrganizationPartnershipOffers from "./pages/OrganizationPartnershipOffers.jsx";
 import ActiveProjects from "./pages/ActiveProjects.jsx";
@@ -35,6 +37,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/ngo/register" element={<NgoRegistration />} />
         <Route path="/donor/register" element={<DonorRegistration />} />
         <Route path="/auth/:role" element={<Navigate to="/login" replace />} />

@@ -76,6 +76,16 @@ export default function Login() {
             required
           />
 
+          <div className="forgot-password-section">
+            <button
+              type="button"
+              className="forgot-password-link"
+              onClick={() => navigate("/forgot-password")}
+            >
+              Forgot Password?
+            </button>
+          </div>
+
           <button type="submit" className="login-btn" disabled={isSubmitting}>
             {isSubmitting ? "Signing in..." : "Login"}
           </button>

@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import prisma from "../prisma/client.js";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 
 // How many times bcrypt re-hashes the password — 10 is the industry standard balance
 // between security and performance. Higher = slower but more secure.
@@ -9,7 +11,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * sanitizeUser: Strips the password before sending user data to the frontend.
- * NEVER send a password (even hashed) in an API response.
+ * NEVER send a password (even hashed) in an API response :DDDDD
  */
 const sanitizeUser = (user, role) => {
   const { password, ...rest } = user;
@@ -18,7 +20,7 @@ const sanitizeUser = (user, role) => {
 
 /**
  * seedDefaultUsers: Creates default admin and donor accounts on server start.
- * Uses upsert so it's safe to call multiple times — won't create duplicates.
+ * Uses upsert so it's safe to call multiple times SOOOO IT won't create duplicates.
  *
  * Why bcrypt instead of the old sha256?
  * SHA256 is a fast hashing algorithm — fast is bad for passwords because
@@ -271,4 +273,218 @@ export const updateNgoApproval = async (id, action) => {
 
   const { password, ...rest } = updated;
   return rest;
+};
+
+/**
+ * sendPasswordResetEmail: Sends a password reset link via email.
+ * Uses nodemailer with SMTP configuration from .env
+ */
+const sendPasswordResetEmail = async (email, resetToken) => {
+  try {
+    // Create transporter using environment variables
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const resetLink = `${process.env.RESET_PASSWORD_URL}?token=${resetToken}`;
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: "Bayanihub Password Reset Request",
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <h2>Password Reset Request</h2>
+          <p>Hello,</p>
+          <p>We received a request to reset your password. If you made this request, click the button below. This link expires in 24 hours.</p>
+          <p style="margin: 30px 0;">
+            <a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Reset Password
+            </a>
+          </p>
+          <p>Or copy this link: <a href="${resetLink}">${resetLink}</a></p>
+          <p>If you didn't request a password reset, you can ignore this email. Your password won't be changed.</p>
+          <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+          <p style="color: #666; font-size: 12px;">Bayanihub Team</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error("Email sending error:", error);
+    return false;
+  }
+};
+
+/**
+ * requestPasswordReset: Generates a reset token and sends password reset email.
+ * Called when user clicks "Forgot Password" on login page.
+ */
+export const requestPasswordReset = async ({ email }) => {
+  if (!email?.trim() || !EMAIL_REGEX.test(email.trim())) {
+    return { status: 400, body: { error: "Valid email address is required." } };
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Check if email exists in any of the three user tables
+  const donor = await prisma.donor.findUnique({ where: { email: normalizedEmail } });
+  const org = await prisma.organization.findUnique({ where: { email: normalizedEmail } });
+  const admin = await prisma.admin.findUnique({ where: { email: normalizedEmail } });
+
+  if (!donor && !org && !admin) {
+    // Don't reveal if email exists for security reasons
+    return {
+      status: 200,
+      body: {
+        message: "If an account exists with this email, you will receive a password reset link.",
+      },
+    };
+  }
+
+  // Generate secure random token
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  // Hash the token for storage (don't store plain tokens in DB)
+  const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+  // Store token in database with 24-hour expiration
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await prisma.passwordResetToken.create({
+    data: {
+      email: normalizedEmail,
+      token: hashedToken,
+      expiresAt,
+    },
+  });
+
+  // Send email with reset token
+  const emailSent = await sendPasswordResetEmail(normalizedEmail, resetToken);
+
+  if (!emailSent) {
+    // Delete the token if email fails to send
+    await prisma.passwordResetToken.deleteMany({
+      where: { token: hashedToken },
+    });
+
+    return {
+      status: 500,
+      body: { error: "Failed to send reset email. Please try again." },
+    };
+  }
+
+  return {
+    status: 200,
+    body: {
+      message: "If an account exists with this email, you will receive a password reset link.",
+    },
+  };
+};
+
+/**
+ * verifyResetToken: Checks if a reset token is valid and not expired.
+ * Returns the email associated with the token if valid.
+ */
+export const verifyResetToken = async (resetToken) => {
+  if (!resetToken?.trim()) {
+    return { status: 400, body: { error: "Reset token is required." } };
+  }
+
+  // Hash the token to compare with stored hash
+  const hashedToken = crypto.createHash("sha256").update(resetToken.trim()).digest("hex");
+
+  const tokenRecord = await prisma.passwordResetToken.findUnique({
+    where: { token: hashedToken },
+  });
+
+  if (!tokenRecord) {
+    return { status: 400, body: { error: "Invalid or expired reset token." } };
+  }
+
+  if (tokenRecord.isUsed) {
+    return { status: 400, body: { error: "This reset token has already been used." } };
+  }
+
+  if (new Date() > tokenRecord.expiresAt) {
+    return { status: 400, body: { error: "Reset token has expired. Please request a new one." } };
+  }
+
+  return {
+    status: 200,
+    body: { email: tokenRecord.email },
+  };
+};
+
+/**
+ * resetPassword: Updates password for a user using a valid reset token.
+ * Marks the token as used after successful reset.
+ */
+export const resetPassword = async ({ resetToken, newPassword }) => {
+  if (!resetToken?.trim()) {
+    return { status: 400, body: { error: "Reset token is required." } };
+  }
+
+  if (!newPassword || newPassword.length < 6) {
+    return { status: 400, body: { error: "Password must be at least 6 characters." } };
+  }
+
+  // Hash the token to compare with stored hash
+  const hashedToken = crypto.createHash("sha256").update(resetToken.trim()).digest("hex");
+
+  const tokenRecord = await prisma.passwordResetToken.findUnique({
+    where: { token: hashedToken },
+  });
+
+  if (!tokenRecord) {
+    return { status: 400, body: { error: "Invalid or expired reset token." } };
+  }
+
+  if (tokenRecord.isUsed) {
+    return { status: 400, body: { error: "This reset token has already been used." } };
+  }
+
+  if (new Date() > tokenRecord.expiresAt) {
+    return { status: 400, body: { error: "Reset token has expired. Please request a new one." } };
+  }
+
+  const userEmail = tokenRecord.email;
+  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+  // Update password in all three user tables (whichever has the email)
+  await Promise.all([
+    prisma.donor.updateMany({
+      where: { email: userEmail },
+      data: { password: hashedPassword },
+    }),
+    prisma.organization.updateMany({
+      where: { email: userEmail },
+      data: { password: hashedPassword },
+    }),
+    prisma.admin.updateMany({
+      where: { email: userEmail },
+      data: { password: hashedPassword },
+    }),
+  ]);
+
+  // Mark the token as used
+  await prisma.passwordResetToken.update({
+    where: { token: hashedToken },
+    data: { isUsed: true },
+  });
+
+  return {
+    status: 200,
+    body: {
+      message: "Password reset successful. You can now login with your new password.",
+    },
+  };
 };

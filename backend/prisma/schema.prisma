@@ -175,6 +175,18 @@ model DonorOrganizationPartner {
   @@unique([donorId, orgId])
 }
 
+// PASSWORD RESET TOKEN
+// Stores temporary tokens for password reset requests.
+// Tokens expire after 24 hours and are deleted after use.
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String   // email of user requesting password reset
+  token     String   @unique // unique reset token
+  expiresAt DateTime // expiration timestamp (24 hours from creation)
+  isUsed    Boolean  @default(false) // marked true after password is successfully reset
+  createdAt DateTime @default(now())
+}
+
 // ENUMS
 
 enum ASEANCountry {
