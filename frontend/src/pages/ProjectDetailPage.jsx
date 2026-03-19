@@ -147,7 +147,18 @@ export default function ProjectDetailPage() {
                 </div>
         </div>
 
-        <p className="apd-org-name">{project.orgName ?? "organization"}</p>
+        <p className="apd-org-name">
+          {project.orgName ?? "organization"}
+          {project.orgIsVerified && (
+            <button
+              type="button"
+              className="apd-verified-badge"
+              onClick={() => navigate(`/organization/${project.orgId}/verification`)}
+            >
+              Verified NGO
+            </button>
+          )}
+        </p>
         <p className="apd-org-contact">
           {project.orgRepresentative && <span>{project.orgRepresentative}</span>}
           {project.orgEmail && <span>{project.orgEmail}</span>}

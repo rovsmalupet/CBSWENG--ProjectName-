@@ -15,6 +15,7 @@ const formatPost = (post) => {
     orgName: post.organization?.orgName ?? null,
     orgEmail: post.organization?.email ?? null,
     orgCountry: post.organization?.country ?? null,
+    orgIsVerified: post.organization?.isVerified ?? false,
     orgRepresentative:
       post.organization?.firstName && post.organization?.surname
         ? `${post.organization.firstName} ${post.organization.surname}`
