@@ -90,3 +90,156 @@ export const rejectOrganization = async (req, res) => {
     res.status(500).json({ error: "Failed to reject organization." });
   }
 };
+
+/**
+ * GET /organizations/:id/verification
+ * Returns public verification profile data: registration/compliance documents
+ * and organization track record metrics for donor trust checks.
+ */
+export const getOrganizationVerificationProfile = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        orgName: true,
+        email: true,
+        country: true,
+        firstName: true,
+        surname: true,
+        isVerified: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    if (!org) {
+      return res.status(404).json({ error: "Organization not found." });
+    }
+
+    const now = new Date();
+
+    const [
+      totalProjects,
+      approvedProjects,
+      activeProjects,
+      confirmedContributionCount,
+      monetaryRaised,
+      projectsWithMonetaryGoals,
+      documents,
+    ] = await Promise.all([
+      prisma.post.count({
+        where: { orgId: id, NOT: { overallStatus: "Deleted" } },
+      }),
+      prisma.post.count({
+        where: { orgId: id, overallStatus: "Approved" },
+      }),
+      prisma.post.count({
+        where: {
+          orgId: id,
+          overallStatus: "Approved",
+          OR: [{ endDate: null }, { endDate: { gte: now } }],
+        },
+      }),
+      prisma.contribution.count({
+        where: {
+          status: "Confirmed",
+          post: { orgId: id },
+        },
+      }),
+      prisma.contribution.aggregate({
+        where: {
+          status: "Confirmed",
+          type: "Monetary",
+          post: { orgId: id },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.post.findMany({
+        where: {
+          orgId: id,
+          NOT: { overallStatus: "Deleted" },
+          supportOptions: { some: { type: "Monetary" } },
+        },
+        select: {
+          id: true,
+          supportOptions: {
+            where: { type: "Monetary" },
+            select: { targetAmount: true, currentAmount: true },
+            take: 1,
+          },
+        },
+      }),
+      prisma.documentUpload.findMany({
+        where: { post: { orgId: id } },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          fileName: true,
+          fileType: true,
+          fileSize: true,
+          mimeType: true,
+          description: true,
+          uploadedBy: true,
+          createdAt: true,
+          post: {
+            select: {
+              id: true,
+              projectName: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const registrationDocTypes = new Set(["Certification", "Compliance", "Certificate"]);
+    const registrationDocuments = documents.filter((doc) => registrationDocTypes.has(doc.fileType));
+
+    const completedFundingGoals = projectsWithMonetaryGoals.reduce((count, post) => {
+      const monetary = post.supportOptions?.[0];
+      if (!monetary) return count;
+      const target = Number(monetary.targetAmount ?? 0);
+      const current = Number(monetary.currentAmount ?? 0);
+      if (target > 0 && current >= target) return count + 1;
+      return count;
+    }, 0);
+
+    const yearsActive = Math.max(
+      0,
+      Math.floor((now.getTime() - new Date(org.createdAt).getTime()) / (365 * 24 * 60 * 60 * 1000)),
+    );
+
+    return res.status(200).json({
+      organization: {
+        id: org.id,
+        orgName: org.orgName,
+        email: org.email,
+        country: org.country,
+        representative:
+          org.firstName && org.surname ? `${org.firstName} ${org.surname}` : null,
+        isVerified: org.isVerified,
+        status: org.status,
+        createdAt: org.createdAt,
+      },
+      trackRecord: {
+        yearsActive,
+        totalProjects,
+        approvedProjects,
+        activeProjects,
+        confirmedContributions: confirmedContributionCount,
+        totalMonetaryRaised: monetaryRaised._sum.amount ?? 0,
+        totalMonetaryCampaigns: projectsWithMonetaryGoals.length,
+        completedFundingGoals,
+      },
+      registrationDocuments,
+      allDocuments: documents,
+    });
+  } catch (error) {
+    console.error("Error fetching organization verification profile:", error);
+    return res.status(500).json({
+      error: "Failed to load organization verification profile.",
+    });
+  }
+};

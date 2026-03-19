@@ -1,0 +1,164 @@
+.orgv-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  font-family: "DM Sans", sans-serif;
+}
+
+.orgv-main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1.8rem 1.2rem 3rem;
+}
+
+.orgv-back {
+  border: 0;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  margin-bottom: 0.9rem;
+}
+
+.orgv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.orgv-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #111827;
+}
+
+.orgv-header p {
+  margin: 0.45rem 0 0;
+  color: #475569;
+}
+
+.orgv-badge {
+  border-radius: 999px;
+  padding: 0.35rem 0.72rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.orgv-badge.verified {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.orgv-badge.pending {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.orgv-card {
+  background: #fff;
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 0.85rem;
+}
+
+.orgv-card h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.orgv-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.orgv-stats-grid div {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.28rem;
+}
+
+.orgv-stats-grid strong {
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.orgv-stats-grid span {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.orgv-footnote {
+  margin: 0.8rem 0 0;
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.orgv-doc-list {
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.orgv-doc-item {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 0.72rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.orgv-doc-name {
+  margin: 0;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.orgv-doc-meta,
+.orgv-doc-project,
+.orgv-doc-desc {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.orgv-download {
+  border: 1px solid #0284c7;
+  background: #fff;
+  color: #0369a1;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.orgv-status {
+  color: #475569;
+}
+
+.orgv-error {
+  color: #b91c1c;
+}
+
+.orgv-muted {
+  color: #64748b;
+  margin: 0.7rem 0 0;
+}
+
+@media (max-width: 680px) {
+  .orgv-doc-item {
+    flex-direction: column;
+  }
+}

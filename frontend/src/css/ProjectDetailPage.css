@@ -157,6 +157,27 @@
   background-color: #15803d;
   border-color: #166534;
 }
+
+.apd-verified-badge {
+  margin-left: 0.6rem;
+  border: 1px solid #34d399;
+  background: #d1fae5;
+  color: #047857;
+  border-radius: 999px;
+  padding: 0.2rem 0.58rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.apd-verified-badge:hover {
+  background: #bbf7d0;
+}
+
+.apd-verified-badge:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
 .detail-header {
   background: #ffffff;
   padding: 24px 32px;
