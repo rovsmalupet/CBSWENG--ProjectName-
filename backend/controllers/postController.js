@@ -378,11 +378,12 @@ export const updatePostStatus = async (req, res) => {
 export const addContribution = async (req, res) => {
   try {
     const { postId } = req.params;
-    const {
-      monetary = [],
-      inKind = [],
-      volunteer = [],
-    } = req.body;
+    let { monetary = [], inKind = [], volunteer = [] } = req.body;
+
+    // When donor uploads proof via FormData, arrays arrive as JSON strings.
+    if (typeof monetary === "string") monetary = JSON.parse(monetary || "[]");
+    if (typeof inKind === "string") inKind = JSON.parse(inKind || "[]");
+    if (typeof volunteer === "string") volunteer = JSON.parse(volunteer || "[]");
 
     // Fetch post with support options and in-kind items
     const post = await prisma.post.findUnique({
@@ -419,6 +420,15 @@ export const addContribution = async (req, res) => {
     const monetaryOption = post.supportOptions.find((o) => o.type === "Monetary");
     const volunteerOption = post.supportOptions.find((o) => o.type === "Volunteer");
 
+    const proofData = req.file
+      ? {
+          proofFileName: req.file.originalname,
+          proofFilePath: req.file.path,
+          proofMimeType: req.file.mimetype,
+          proofFileSize: req.file.size,
+        }
+      : {};
+
     // ── Create Contribution records and update totals ──────────────────────
 
     // Monetary
@@ -431,6 +441,7 @@ export const addContribution = async (req, res) => {
           postId,
           type: "Monetary",
           amount: parseFloat(entry.amount),
+          ...proofData,
           status: "Confirmed",
         },
       });
@@ -453,6 +464,7 @@ export const addContribution = async (req, res) => {
           type: "InKind",
           inKindItemId: entry.itemId,
           quantity: parseFloat(entry.quantity),
+          ...proofData,
           status: "Confirmed",
         },
       });
@@ -472,6 +484,7 @@ export const addContribution = async (req, res) => {
           postId,
           type: "Volunteer",
           volunteerCount: Math.round(entry.count),
+          ...proofData,
           status: "Confirmed",
         },
       });

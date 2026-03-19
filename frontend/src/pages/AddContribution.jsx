@@ -90,6 +90,7 @@ export default function AddContribution() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [proofFile, setProofFile] = useState(null);
 
   // Entry state
   const [monetaryRows, setMonetaryRows] = useState([newMonetaryRow()]);
@@ -170,11 +171,29 @@ export default function AddContribution() {
         return;
       }
 
-      const { getApiUrl, apiFetch } = await import("../config/api");
-      const updated = await apiFetch(getApiUrl(`/posts/${id}/contribute`), {
+      const { getApiUrl } = await import("../config/api");
+      const token = localStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append("monetary", JSON.stringify(monetary));
+      formData.append("inKind", JSON.stringify(inKind));
+      formData.append("volunteer", JSON.stringify(volunteer));
+      if (proofFile) {
+        formData.append("proofFile", proofFile);
+      }
+
+      const response = await fetch(getApiUrl(`/posts/${id}/contribute`), {
         method: "PATCH",
-        body: JSON.stringify({ monetary, inKind, volunteer }),
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
       });
+
+      const updated = await response.json();
+      if (!response.ok) {
+        throw new Error(updated.error || "Failed to save contribution.");
+      }
 
       setProject(updated.post);
 
@@ -186,6 +205,7 @@ export default function AddContribution() {
       });
       setInKindRows(resetInKind);
       setVolRows([newVolRow()]);
+      setProofFile(null);
 
       setSuccessMsg("Contributions saved successfully!");
       setTimeout(() => setSuccessMsg(""), 3500);
@@ -457,6 +477,20 @@ export default function AddContribution() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {anySection && (
+          <div className="ac-proof-wrap">
+            <label htmlFor="proofFile" className="ac-proof-label">Proof of Donation (Optional)</label>
+            <input
+              id="proofFile"
+              className="ac-proof-input"
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx"
+              onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+            />
+            {proofFile && <p className="ac-proof-file">Selected: {proofFile.name}</p>}
           </div>
         )}
 

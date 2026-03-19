@@ -170,6 +170,12 @@ model Contribution {
   inKindItem     PostInKindItem?           @relation(fields: [inKindItemId], references: [id], onDelete: SetNull)
   quantity       Float?
 
+  // Optional proof of donation upload from donor
+  proofFileName  String?
+  proofFilePath  String?
+  proofMimeType  String?
+  proofFileSize  Int?
+
   status         ContributionStatus        @default(Pending)
   createdAt      DateTime                  @default(now())
 }
