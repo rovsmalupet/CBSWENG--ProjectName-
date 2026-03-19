@@ -8,7 +8,10 @@ async function main() {
   // ── Organization ──────────────────────────────────────────────────────────
   const org = await prisma.organization.upsert({
     where: { email: "mary.angela@redcross.ph" },
-    update: {},
+    update: {
+      isVerified: true,
+      status: "Approved",
+    },
     create: {
       orgName: "Philippine Red Cross",
       firstName: "Mary Angela",
