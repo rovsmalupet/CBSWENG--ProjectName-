@@ -136,6 +136,27 @@
   background-color: #e0f2fe;
   border-color: #3b82f6;
 }
+
+.apd-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #16a34a;
+  border: 1px solid #15803d;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.apd-support-btn:hover {
+  background-color: #15803d;
+  border-color: #166534;
+}
 .detail-header {
   background: #ffffff;
   padding: 24px 32px;

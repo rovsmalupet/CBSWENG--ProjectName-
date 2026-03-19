@@ -378,6 +378,19 @@ export default function DonorHomepage() {
                       </div>
                     </div>
                   )}
+
+                  <div className="campaign-actions">
+                    <button
+                      type="button"
+                      className="support-now-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/add-contribution/${campaign.id}`);
+                      }}
+                    >
+                      Support Now
+                    </button>
+                  </div>
                 </div>
               );
             })}

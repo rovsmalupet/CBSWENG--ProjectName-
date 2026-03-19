@@ -411,6 +411,28 @@
   margin-top: 0.25rem;
 }
 
+.campaign-actions {
+  margin-top: 0.75rem;
+}
+
+.support-now-btn {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: #16a34a;
+  color: #ffffff;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.support-now-btn:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
 .inkind-list {
   list-style: none;
   padding: 0;
