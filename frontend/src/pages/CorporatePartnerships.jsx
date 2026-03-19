@@ -26,6 +26,26 @@ export default function CorporatePartnerships() {
     loadPartnerships();
   }, []);
 
+  const formatAmount = (value) =>
+    new Intl.NumberFormat("en-PH", {
+      style: "currency",
+      currency: "PHP",
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0));
+
+  const formatDateTime = (value) => {
+    if (!value) return "Just now";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Just now";
+    return date.toLocaleString("en-PH", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
   return (
     <div className="partnerships-page">
       <main className="partnerships-main">
@@ -75,14 +95,41 @@ export default function CorporatePartnerships() {
                 <div className="partnership-projects">
                   {partnership.projects?.length ? (
                     partnership.projects.map((project) => (
-                      <button
-                        key={project.id}
-                        className="partnership-project"
-                        onClick={() => navigate(`/project/${project.id}`)}
-                      >
-                        <span className="project-name">{project.projectName}</span>
-                        <span className="project-status">{project.overallStatus}</span>
-                      </button>
+                      <article key={project.id} className="partnership-project-card">
+                        <button
+                          className="partnership-project"
+                          onClick={() => navigate(`/project/${project.id}`)}
+                        >
+                          <span className="project-name">{project.projectName}</span>
+                          <span className="project-status">{project.overallStatus}</span>
+                        </button>
+
+                        {project.fundraisingUpdate && (
+                          <div
+                            className={`fundraising-update ${
+                              project.fundraisingUpdate.goalMet ? "goal-met" : "goal-progress"
+                            }`}
+                          >
+                            <div className="fundraising-update-top">
+                              <strong>
+                                {project.fundraisingUpdate.goalMet
+                                  ? "Goal reached"
+                                  : "Goal in progress"}
+                              </strong>
+                              <span className="fundraising-update-meta">
+                                {formatAmount(project.fundraisingUpdate.currentAmount)} /{" "}
+                                {formatAmount(project.fundraisingUpdate.targetAmount)}
+                              </span>
+                            </div>
+                            <p>{project.fundraisingUpdate.message}</p>
+                            {project.fundraisingUpdate.goalMet && (
+                              <small>
+                                Reached on {formatDateTime(project.fundraisingUpdate.reachedAt)}
+                              </small>
+                            )}
+                          </div>
+                        )}
+                      </article>
                     ))
                   ) : (
                     <p className="no-projects">No project snapshots available yet.</p>
