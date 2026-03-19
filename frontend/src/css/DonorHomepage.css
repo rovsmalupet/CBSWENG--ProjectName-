@@ -306,16 +306,26 @@
 }
 
 .verified-badge {
-  display: inline-block;
+  display: inline-flex;
+  border: 1px solid #34d399;
+  cursor: pointer;
   padding: 0.4rem 0.75rem;
   background: #d1fae5;
   color: #047857;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
-  display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.verified-badge:hover {
+  background: #bbf7d0;
+}
+
+.verified-badge:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
 }
 
 .campaign-title {

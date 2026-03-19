@@ -5,6 +5,7 @@ import {
   getPendingOrganizations,
   approveOrganization,
   rejectOrganization,
+  getOrganizationVerificationProfile,
 } from "../controllers/organizationController.js";
 
 const router = express.Router();
@@ -14,6 +15,9 @@ router.post("/register", registerOrganization);
 
 // GET /organizations/pending - Get all pending organizations
 router.get("/pending", authenticate, authorizeRoles("admin"), getPendingOrganizations);
+
+// GET /organizations/:id/verification - View NGO verification details and track record
+router.get("/:id/verification", authenticate, authorizeRoles("donor", "ngo", "admin"), getOrganizationVerificationProfile);
 
 // PATCH /organizations/:id/approve - Approve an organization
 router.patch("/:id/approve", authenticate, authorizeRoles("admin"), approveOrganization);

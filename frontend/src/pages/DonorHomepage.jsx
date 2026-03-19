@@ -323,7 +323,22 @@ export default function DonorHomepage() {
 
                   <div className="campaign-meta">
                     <div className="meta-item"><span className="meta-label">location:</span><span>{campaign.location || "not specified"}</span></div>
-                    <div className="meta-item"><span className="meta-label">org:</span><span>{truncateText(campaign.orgName || "organization", 30)}</span></div>
+                    <div className="meta-item">
+                      <span className="meta-label">org:</span>
+                      <span>{truncateText(campaign.orgName || "organization", 30)}</span>
+                      {campaign.orgIsVerified && (
+                        <button
+                          type="button"
+                          className="verified-badge"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/organization/${campaign.orgId}/verification`);
+                          }}
+                        >
+                          Verified NGO
+                        </button>
+                      )}
+                    </div>
                     {(campaign.startDate || campaign.endDate) && (
                       <div className="meta-item">
                         <span className="meta-label">dates:</span>
