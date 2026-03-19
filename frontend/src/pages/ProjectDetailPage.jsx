@@ -136,6 +136,11 @@ export default function ProjectDetailPage() {
             )}
           </div>
                 <div className="apd-secondary-actions">
+                  {userRole === "donor" && (
+                    <button className="apd-support-btn" onClick={() => navigate(`/add-contribution/${id}`)}>
+                      Support Now
+                    </button>
+                  )}
                   <button className="apd-doc-btn" onClick={() => navigate(`/project/${id}/documentation`)}>
                     View Documentation
                   </button>
