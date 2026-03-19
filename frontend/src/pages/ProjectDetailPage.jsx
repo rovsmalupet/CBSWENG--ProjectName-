@@ -55,6 +55,7 @@ const percent = (current, target) => {
 export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const userRole = localStorage.getItem("userRole");
 
   const userId = localStorage.getItem("userId");
   const bookmarkKey = `bookmarkedProjects_${userId}`;
@@ -77,6 +78,12 @@ export default function ProjectDetailPage() {
   };
 
   const isBookmarked = bookmarkedProjects.includes(id);
+
+  const getBackRoute = () => {
+    if (userRole === "ngo") return "/dashboard";
+    if (userRole === "admin") return "/admin";
+    return "/donor";
+  };
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -103,7 +110,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="apd-page">
-      <button onClick={() => navigate("/donor")} className="apd-back-btn">
+      <button onClick={() => navigate(getBackRoute())} className="apd-back-btn">
         <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path d="M19 12H5M12 5l-7 7 7 7" />
         </svg>
@@ -119,9 +126,14 @@ export default function ProjectDetailPage() {
                 {project.priority.toLowerCase()} priority
               </span>
             )}
-            <button className={`apd-save-btn ${isBookmarked ? "saved" : ""}`} onClick={toggleBookmark}>
-              {isBookmarked ? "SAVED" : "SAVE"}
-            </button>
+            {userRole === "donor" && (
+              <button className={`apd-save-btn ${isBookmarked ? "saved" : ""}`} onClick={toggleBookmark}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+                </svg>
+                {isBookmarked ? "Saved" : "Save"}
+              </button>
+            )}
           </div>
                 <div className="apd-secondary-actions">
                   <button className="apd-doc-btn" onClick={() => navigate(`/project/${id}/documentation`)}>

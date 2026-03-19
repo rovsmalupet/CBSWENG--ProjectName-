@@ -1,11 +1,9 @@
 import prisma from "../prisma/client.js";
 import fs from "fs";
-import path from "path";
 
 export const uploadDocument = async (req, res) => {
   try {
     const { postId, fileType, description } = req.body;
-    const uploadedBy = req.body.uploadedBy || "unknown";
 
     if (!postId || !fileType) {
       return res.status(400).json({
@@ -21,6 +19,7 @@ export const uploadDocument = async (req, res) => {
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
+      include: { organization: true },
     });
 
     if (!post) {
@@ -29,6 +28,18 @@ export const uploadDocument = async (req, res) => {
         error: "Post not found.",
       });
     }
+
+    if (req.user?.role === "ngo" && req.user.id !== post.orgId) {
+      fs.unlinkSync(req.file.path);
+      return res.status(403).json({
+        error: "You can only upload documents for your own projects.",
+      });
+    }
+
+    const uploadedBy =
+      post.organization?.orgName ||
+      `${post.organization?.firstName || ""} ${post.organization?.surname || ""}`.trim() ||
+      "Organization";
 
     const document = await prisma.documentUpload.create({
       data: {
@@ -129,11 +140,18 @@ export const deleteDocument = async (req, res) => {
 
     const document = await prisma.documentUpload.findUnique({
       where: { id: documentId },
+      include: { post: true },
     });
 
     if (!document) {
       return res.status(404).json({
         error: "Document not found.",
+      });
+    }
+
+    if (req.user?.role === "ngo" && req.user.id !== document.post.orgId) {
+      return res.status(403).json({
+        error: "You can only delete documents from your own projects.",
       });
     }
 
