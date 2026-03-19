@@ -281,17 +281,24 @@
 .bookmark-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
   color: #9ca3af;
   cursor: pointer;
   padding: 0.25rem;
   transition: all 0.2s;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .bookmark-btn:hover {
   color: #f59e0b;
   transform: scale(1.1);
+}
+
+.bookmark-btn:active {
+  color: #f59e0b;
+  transform: scale(0.98);
 }
 
 .bookmark-btn.bookmarked {

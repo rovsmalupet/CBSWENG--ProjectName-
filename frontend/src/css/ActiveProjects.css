@@ -239,6 +239,7 @@
 
 /* ── Edit and Delete buttons ── */
 .edit-btn,
+.documentation-btn,
 .contribution-btn,
 .delete-btn {
   font-size: 0.72rem;
@@ -276,6 +277,19 @@
 .contribution-btn:hover {
   background: #93c5fd;
   border-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+/* Documentation button styling (teal) */
+.documentation-btn {
+  background: #ccfbf1;
+  color: #0f766e;
+  border: 1px solid #5eead4;
+}
+
+.documentation-btn:hover {
+  background: #99f6e4;
+  border-color: #14b8a6;
   transform: translateY(-1px);
 }
 

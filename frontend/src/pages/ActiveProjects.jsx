@@ -256,6 +256,13 @@ export default function ActiveProjects() {
                       Edit
                     </button>
                     <button
+                      className="documentation-btn"
+                      onClick={() => navigate(`/project/${project.id}/documentation`)}
+                      title="Upload or view project documentation"
+                    >
+                      Documentation
+                    </button>
+                    <button
                       className="contribution-btn"
                       onClick={() =>
                         navigate(`/add-contribution/${project.id}`)
