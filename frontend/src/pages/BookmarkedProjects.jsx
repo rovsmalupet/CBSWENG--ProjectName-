@@ -219,8 +219,11 @@ export default function BookmarkedProjects() {
                         className="bookmark-btn bookmarked"
                         onClick={(e) => toggleBookmark(e, campaign.id)}
                         title="remove bookmark"
+                        aria-label="remove bookmark"
                       >
-                        BOOKMARKED
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
                       </button>
                     </div>
 
