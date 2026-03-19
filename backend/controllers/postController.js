@@ -45,6 +45,34 @@ const formatPost = (post) => {
 };
 
 /**
+ * Builds a quick lookup for the first time each post reached its monetary target.
+ * Returns: { [postId]: Date | null }
+ */
+const getMonetaryGoalReachedAtMap = (postsById, monetaryContributions) => {
+  const reachedAtMap = {};
+  const runningTotals = {};
+
+  for (const contribution of monetaryContributions) {
+    const post = postsById[contribution.postId];
+    if (!post) continue;
+
+    const monetary = post.supportTypes?.monetary;
+    if (!monetary?.enabled || !monetary.targetAmount || monetary.targetAmount <= 0) {
+      continue;
+    }
+
+    runningTotals[contribution.postId] =
+      (runningTotals[contribution.postId] ?? 0) + (contribution.amount ?? 0);
+
+    if (!reachedAtMap[contribution.postId] && runningTotals[contribution.postId] >= monetary.targetAmount) {
+      reachedAtMap[contribution.postId] = contribution.createdAt;
+    }
+  }
+
+  return reachedAtMap;
+};
+
+/**
  * buildPostData: Parses the request body into structured data ready for Prisma.
  */
 const buildPostData = (body) => {
@@ -545,15 +573,27 @@ export const getMyDonorPartnerships = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
+    const postsById = {};
+    const partnershipMonetaryContributionsByPost = {};
+
     const result = partnerships.map((partnership) => {
       const uniquePosts = [];
       const seenPostIds = new Set();
 
       for (const contribution of partnership.contributions) {
+        if (contribution.type !== "Monetary" || !contribution.postId) continue;
+        partnershipMonetaryContributionsByPost[contribution.postId] =
+          (partnershipMonetaryContributionsByPost[contribution.postId] ?? 0) + 1;
+      }
+
+      for (const contribution of partnership.contributions) {
         const post = contribution.post;
         if (!post || seenPostIds.has(post.id)) continue;
         seenPostIds.add(post.id);
-        uniquePosts.push(formatPost(post));
+
+        const formattedPost = formatPost(post);
+        postsById[formattedPost.id] = formattedPost;
+        uniquePosts.push(formattedPost);
       }
 
       return {
@@ -564,6 +604,57 @@ export const getMyDonorPartnerships = async (req, res) => {
         totalContributions: partnership.contributions.length,
       };
     });
+
+    const postIds = Object.keys(postsById);
+    if (postIds.length > 0) {
+      const monetaryContributions = await prisma.contribution.findMany({
+        where: {
+          postId: { in: postIds },
+          type: "Monetary",
+          status: "Confirmed",
+        },
+        select: {
+          postId: true,
+          amount: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "asc" },
+      });
+
+      const reachedAtMap = getMonetaryGoalReachedAtMap(postsById, monetaryContributions);
+
+      for (const partnership of result) {
+        partnership.projects = (partnership.projects || []).map((project) => {
+          const monetary = project.supportTypes?.monetary;
+          const hasMonetaryGoal = monetary?.enabled && (monetary.targetAmount ?? 0) > 0;
+          const donorContributedMonetary = (partnershipMonetaryContributionsByPost[project.id] ?? 0) > 0;
+
+          if (!hasMonetaryGoal || !donorContributedMonetary) {
+            return {
+              ...project,
+              fundraisingUpdate: null,
+            };
+          }
+
+          const targetAmount = monetary.targetAmount ?? 0;
+          const currentAmount = monetary.currentAmount ?? 0;
+          const goalMet = currentAmount >= targetAmount;
+
+          return {
+            ...project,
+            fundraisingUpdate: {
+              goalMet,
+              targetAmount,
+              currentAmount,
+              reachedAt: goalMet ? reachedAtMap[project.id] ?? null : null,
+              message: goalMet
+                ? "Fundraising goal reached. Thank you for helping this project succeed."
+                : "Fundraising is still in progress.",
+            },
+          };
+        });
+      }
+    }
 
     res.json(result);
   } catch (err) {

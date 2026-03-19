@@ -67,6 +67,11 @@
   gap: 0.55rem;
 }
 
+.partnership-project-card {
+  display: grid;
+  gap: 0.45rem;
+}
+
 .partnership-project {
   width: 100%;
   text-align: left;
@@ -95,6 +100,47 @@
   color: #0369a1;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+.fundraising-update {
+  border-radius: 10px;
+  padding: 0.62rem 0.75rem;
+  border: 1px solid;
+}
+
+.fundraising-update.goal-met {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #065f46;
+}
+
+.fundraising-update.goal-progress {
+  background: #f0f9ff;
+  border-color: #7dd3fc;
+  color: #075985;
+}
+
+.fundraising-update-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.22rem;
+}
+
+.fundraising-update-meta {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.fundraising-update p {
+  margin: 0.12rem 0;
+  font-size: 0.86rem;
+}
+
+.fundraising-update small {
+  font-size: 0.78rem;
+  opacity: 0.9;
 }
 
 .partnerships-empty,
