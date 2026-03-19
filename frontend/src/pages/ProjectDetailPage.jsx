@@ -123,6 +123,11 @@ export default function ProjectDetailPage() {
               {isBookmarked ? "SAVED" : "SAVE"}
             </button>
           </div>
+                <div className="apd-secondary-actions">
+                  <button className="apd-doc-btn" onClick={() => navigate(`/project/${id}/documentation`)}>
+                    View Documentation
+                  </button>
+                </div>
         </div>
 
         <p className="apd-org-name">{project.orgName ?? "organization"}</p>

@@ -5,6 +5,7 @@ import postRoutes from "./routes/postRoutes.js";
 import organizationRoutes from "./routes/organizationRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import { seedDefaultUsers } from "./services/userAccountService.js";
+import documentRoutes from "./routes/documentRoutes.js";
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/", authRoutes);
 app.use("/posts", postRoutes);
 app.use("/organizations", organizationRoutes);
+app.use("/documents", documentRoutes);
 
 // Health check — useful for Railway and deployment verification
 app.get("/health", (req, res) => {

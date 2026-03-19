@@ -109,6 +109,33 @@
   color: #92400e;
 }
 
+.apd-secondary-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.apd-doc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #f0f9ff;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.apd-doc-btn:hover {
+  background-color: #e0f2fe;
+  border-color: #3b82f6;
+}
 .detail-header {
   background: #ffffff;
   padding: 24px 32px;

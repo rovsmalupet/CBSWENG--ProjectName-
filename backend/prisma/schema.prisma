@@ -77,6 +77,7 @@ model Post {
   inKindItems    PostInKindItem[]
   contributions  Contribution[]
   auditLogs      PostAuditLog[]
+    documents      DocumentUpload[]
 }
 
 // POST AUDIT LOG
@@ -90,6 +91,20 @@ model PostAuditLog {
   action    PostStatus // the status that was set
   createdAt DateTime   @default(now())
 }
+  model DocumentUpload {
+    id            String          @id @default(uuid())
+    postId        String
+    post          Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
+    fileName      String
+    fileType      DocumentType
+    filePath      String
+    fileSize      Int
+    mimeType      String?
+    uploadedBy    String
+    description   String?
+    createdAt     DateTime        @default(now())
+  }
+
 
 // POST SUPPORT OPTION
 
@@ -259,4 +274,13 @@ enum ContributionStatus {
   Pending    // logged, waiting for org to confirm
   Confirmed  // org verified the contribution
   Declined   // org rejected the contribution
+  }
+
+  enum DocumentType {
+    Photo
+    Receipt
+    Report
+    Update
+    Certificate
+    Other
 }
