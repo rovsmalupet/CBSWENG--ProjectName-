@@ -178,6 +178,91 @@
   outline: 2px solid #059669;
   outline-offset: 2px;
 }
+
+.apd-budget-section {
+  margin: 0.4rem 0;
+}
+
+.apd-budget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.apd-budget-note {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.apd-budget-layout {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.apd-budget-pie {
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  border: 6px solid #fff;
+  box-shadow: 0 0 0 1px #e2e8f0;
+}
+
+.apd-budget-legend {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.apd-budget-row {
+  display: grid;
+  grid-template-columns: 14px 1fr auto auto;
+  align-items: center;
+  gap: 0.55rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.46rem 0.58rem;
+}
+
+.apd-budget-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.apd-budget-label {
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.apd-budget-percent {
+  color: #0369a1;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.apd-budget-amount {
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .apd-budget-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .apd-budget-legend {
+    width: 100%;
+  }
+}
+
 .detail-header {
   background: #ffffff;
   padding: 24px 32px;
