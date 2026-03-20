@@ -63,6 +63,7 @@ model Post {
   organization   Organization        @relation(fields: [orgId], references: [id])
   projectName    String
   description    String?
+  budgetBreakdown Json?
   causes         CauseEnum[]
   location       String?
   priority       Priority            @default(Medium)

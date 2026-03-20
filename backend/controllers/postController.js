@@ -2,6 +2,57 @@ import prisma from "../prisma/client.js";
 
 // HELPERS
 
+const DEFAULT_BUDGET_BREAKDOWN = [
+  { label: "Food", percentage: 80 },
+  { label: "Logistics", percentage: 10 },
+  { label: "Operations", percentage: 10 },
+];
+
+const normalizeBudgetBreakdown = (rawBudgetBreakdown) => {
+  if (!rawBudgetBreakdown) {
+    return DEFAULT_BUDGET_BREAKDOWN;
+  }
+
+  let parsed = rawBudgetBreakdown;
+  if (typeof rawBudgetBreakdown === "string") {
+    try {
+      parsed = JSON.parse(rawBudgetBreakdown);
+    } catch {
+      return DEFAULT_BUDGET_BREAKDOWN;
+    }
+  }
+
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return DEFAULT_BUDGET_BREAKDOWN;
+  }
+
+  const cleaned = parsed
+    .map((item) => ({
+      label: String(item?.label || "Category").trim(),
+      percentage: Number(item?.percentage ?? 0),
+    }))
+    .filter((item) => item.label && item.percentage > 0);
+
+  if (cleaned.length === 0) {
+    return DEFAULT_BUDGET_BREAKDOWN;
+  }
+
+  const total = cleaned.reduce((sum, item) => sum + item.percentage, 0);
+  if (total <= 0) {
+    return DEFAULT_BUDGET_BREAKDOWN;
+  }
+
+  let assigned = 0;
+  return cleaned.map((item, index) => {
+    if (index === cleaned.length - 1) {
+      return { ...item, percentage: Math.max(0, 100 - assigned) };
+    }
+    const value = Math.round((item.percentage / total) * 100);
+    assigned += value;
+    return { ...item, percentage: value };
+  });
+};
+
 /**
  * formatPost: Transforms a raw Prisma post object into the shape the frontend expects.
  * Reads support types from PostSupportOption rows and inKindItems.
@@ -20,6 +71,7 @@ const formatPost = (post) => {
       post.organization?.firstName && post.organization?.surname
         ? `${post.organization.firstName} ${post.organization.surname}`
         : null,
+    budgetBreakdown: normalizeBudgetBreakdown(post.budgetBreakdown),
     organization: undefined,
     supportTypes: {
       monetary: monetary
@@ -80,6 +132,7 @@ const buildPostData = (body) => {
   const {
     projectName,
     description,
+    budgetBreakdown,
     causes,
     location,
     priority,
@@ -114,6 +167,7 @@ const buildPostData = (body) => {
   return {
     projectName,
     description,
+    budgetBreakdown: normalizeBudgetBreakdown(budgetBreakdown),
     causes: causes ?? [],
     location,
     priority,
