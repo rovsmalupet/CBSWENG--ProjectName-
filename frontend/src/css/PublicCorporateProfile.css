@@ -1,0 +1,70 @@
+.public-corporate-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #dbeafe 0%, #f8fafc 50%, #eff6ff 100%);
+  font-family: "DM Sans", sans-serif;
+}
+
+.public-corporate-main {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 2.4rem 1.2rem 3.2rem;
+}
+
+.public-corporate-hero {
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  border-radius: 16px;
+  padding: 1.2rem;
+}
+
+.public-kicker {
+  margin: 0;
+  color: #0369a1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.public-corporate-hero h1 {
+  margin: 0.55rem 0 0;
+  color: #0f172a;
+  font-size: 2rem;
+}
+
+.public-corporate-hero p {
+  margin: 0.55rem 0 0;
+  color: #475569;
+}
+
+.public-corporate-metrics {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.public-corporate-metrics article {
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  border-radius: 14px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.public-corporate-metrics strong {
+  color: #0f172a;
+  font-size: 1.5rem;
+}
+
+.public-corporate-metrics span {
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.public-corporate-footnote {
+  margin-top: 0.8rem;
+  color: #64748b;
+  font-size: 0.82rem;
+}

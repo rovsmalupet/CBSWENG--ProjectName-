@@ -21,6 +21,7 @@ import NgoRegistration from "./pages/NgoRegistration.jsx";
 import DonorRegistration from "./pages/DonorRegistration.jsx";
 import ProjectDocumentation from "./pages/ProjectDocumentation.jsx";
 import OrganizationVerification from "./pages/OrganizationVerification.jsx";
+import PublicCorporateProfile from "./pages/PublicCorporateProfile.jsx";
 
 function RequireRole({ allowedRoles, children }) {
   const token = localStorage.getItem("token");
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/project/:id" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><ProjectDetailPage /></RequireRole>} />
           <Route path="/project/:id/documentation" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><ProjectDocumentation /></RequireRole>} />
         <Route path="/organization/:id/verification" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><OrganizationVerification /></RequireRole>} />
+        <Route path="/public/corporate-profile" element={<PublicCorporateProfile />} />
         <Route path="/admin" element={<RequireRole allowedRoles={["admin"]}><AdminHomepage /></RequireRole>} />
         <Route path="/viewProjects" element={<RequireRole allowedRoles={["admin"]}><ViewProjects /></RequireRole>} />
         <Route path="/admin/project/:id" element={<RequireRole allowedRoles={["admin"]}><AdminProjectDetail /></RequireRole>} />

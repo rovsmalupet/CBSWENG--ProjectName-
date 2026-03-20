@@ -22,6 +22,66 @@
   font-size: 0.95rem;
 }
 
+.public-profile-preview {
+  background: linear-gradient(120deg, #f0f9ff 0%, #ecfeff 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.9rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.public-profile-kicker {
+  margin: 0;
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.public-profile-preview h2 {
+  margin: 0.35rem 0 0;
+  color: #0f172a;
+  font-size: 1.1rem;
+}
+
+.public-profile-metric {
+  margin: 0.42rem 0 0;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.public-profile-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.public-profile-btn {
+  border: 1px solid #0284c7;
+  background: #0284c7;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.public-profile-btn.secondary {
+  background: #fff;
+  color: #0369a1;
+}
+
+.public-profile-btn:hover {
+  opacity: 0.92;
+}
+
 .partnerships-list {
   display: grid;
   gap: 1rem;

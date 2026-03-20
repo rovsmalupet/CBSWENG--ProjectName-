@@ -46,6 +46,48 @@ export default function CorporatePartnerships() {
     });
   };
 
+  const donorName = `${localStorage.getItem("userFirstName") || "Corporate"} ${
+    localStorage.getItem("userLastName") || "Donor"
+  }`.trim();
+
+  const totalLifetimeContributions = partnerships.reduce(
+    (sum, partnership) => sum + Number(partnership.totalContributions || 0),
+    0,
+  );
+
+  const totalSupportedProjects = new Set(
+    partnerships.flatMap((partnership) => (partnership.projects || []).map((project) => project.id)),
+  ).size;
+
+  const buildPublicProfileUrl = () => {
+    const params = new URLSearchParams({
+      name: donorName,
+      lifetime: String(totalLifetimeContributions),
+      partnerships: String(partnerships.length),
+      projects: String(totalSupportedProjects),
+      updated: new Date().toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    });
+
+    return `${window.location.origin}/public/corporate-profile?${params.toString()}`;
+  };
+
+  const openPublicProfile = () => {
+    window.open(buildPublicProfileUrl(), "_blank", "noopener,noreferrer");
+  };
+
+  const copyPublicProfileLink = async () => {
+    try {
+      await navigator.clipboard.writeText(buildPublicProfileUrl());
+      alert("Public profile link copied.");
+    } catch {
+      alert("Could not copy link. Please copy from your browser address bar.");
+    }
+  };
+
   return (
     <div className="partnerships-page">
       <main className="partnerships-main">
@@ -67,6 +109,24 @@ export default function CorporatePartnerships() {
         <p className="partnerships-subtitle">
           Projects where your donor account is already verified through active org partnerships.
         </p>
+
+        <section className="public-profile-preview">
+          <div>
+            <p className="public-profile-kicker">Public Corporate Profile</p>
+            <h2>{donorName}</h2>
+            <p className="public-profile-metric">
+              Total Lifetime Contribution: <strong>{totalLifetimeContributions.toLocaleString()}</strong>
+            </p>
+          </div>
+          <div className="public-profile-actions">
+            <button type="button" className="public-profile-btn" onClick={openPublicProfile}>
+              View Public Profile
+            </button>
+            <button type="button" className="public-profile-btn secondary" onClick={copyPublicProfileLink}>
+              Copy Share Link
+            </button>
+          </div>
+        </section>
 
         {loading ? (
           <div className="partnerships-empty">Loading partnerships...</div>
