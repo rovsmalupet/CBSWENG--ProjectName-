@@ -40,14 +40,6 @@ const priorityClass = {
   Low:    "apd-priority-low",
 };
 
-const DEFAULT_BUDGET_BREAKDOWN = [
-  { label: "Food",       percentage: 80 },
-  { label: "Logistics",  percentage: 10 },
-  { label: "Operations", percentage: 10 },
-];
-
-const BUDGET_COLORS = ["#f97316", "#0891b2", "#16a34a", "#7c3aed", "#f43f5e", "#0ea5e9"];
-
 const formatDate = (dateStr) => {
   if (!dateStr) return "";
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -62,40 +54,11 @@ const percent = (current, target) => {
   return Math.min(100, Math.round((safeCurrent / safeTarget) * 100));
 };
 
-const normalizeBudgetBreakdown = (raw) => {
-  if (!Array.isArray(raw) || raw.length === 0) return DEFAULT_BUDGET_BREAKDOWN;
-
-  const cleaned = raw
-    .map((item) => ({
-      label:      String(item?.label || "Category").trim(),
-      percentage: Number(item?.percentage ?? 0),
-    }))
-    .filter((item) => item.label && item.percentage > 0);
-
-  if (cleaned.length === 0) return DEFAULT_BUDGET_BREAKDOWN;
-
-  const total = cleaned.reduce((sum, item) => sum + item.percentage, 0);
-  if (total <= 0) return DEFAULT_BUDGET_BREAKDOWN;
-
-  let assigned = 0;
-  return cleaned.map((item, index) => {
-    if (index === cleaned.length - 1) {
-      return { ...item, percentage: Math.max(0, 100 - assigned) };
-    }
-    const value = Math.round((item.percentage / total) * 100);
-    assigned += value;
-    return { ...item, percentage: value };
-  });
-};
-
-const formatCurrency = (value) =>
-  `PHP ${Number(value || 0).toLocaleString()}`;
-
 export default function ProjectDetailPage() {
-  const navigate  = useNavigate();
-  const { id }    = useParams();
-  const userRole  = localStorage.getItem("userRole");
-  const userId    = localStorage.getItem("userId");
+  const navigate    = useNavigate();
+  const { id }      = useParams();
+  const userRole    = localStorage.getItem("userRole");
+  const userId      = localStorage.getItem("userId");
   const bookmarkKey = `bookmarkedProjects_${userId}`;
 
   const [project, setProject] = useState(null);
@@ -110,7 +73,7 @@ export default function ProjectDetailPage() {
     setBookmarkedProjects((prev) => {
       const isBookmarked = prev.includes(id);
       const updated = isBookmarked
-        ? prev.filter((projectId) => projectId !== id)
+        ? prev.filter((pid) => pid !== id)
         : [...prev, id];
       localStorage.setItem(bookmarkKey, JSON.stringify(updated));
       return updated;
@@ -161,24 +124,12 @@ export default function ProjectDetailPage() {
 
   if (!project) return null;
 
-  const monetary        = project.supportTypes?.monetary;
-  const inKind          = project.supportTypes?.inKind ?? [];
-  const volunteer       = project.supportTypes?.volunteer;
-  const budgetBreakdown = normalizeBudgetBreakdown(project.budgetBreakdown);
-  const totalBudget     = Number(monetary?.targetAmount ?? 0);
-
-  let start = 0;
-  const pieParts = budgetBreakdown.map((item, index) => {
-    const color   = BUDGET_COLORS[index % BUDGET_COLORS.length];
-    const end     = start + item.percentage;
-    const segment = `${color} ${start}% ${end}%`;
-    start = end;
-    return segment;
-  });
+  const monetary  = project.supportTypes?.monetary;
+  const inKind    = project.supportTypes?.inKind ?? [];
+  const volunteer = project.supportTypes?.volunteer;
 
   return (
     <div className="apd-page">
-      {/* Back button lives outside the card for breathing room */}
       <button onClick={() => navigate(getBackRoute())} className="apd-back-btn">
         <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -188,19 +139,19 @@ export default function ProjectDetailPage() {
 
       <div className="apd-card">
 
-        {/* ── Title row ── */}
-        <div className="apd-title-row">
+        {/* ── Title block — left-aligned ── */}
+        <div className="apd-title-block">
 
-          {/* Line 1: title + priority badge + bookmark */}
-          <div className="apd-title-top">
-            <h1 className="apd-title">{project.projectName}</h1>
+          {/* Row 1: title */}
+          <h1 className="apd-title">{project.projectName}</h1>
 
+          {/* Row 2: priority badge + bookmark */}
+          <div className="apd-title-meta">
             {project.priority && (
               <span className={`apd-priority ${priorityClass[project.priority] ?? ""}`}>
                 {project.priority.toLowerCase()} priority
               </span>
             )}
-
             {userRole === "donor" && (
               <button
                 className={`apd-save-btn ${isBookmarked ? "saved" : ""}`}
@@ -220,14 +171,14 @@ export default function ProjectDetailPage() {
             )}
           </div>
 
-          {/* Line 2: action buttons — Support Now (donor) + View Documentation */}
-          <div className="apd-secondary-actions">
+          {/* Row 3: action buttons */}
+          <div className="apd-action-btns">
             {userRole === "donor" && (
               <button
                 className="apd-support-btn"
                 onClick={() => navigate(`/add-contribution/${id}`)}
               >
-                ✦ Support Now
+                Support Now
               </button>
             )}
             <button
@@ -239,7 +190,6 @@ export default function ProjectDetailPage() {
           </div>
 
         </div>
-        {/* ── end title row ── */}
 
         {/* ── Org info ── */}
         <p className="apd-org-name">
@@ -258,7 +208,7 @@ export default function ProjectDetailPage() {
         {(project.orgRepresentative || project.orgEmail) && (
           <p className="apd-org-contact">
             {project.orgRepresentative && <span>{project.orgRepresentative}</span>}
-            {project.orgEmail         && <span>{project.orgEmail}</span>}
+            {project.orgEmail          && <span>{project.orgEmail}</span>}
           </p>
         )}
 
@@ -295,49 +245,6 @@ export default function ProjectDetailPage() {
         {/* ── Description ── */}
         {project.description && (
           <p className="apd-description">{project.description}</p>
-        )}
-
-        {/* ── Budget breakdown (donor only) ── */}
-        {userRole === "donor" && (
-          <>
-            <hr className="apd-divider" />
-            <section className="apd-budget-section">
-              <div className="apd-budget-header">
-                <h2 className="apd-section-title">budget breakdown</h2>
-                <span className="apd-budget-note">
-                  {totalBudget > 0
-                    ? `Based on campaign goal: ${formatCurrency(totalBudget)}`
-                    : "Budget split percentages provided by campaign"}
-                </span>
-              </div>
-
-              <div className="apd-budget-layout">
-                <div
-                  className="apd-budget-pie"
-                  role="img"
-                  aria-label="Campaign budget allocation pie chart"
-                  style={{ background: `conic-gradient(${pieParts.join(", ")})` }}
-                />
-                <div className="apd-budget-legend">
-                  {budgetBreakdown.map((item, index) => (
-                    <div key={`${item.label}-${index}`} className="apd-budget-row">
-                      <span
-                        className="apd-budget-dot"
-                        style={{ backgroundColor: BUDGET_COLORS[index % BUDGET_COLORS.length] }}
-                      />
-                      <span className="apd-budget-label">{item.label}</span>
-                      <span className="apd-budget-percent">{item.percentage}%</span>
-                      <span className="apd-budget-amount">
-                        {totalBudget > 0
-                          ? formatCurrency(Math.round((totalBudget * item.percentage) / 100))
-                          : "—"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-          </>
         )}
 
         <hr className="apd-divider" />
