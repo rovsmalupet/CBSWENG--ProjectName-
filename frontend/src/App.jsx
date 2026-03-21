@@ -51,7 +51,7 @@ export default function App() {
         <Route path="/unposted-projects" element={<RequireRole allowedRoles={["ngo"]}><UnapprovedProjects /></RequireRole>} />
         <Route path="/post-project" element={<RequireRole allowedRoles={["ngo"]}><PostNewProject /></RequireRole>} />
         <Route path="/edit-project/:id" element={<RequireRole allowedRoles={["ngo"]}><EditProject /></RequireRole>} />
-        <Route path="/add-contribution/:id" element={<RequireRole allowedRoles={["donor"]}><AddContribution /></RequireRole>} />
+        <Route path="/add-contribution/:id" element={<RequireRole allowedRoles={["donor", "ngo"]}><AddContribution /></RequireRole>} />
         <Route path="/contribution-detail/:id" element={<RequireRole allowedRoles={["ngo"]}><ContributionDetailPage /></RequireRole>} />
         <Route path="/donor" element={<RequireRole allowedRoles={["donor"]}><DonorHomepage /></RequireRole>} />
         <Route path="/donor/bookmarks" element={<RequireRole allowedRoles={["donor"]}><BookmarkedProjects /></RequireRole>} />
