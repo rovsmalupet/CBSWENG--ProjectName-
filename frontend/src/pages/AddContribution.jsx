@@ -88,6 +88,7 @@ export default function AddContribution() {
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [proofFile, setProofFile] = useState(null);
@@ -101,7 +102,16 @@ export default function AddContribution() {
   useEffect(() => {
     const load = async () => {
       try {
+        setError("");
         const { getApiUrl, apiFetch } = await import("../config/api");
+        const token = localStorage.getItem("token");
+        
+        if (!token) {
+          setError("Authentication token not found. Please log in again.");
+          setLoading(false);
+          return;
+        }
+        
         const data = await apiFetch(getApiUrl(`/posts/${id}`));
         setProject(data);
 
@@ -112,7 +122,8 @@ export default function AddContribution() {
         });
         setInKindRows(init);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load project:", err);
+        setError(err.message || "Failed to load project. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -224,6 +235,24 @@ export default function AddContribution() {
         <main className="ac-main">
           <div className="ac-empty">
             <p>Loading project…</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="ac-page">
+        <main className="ac-main">
+          <button className="ac-back-btn" onClick={() => navigate(-1)} type="button">
+            ← Back
+          </button>
+          <div className="ac-empty" style={{ color: "red" }}>
+            <p>{error}</p>
+            <button className="ac-save-btn" onClick={() => navigate(-1)}>
+              Go Back
+            </button>
           </div>
         </main>
       </div>

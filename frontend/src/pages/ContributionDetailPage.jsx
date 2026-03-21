@@ -40,6 +40,18 @@ const priorityClass = {
   Low: "apd-priority-low",
 };
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+};
+
+const percent = (current, target) => {
+  const safeCurrent = Number(current ?? 0);
+  const safeTarget = Number(target ?? 0);
+  if (safeTarget <= 0) return 0;
+  return Math.min(100, Math.round((safeCurrent / safeTarget) * 100));
+};
+
 const DEFAULT_BUDGET_BREAKDOWN = [
   { label: "Food", percentage: 80 },
   { label: "Logistics", percentage: 10 },
