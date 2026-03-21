@@ -717,3 +717,100 @@ export const getMyDonorPartnerships = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * GET /posts/organization/partnership-offers
+ * Returns all partnership offers (DonorOrganizationPartner entries) for the org.
+ * Used by organizations to view incoming partnership proposals from donors.
+ */
+export const getOrgPartnershipOffers = async (req, res) => {
+  try {
+    const orgId = req.user.id;
+
+    const partnerships = await prisma.donorOrganizationPartner.findMany({
+      where: { orgId },
+      include: {
+        donor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            country: true,
+          },
+        },
+        contributions: {
+          include: {
+            post: {
+              select: {
+                id: true,
+                projectName: true,
+                priority: true,
+                causes: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Transform partnerships into partnership offers format
+    const offers = partnerships.flatMap((partnership) => {
+      // Group contributions by post to create one offer per post
+      const postContributions = {};
+
+      for (const contribution of partnership.contributions) {
+        if (!contribution.postId) continue;
+        if (!postContributions[contribution.postId]) {
+          postContributions[contribution.postId] = [];
+        }
+        postContributions[contribution.postId].push(contribution);
+      }
+
+      // Create an offer for each post
+      return Object.entries(postContributions).map(([postId, contributions]) => {
+        const post = contributions[0]?.post;
+        const donor = partnership.donor;
+
+        // Calculate total contribution value
+        const totalAmount = contributions
+          .filter((c) => c.type === "Monetary" && c.amount)
+          .reduce((sum, c) => sum + (c.amount ?? 0), 0);
+
+        const volunteerCount = contributions
+          .filter((c) => c.type === "Volunteer" && c.volunteerCount)
+          .reduce((sum, c) => sum + (c.volunteerCount ?? 0), 0);
+
+        // Determine support focus based on contribution types
+        const supportTypes = new Set(contributions.map((c) => c.type));
+        const supportFocus = Array.from(supportTypes).join(", ");
+
+        return {
+          id: `${partnership.id}-${postId}`,
+          companyName: `${donor.firstName} ${donor.lastName}`.trim(),
+          sector: donor.country || "International",
+          supportFocus: supportFocus || "Various Support",
+          annualBudget: "N/A",
+          certifications: [],
+          projectId: postId,
+          projectName: post?.projectName || "Unknown Project",
+          projectPriority: post?.priority || "Medium",
+          suitabilityScore: 75, // Could be calculated based on match criteria
+          proposedValue: totalAmount > 0 ? `PHP ${totalAmount.toLocaleString("en-PH")}` : "In-Kind Support",
+          volunteerHours: volunteerCount,
+          status: "pending",
+          partnershipId: partnership.id,
+          donorId: donor.id,
+          donorEmail: donor.email,
+          createdAt: partnership.createdAt,
+        };
+      });
+    });
+
+    res.json(offers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -3,50 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/OrganizationPartnershipOffers.css";
 
-const COMPANY_PROFILES = [
-  {
-    name: "PacificAid Logistics",
-    sector: "Logistics",
-    supportFocus: "In-kind supplies and transport",
-    annualBudget: "PHP 2.5M",
-    certifications: ["ISO 9001", "ESG Verified"],
-  },
-  {
-    name: "Northstar Energy Corp",
-    sector: "Energy",
-    supportFocus: "Monetary grants and volunteers",
-    annualBudget: "PHP 3.2M",
-    certifications: ["CSR Platinum", "Carbon Neutral"],
-  },
-  {
-    name: "BlueRiver Foods Inc",
-    sector: "Food and Beverage",
-    supportFocus: "Food packs and community nutrition",
-    annualBudget: "PHP 1.8M",
-    certifications: ["HACCP", "CSR Gold"],
-  },
-  {
-    name: "SummitTech Solutions",
-    sector: "Technology",
-    supportFocus: "Digital tools and direct funding",
-    annualBudget: "PHP 2.1M",
-    certifications: ["Data Secure", "CSR Silver"],
-  },
-];
-
-function scoreOffer(project, company, index) {
-  let score = 60;
-  if (project.priority === "High") score += 15;
-  if ((project.causes || []).length > 1) score += 8;
-  if (company.supportFocus.toLowerCase().includes("monetary")) score += 6;
-  if (index % 2 === 0) score += 4;
-  return Math.min(95, score);
-}
-
 export default function OrganizationPartnershipOffers() {
   const navigate = useNavigate();
   const orgId = localStorage.getItem("userId") || "ngo";
-  const storageKey = `partnershipOffers_${orgId}`;
 
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,36 +17,12 @@ export default function OrganizationPartnershipOffers() {
     const loadOffers = async () => {
       try {
         setLoading(true);
+        setError("");
 
-        const cached = localStorage.getItem(storageKey);
-        if (cached) {
-          setOffers(JSON.parse(cached));
-          return;
-        }
+        const response = await apiFetch(getApiUrl("/posts/partnerships/incoming"));
+        const allOffers = Array.isArray(response) ? response : [];
 
-        const projects = await apiFetch(getApiUrl("/posts"));
-        const baseProjects = Array.isArray(projects) ? projects.slice(0, 8) : [];
-
-        const generatedOffers = baseProjects.map((project, index) => {
-          const company = COMPANY_PROFILES[index % COMPANY_PROFILES.length];
-          return {
-            id: `${project.id}-${index}`,
-            companyName: company.name,
-            sector: company.sector,
-            supportFocus: company.supportFocus,
-            annualBudget: company.annualBudget,
-            certifications: company.certifications,
-            projectId: project.id,
-            projectName: project.projectName,
-            projectPriority: project.priority,
-            suitabilityScore: scoreOffer(project, company, index),
-            proposedValue: `PHP ${(450000 + index * 90000).toLocaleString("en-PH")}`,
-            status: "pending",
-          };
-        });
-
-        setOffers(generatedOffers);
-        localStorage.setItem(storageKey, JSON.stringify(generatedOffers));
+        setOffers(allOffers);
       } catch (err) {
         console.error("Failed to load partnership offers:", err);
         setError(err.message || "Failed to load partnership offers.");
@@ -97,14 +32,13 @@ export default function OrganizationPartnershipOffers() {
     };
 
     loadOffers();
-  }, [storageKey]);
+  }, []);
 
   const updateOfferStatus = (offerId, status) => {
     const updated = offers.map((offer) =>
       offer.id === offerId ? { ...offer, status } : offer,
     );
     setOffers(updated);
-    localStorage.setItem(storageKey, JSON.stringify(updated));
   };
 
   const filteredOffers = useMemo(() => {
@@ -135,14 +69,14 @@ export default function OrganizationPartnershipOffers() {
 
         <h1 className="offers-title">Partnership Offers</h1>
         <p className="offers-subtitle">
-          Review company partnership proposals and accept the most suitable offers for your projects.
+          Review donor partnership proposals and accept the most suitable offers for your projects.
         </p>
 
         <div className="offers-controls">
           <input
             className="offers-search"
             type="text"
-            placeholder="Search by company, project, sector..."
+            placeholder="Search by donor, project, sector..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -179,19 +113,23 @@ export default function OrganizationPartnershipOffers() {
                 <p className="offer-project">Project: {offer.projectName}</p>
 
                 <div className="offer-meta">
-                  <span>Sector: {offer.sector}</span>
-                  <span>Focus: {offer.supportFocus}</span>
+                  <span>Country/Region: {offer.sector}</span>
+                  <span>Support Type: {offer.supportFocus}</span>
                   <span>Proposed Value: {offer.proposedValue}</span>
-                  <span>Annual CSR Budget: {offer.annualBudget}</span>
+                  {offer.volunteerHours > 0 && (
+                    <span>Volunteer Hours: {offer.volunteerHours}</span>
+                  )}
                 </div>
 
                 <div className="offer-score">Suitability Score: {offer.suitabilityScore}/100</div>
 
-                <div className="offer-tags">
-                  {offer.certifications.map((cert) => (
-                    <span key={cert} className="offer-tag">{cert}</span>
-                  ))}
-                </div>
+                {offer.certifications && offer.certifications.length > 0 && (
+                  <div className="offer-tags">
+                    {offer.certifications.map((cert) => (
+                      <span key={cert} className="offer-tag">{cert}</span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="offer-actions">
                   <button

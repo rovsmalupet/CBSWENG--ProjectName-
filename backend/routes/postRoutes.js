@@ -14,6 +14,7 @@ import {
 	updatePostStatus,
 	permanentDeletePost,
 	getPostAuditLog,
+	getOrgPartnershipOffers,
 } from "../controllers/postController.js";
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.post("/", authenticate, authorizeRoles("ngo"), createPost);
 router.get("/", authenticate, authorizeRoles("ngo"), getOrgPosts);           // protected — org's own posts
 router.get("/admin/all", authenticate, authorizeRoles("admin"), getAllPosts);   // protected — all posts for admin
 router.get("/partnerships/me", authenticate, authorizeRoles("donor"), getMyDonorPartnerships);
+router.get("/partnerships/incoming", authenticate, authorizeRoles("ngo"), getOrgPartnershipOffers); // org's incoming partnership offers
 router.get("/approved", getApprovedPosts);             // public — donor homepage
 router.get("/:postId", authenticate, getPostById);
 router.get("/:postId/audit", authenticate, authorizeRoles("admin"), getPostAuditLog); // full audit log for a post

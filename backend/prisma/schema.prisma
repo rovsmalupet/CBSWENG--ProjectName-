@@ -192,7 +192,6 @@ model DonorOrganizationPartner {
   orgId          String
   organization   Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
   createdAt      DateTime       @default(now())
-
   contributions  Contribution[]
 
   @@unique([donorId, orgId])
