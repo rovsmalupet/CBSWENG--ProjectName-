@@ -10,6 +10,7 @@ import DonorHomepage from "./pages/DonorHomepage.jsx";
 import BookmarkedProjects from "./pages/BookmarkedProjects.jsx";
 import CorporatePartnerships from "./pages/CorporatePartnerships.jsx";
 import ProjectDetailPage from "./pages/ProjectDetailPage.jsx";
+import ContributionDetailPage from "./pages/ContributionDetailPage.jsx";
 import PostNewProject from "./components/PostNewProject.jsx";
 import EditProject from "./pages/EditProject.jsx";
 import AddContribution from "./pages/AddContribution.jsx";
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/post-project" element={<RequireRole allowedRoles={["ngo"]}><PostNewProject /></RequireRole>} />
         <Route path="/edit-project/:id" element={<RequireRole allowedRoles={["ngo"]}><EditProject /></RequireRole>} />
         <Route path="/add-contribution/:id" element={<RequireRole allowedRoles={["donor"]}><AddContribution /></RequireRole>} />
+        <Route path="/contribution-detail/:id" element={<RequireRole allowedRoles={["ngo"]}><ContributionDetailPage /></RequireRole>} />
         <Route path="/donor" element={<RequireRole allowedRoles={["donor"]}><DonorHomepage /></RequireRole>} />
         <Route path="/donor/bookmarks" element={<RequireRole allowedRoles={["donor"]}><BookmarkedProjects /></RequireRole>} />
         <Route path="/donor/partnerships" element={<RequireRole allowedRoles={["donor"]}><CorporatePartnerships /></RequireRole>} />
