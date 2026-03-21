@@ -22,6 +22,33 @@ const CAUSE_STYLES = {
   others: { label: "OTHERS", bg: "#f3f4f6", color: "#374151" },
 };
 
+// Map from enum values to category keys
+const CAUSE_ENUM_MAP = {
+  noPoverty: "povertyAndHunger",
+  zeroHunger: "povertyAndHunger",
+  goodHealth: "healthAndMedical",
+  qualityEducation: "educationAndChildren",
+  genderEquality: "communityDevelopment",
+  cleanWater: "environmentAndClimate",
+  affordableEnergy: "environmentAndClimate",
+  decentWork: "livelihoodAndSkillsTraining",
+  industry: "communityDevelopment",
+  reducedInequalities: "communityDevelopment",
+  sustainableCities: "communityDevelopment",
+  responsibleConsumption: "communityDevelopment",
+  climateAction: "environmentAndClimate",
+  lifeBelowWater: "environmentAndClimate",
+  lifeOnLand: "environmentAndClimate",
+  peaceAndJustice: "communityDevelopment",
+  partnerships: "communityDevelopment",
+  animalWelfare: "animalWelfare",
+  others: "others",
+};
+
+const normalizeCause = (causeEnum) => {
+  return CAUSE_ENUM_MAP[causeEnum] || "others";
+};
+
 export default function ActiveProjects() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -180,12 +207,13 @@ export default function ActiveProjects() {
                     {/* Render a badge for each cause */}
                     <div className="pcard-cause-badges">
                       {causes.length > 0 ? (
-                        causes.map((causeKey) => {
+                        causes.map((causeEnum) => {
+                          const categoryKey = normalizeCause(causeEnum);
                           const style =
-                            CAUSE_STYLES[causeKey] || CAUSE_STYLES.others;
+                            CAUSE_STYLES[categoryKey] || CAUSE_STYLES.others;
                           return (
                             <span
-                              key={causeKey}
+                              key={causeEnum}
                               className="pcard-cause-badge"
                               style={{
                                 background: style.bg,
