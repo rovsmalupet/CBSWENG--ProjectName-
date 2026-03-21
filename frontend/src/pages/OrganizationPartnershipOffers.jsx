@@ -121,8 +121,6 @@ export default function OrganizationPartnershipOffers() {
                   )}
                 </div>
 
-                <div className="offer-score">Suitability Score: {offer.suitabilityScore}/100</div>
-
                 {offer.certifications && offer.certifications.length > 0 && (
                   <div className="offer-tags">
                     {offer.certifications.map((cert) => (

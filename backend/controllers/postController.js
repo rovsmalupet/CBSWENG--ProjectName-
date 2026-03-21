@@ -796,7 +796,6 @@ export const getOrgPartnershipOffers = async (req, res) => {
           projectId: postId,
           projectName: post?.projectName || "Unknown Project",
           projectPriority: post?.priority || "Medium",
-          suitabilityScore: 75, // Could be calculated based on match criteria
           proposedValue: totalAmount > 0 ? `PHP ${totalAmount.toLocaleString("en-PH")}` : "In-Kind Support",
           volunteerHours: volunteerCount,
           status: "pending",
