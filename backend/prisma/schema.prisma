@@ -18,6 +18,7 @@ model Organization {
   email         String        @unique
   password      String        // always store hashed, never plain text
   country       ASEANCountry  @default(Philippines)
+  bio           String?       // org mission statement / about section
   isVerified    Boolean       @default(false)
   status        AccountStatus @default(Pending)
   createdAt     DateTime      @default(now())
@@ -35,6 +36,8 @@ model Donor {
   email         String        @unique
   password      String
   country       ASEANCountry  @default(Philippines)
+  affiliation   String        // company or organization they represent
+  bio           String?       // personal bio / about me
   isVerified    Boolean       @default(false)
   status        AccountStatus @default(Pending)
   createdAt     DateTime      @default(now())

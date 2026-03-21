@@ -48,6 +48,7 @@ async function main() {
       email: "donor@bayanihub.local",
       password: await bcrypt.hash("donor123", SALT_ROUNDS),
       country: "Philippines",
+      affiliation: "Virtual Champions PH",
       isVerified: true,
       status: "Approved",
     },

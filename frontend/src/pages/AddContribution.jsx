@@ -86,6 +86,17 @@ export default function AddContribution() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  // ── auth context ──
+  const userRole        = localStorage.getItem("userRole");
+  const userFirstName   = localStorage.getItem("userFirstName") || "";
+  const userLastName    = localStorage.getItem("userLastName")  || "";
+  const userAffiliation = localStorage.getItem("userAffiliation") || "";
+  const userId          = localStorage.getItem("userId") || "";
+  const isDonor         = userRole === "donor";
+
+  const donorDisplayName =
+    [userFirstName, userLastName].filter(Boolean).join(" ") || "Donor";
+
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -95,7 +106,7 @@ export default function AddContribution() {
 
   // Entry state
   const [monetaryRows, setMonetaryRows] = useState([newMonetaryRow()]);
-  const [inKindRows, setInKindRows] = useState({}); // { itemId: [row, ...] }
+  const [inKindRows, setInKindRows] = useState({});
   const [volRows, setVolRows] = useState([newVolRow()]);
 
   // ── fetch project ──
@@ -105,17 +116,16 @@ export default function AddContribution() {
         setError("");
         const { getApiUrl, apiFetch } = await import("../config/api");
         const token = localStorage.getItem("token");
-        
+
         if (!token) {
           setError("Authentication token not found. Please log in again.");
           setLoading(false);
           return;
         }
-        
+
         const data = await apiFetch(getApiUrl(`/posts/${id}`));
         setProject(data);
 
-        // initialise one empty row per in-kind item
         const init = {};
         (data.supportTypes?.inKind ?? []).forEach((item) => {
           init[item.id] = [newInKindRow()];
@@ -157,16 +167,21 @@ export default function AddContribution() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Build body in new schema shape
+      const resolveDonorName = (row) =>
+        isDonor ? donorDisplayName : row.donorName || "Anonymous";
+
       const monetary = monetaryRows
         .filter((r) => parseFloat(r.amount) > 0)
-        .map((r) => ({ donorName: r.donorName || "Anonymous", amount: parseFloat(r.amount) }));
+        .map((r) => ({
+          donorName: resolveDonorName(r),
+          amount: parseFloat(r.amount),
+        }));
 
       const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
         rows
           .filter((r) => parseFloat(r.quantity) > 0)
           .map((r) => ({
-            donorName: r.donorName || "Anonymous",
+            donorName: resolveDonorName(r),
             itemId,
             quantity: parseFloat(r.quantity),
           })),
@@ -174,7 +189,14 @@ export default function AddContribution() {
 
       const volunteer = volRows
         .filter((r) => parseInt(r.count) > 0)
-        .map((r) => ({ donorName: r.donorName || "Anonymous", count: parseInt(r.count) }));
+        .map((r) => ({
+          donorName: resolveDonorName(r),
+          count: parseInt(r.count),
+          startDate: r.startDate,
+          endDate: r.endDate,
+          startTime: r.startTime,
+          endTime: r.endTime,
+        }));
 
       if (monetary.length === 0 && inKind.length === 0 && volunteer.length === 0) {
         alert("Please enter at least one contribution before saving.");
@@ -189,6 +211,11 @@ export default function AddContribution() {
       formData.append("monetary", JSON.stringify(monetary));
       formData.append("inKind", JSON.stringify(inKind));
       formData.append("volunteer", JSON.stringify(volunteer));
+
+      if (isDonor && userId) {
+        formData.append("donorId", userId);
+      }
+
       if (proofFile) {
         formData.append("proofFile", proofFile);
       }
@@ -208,7 +235,6 @@ export default function AddContribution() {
 
       setProject(updated.post);
 
-      // re-init rows
       setMonetaryRows([newMonetaryRow()]);
       const resetInKind = {};
       (updated.post.supportTypes?.inKind ?? []).forEach((item) => {
@@ -228,14 +254,12 @@ export default function AddContribution() {
     }
   };
 
-  // ── loading ──
+  // ── loading / error states ──
   if (loading) {
     return (
       <div className="ac-page">
         <main className="ac-main">
-          <div className="ac-empty">
-            <p>Loading project…</p>
-          </div>
+          <div className="ac-empty"><p>Loading project…</p></div>
         </main>
       </div>
     );
@@ -250,9 +274,7 @@ export default function AddContribution() {
           </button>
           <div className="ac-empty" style={{ color: "red" }}>
             <p>{error}</p>
-            <button className="ac-save-btn" onClick={() => navigate(-1)}>
-              Go Back
-            </button>
+            <button className="ac-save-btn" onClick={() => navigate(-1)}>Go Back</button>
           </div>
         </main>
       </div>
@@ -263,17 +285,15 @@ export default function AddContribution() {
     return (
       <div className="ac-page">
         <main className="ac-main">
-          <div className="ac-empty">
-            <p>Project not found.</p>
-          </div>
+          <div className="ac-empty"><p>Project not found.</p></div>
         </main>
       </div>
     );
   }
 
   const { supportTypes } = project;
-  const monetary = supportTypes?.monetary ?? {};
-  const inKind = supportTypes?.inKind ?? [];
+  const monetary  = supportTypes?.monetary  ?? {};
+  const inKind    = supportTypes?.inKind    ?? [];
   const volunteer = supportTypes?.volunteer ?? {};
   const anySection = monetary.enabled || inKind.length > 0 || volunteer.enabled;
 
@@ -285,6 +305,25 @@ export default function AddContribution() {
         </button>
 
         <h1 className="ac-title">{project.projectName}</h1>
+
+        {/* ── Donor identity badge ── */}
+        {isDonor && (
+          <div className="ac-donor-badge">
+            <div className="ac-donor-badge-avatar">
+              {donorDisplayName.charAt(0).toUpperCase()}
+            </div>
+            <div className="ac-donor-badge-info">
+              <span className="ac-donor-badge-name">{donorDisplayName}</span>
+              {userAffiliation && (
+                <span className="ac-donor-badge-affiliation">{userAffiliation}</span>
+              )}
+              <span className="ac-donor-badge-note">
+                Your name will be recorded on all contributions below
+              </span>
+            </div>
+          </div>
+        )}
+
         {successMsg && <div className="ac-success">{successMsg}</div>}
 
         {/* ── MONETARY ──────────────────────────────────────────────────── */}
@@ -304,9 +343,7 @@ export default function AddContribution() {
                 <div className="ac-row" key={row.id}>
                   <AddBtn
                     title="Add another monetary donation"
-                    onClick={() =>
-                      setMonetaryRows((p) => [...p, newMonetaryRow()])
-                    }
+                    onClick={() => setMonetaryRows((p) => [...p, newMonetaryRow()])}
                   />
                   <input
                     className="ac-input ac-input-amount"
@@ -314,26 +351,26 @@ export default function AddContribution() {
                     min="0"
                     placeholder="Enter amount"
                     value={row.amount}
-                    onChange={(e) =>
-                      updateMonetary(row.id, "amount", e.target.value)
-                    }
+                    onChange={(e) => updateMonetary(row.id, "amount", e.target.value)}
                   />
                   <span className="ac-unit">PHP</span>
-                  <span className="ac-lbl">From</span>
-                  <input
-                    className="ac-input ac-input-donor"
-                    type="text"
-                    placeholder="Donor name"
-                    value={row.donorName}
-                    onChange={(e) =>
-                      updateMonetary(row.id, "donorName", e.target.value)
-                    }
-                  />
+
+                  {!isDonor && (
+                    <>
+                      <span className="ac-lbl">From</span>
+                      <input
+                        className="ac-input ac-input-donor"
+                        type="text"
+                        placeholder="Donor name"
+                        value={row.donorName}
+                        onChange={(e) => updateMonetary(row.id, "donorName", e.target.value)}
+                      />
+                    </>
+                  )}
+
                   {monetaryRows.length > 1 && (
                     <RemoveBtn
-                      onClick={() =>
-                        setMonetaryRows((p) => p.filter((r) => r.id !== row.id))
-                      }
+                      onClick={() => setMonetaryRows((p) => p.filter((r) => r.id !== row.id))}
                     />
                   )}
                 </div>
@@ -371,10 +408,7 @@ export default function AddContribution() {
                           onClick={() =>
                             setInKindRows((p) => ({
                               ...p,
-                              [item.id]: [
-                                ...(p[item.id] ?? []),
-                                newInKindRow(),
-                              ],
+                              [item.id]: [...(p[item.id] ?? []), newInKindRow()],
                             }))
                           }
                         />
@@ -388,27 +422,29 @@ export default function AddContribution() {
                             updateInKind(item.id, row.id, "quantity", e.target.value)
                           }
                         />
-                        <span className="ac-unit">
-                          {unitLabel.toUpperCase()}
-                        </span>
-                        <span className="ac-lbl">From</span>
-                        <input
-                          className="ac-input ac-input-donor"
-                          type="text"
-                          placeholder="Donor name"
-                          value={row.donorName}
-                          onChange={(e) =>
-                            updateInKind(item.id, row.id, "donorName", e.target.value)
-                          }
-                        />
+                        <span className="ac-unit">{unitLabel.toUpperCase()}</span>
+
+                        {!isDonor && (
+                          <>
+                            <span className="ac-lbl">From</span>
+                            <input
+                              className="ac-input ac-input-donor"
+                              type="text"
+                              placeholder="Donor name"
+                              value={row.donorName}
+                              onChange={(e) =>
+                                updateInKind(item.id, row.id, "donorName", e.target.value)
+                              }
+                            />
+                          </>
+                        )}
+
                         {rows.length > 1 && (
                           <RemoveBtn
                             onClick={() =>
                               setInKindRows((p) => ({
                                 ...p,
-                                [item.id]: p[item.id].filter(
-                                  (r) => r.id !== row.id,
-                                ),
+                                [item.id]: p[item.id].filter((r) => r.id !== row.id),
                               }))
                             }
                           />
@@ -452,55 +488,51 @@ export default function AddContribution() {
                     value={row.count}
                     onChange={(e) => updateVol(row.id, "count", e.target.value)}
                   />
-                  <span className="ac-lbl">From</span>
-                  <input
-                    className="ac-input ac-input-donor"
-                    type="text"
-                    placeholder="Donor / org name"
-                    value={row.donorName}
-                    onChange={(e) => updateVol(row.id, "donorName", e.target.value)}
-                  />
+
+                  {!isDonor && (
+                    <>
+                      <span className="ac-lbl">From</span>
+                      <input
+                        className="ac-input ac-input-donor"
+                        type="text"
+                        placeholder="Donor / org name"
+                        value={row.donorName}
+                        onChange={(e) => updateVol(row.id, "donorName", e.target.value)}
+                      />
+                    </>
+                  )}
+
                   <span className="ac-lbl">On</span>
                   <input
                     className="ac-input ac-input-date"
                     type="date"
                     value={row.startDate}
-                    onChange={(e) =>
-                      updateVol(row.id, "startDate", e.target.value)
-                    }
+                    onChange={(e) => updateVol(row.id, "startDate", e.target.value)}
                   />
                   <span className="ac-lbl">to</span>
                   <input
                     className="ac-input ac-input-date"
                     type="date"
                     value={row.endDate}
-                    onChange={(e) =>
-                      updateVol(row.id, "endDate", e.target.value)
-                    }
+                    onChange={(e) => updateVol(row.id, "endDate", e.target.value)}
                   />
                   <span className="ac-lbl">At</span>
                   <input
                     className="ac-input ac-input-time"
                     type="time"
                     value={row.startTime}
-                    onChange={(e) =>
-                      updateVol(row.id, "startTime", e.target.value)
-                    }
+                    onChange={(e) => updateVol(row.id, "startTime", e.target.value)}
                   />
                   <span className="ac-lbl">to</span>
                   <input
                     className="ac-input ac-input-time"
                     type="time"
                     value={row.endTime}
-                    onChange={(e) =>
-                      updateVol(row.id, "endTime", e.target.value)
-                    }
+                    onChange={(e) => updateVol(row.id, "endTime", e.target.value)}
                   />
                   {volRows.length > 1 && (
                     <RemoveBtn
-                      onClick={() =>
-                        setVolRows((p) => p.filter((r) => r.id !== row.id))
-                      }
+                      onClick={() => setVolRows((p) => p.filter((r) => r.id !== row.id))}
                     />
                   )}
                 </div>
@@ -511,7 +543,9 @@ export default function AddContribution() {
 
         {anySection && (
           <div className="ac-proof-wrap">
-            <label htmlFor="proofFile" className="ac-proof-label">Proof of Donation (Optional)</label>
+            <label htmlFor="proofFile" className="ac-proof-label">
+              Proof of Donation (Optional)
+            </label>
             <input
               id="proofFile"
               className="ac-proof-input"
@@ -525,11 +559,7 @@ export default function AddContribution() {
 
         {anySection && (
           <div className="ac-save-row">
-            <button
-              className="ac-save-btn"
-              onClick={handleSave}
-              disabled={saving}
-            >
+            <button className="ac-save-btn" onClick={handleSave} disabled={saving}>
               {saving ? "SAVING…" : "SAVE"}
             </button>
           </div>

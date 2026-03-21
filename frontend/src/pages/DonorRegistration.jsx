@@ -26,6 +26,9 @@ export default function DonorRegistration() {
     email: "",
     password: "",
     country: "Philippines",
+    affiliation: "",
+    bio: "",
+
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -56,6 +59,8 @@ export default function DonorRegistration() {
 
     if (!formData.country) next.country = "Please select your country.";
 
+    if (!formData.affiliation.trim()) next.affiliation = "Affiliation is required.";
+
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -77,6 +82,8 @@ export default function DonorRegistration() {
           email: formData.email.trim(),
           password: formData.password,
           country: formData.country,
+          affiliation: formData.affiliation.trim(),
+          bio: formData.bio.trim() || null,
         }),
       });
 
@@ -174,6 +181,39 @@ export default function DonorRegistration() {
           {errors.country && (
             <span className="field-error">{errors.country}</span>
           )}
+
+          <label htmlFor="affiliation">Affiliation</label>
+          <input
+            id="affiliation"
+            name="affiliation"
+            type="text"
+            placeholder="e.g. Ayala Foundation, UP Manila, freelance"
+            value={formData.affiliation}
+            onChange={handleChange}
+            aria-invalid={Boolean(errors.affiliation)}
+          />
+          {errors.affiliation && (
+            <span className="field-error">{errors.affiliation}</span>
+          )}
+
+          {/* ── Optional profile fields ── */}
+          <div className="optional-section">
+            <p className="optional-label">Optional — you can fill this in later</p>
+
+            <label htmlFor="bio">
+              Bio
+              <span className="field-hint"> — a short intro about yourself</span>
+            </label>
+            <textarea
+              id="bio"
+              name="bio"
+              rows={3}
+              placeholder="Tell campaigns a little about who you are and why you give..."
+              value={formData.bio}
+              onChange={handleChange}
+              className="bio-textarea"
+            />
+          </div>
 
           <button type="submit" className="submit-btn" disabled={submitting}>
             {submitting ? "Creating account..." : "Register Donor"}

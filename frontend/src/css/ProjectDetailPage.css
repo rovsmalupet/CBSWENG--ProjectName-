@@ -1,7 +1,287 @@
-/* reuse admin project detail styles for donor view */
-@import url("./Adminprojectdetail.css");
+/* ── ProjectDetailPage.css ──────────────────────────────────────────────────
+   Self-contained: merged Adminprojectdetail.css + ProjectDetailPage-specific
+   styles. No @import needed.
+   ─────────────────────────────────────────────────────────────────────────── */
 
-/* additional styles for progress bars */
+/* ── Base page ── */
+.apd-page {
+  padding: 24px;
+  font-family: "Inter", sans-serif;
+  background: #f0f4ff;
+  min-height: 100vh;
+}
+
+/* ── Back button ── */
+.apd-back-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  padding: 0;
+}
+.apd-back-btn:hover {
+  text-decoration: underline;
+}
+
+/* ── Card ── */
+.apd-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px;
+  max-width: 860px;
+  margin: 0 auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+/* ── Title row ── */
+.apd-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.apd-title-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.apd-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  color: #111827;
+}
+
+/* ── Priority badge ── */
+.apd-priority {
+  border-radius: 999px;
+  padding: 2px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-width: 2px;
+  border-style: solid;
+  white-space: nowrap;
+}
+.apd-priority-high   { background: #f1d8d8; border-color: #ff3131; color: #ff3131; }
+.apd-priority-medium { background: #f1e5d8; border-color: #ff751f; color: #ff751f; }
+.apd-priority-low    { background: #feffba; border-color: #cf9d24; color: #cf9d24; }
+
+/* ── Title actions row (Save + priority) ── */
+.apd-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Secondary actions (Support Now + View Documentation) ── */
+.apd-secondary-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* ── Save / bookmark button ── */
+.apd-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: white;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.apd-save-btn:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  transform: translateY(-1px);
+}
+.apd-save-btn.saved {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+/* ── Support Now button ── */
+.apd-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  background-color: #16a34a;
+  border: 1px solid #15803d;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+}
+.apd-support-btn:hover {
+  background-color: #15803d;
+  border-color: #166534;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+}
+
+/* ── View Documentation button ── */
+.apd-doc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background-color: #f0f9ff;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.apd-doc-btn:hover {
+  background-color: #e0f2fe;
+  border-color: #3b82f6;
+}
+
+/* ── Org info ── */
+.apd-org-name {
+  margin: 10px 0 2px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.apd-org-contact {
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #4b5563;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ── Verified badge ── */
+.apd-verified-badge {
+  border: 1px solid #34d399;
+  background: #d1fae5;
+  color: #047857;
+  border-radius: 999px;
+  padding: 0.2rem 0.58rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.apd-verified-badge:hover { background: #bbf7d0; }
+.apd-verified-badge:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+/* ── Meta row (location + cause badges) ── */
+.apd-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.apd-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.apd-cause-badge {
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ── Date/time ── */
+.apd-datetime {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+/* ── Description ── */
+.apd-description {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+/* ── Divider ── */
+.apd-divider {
+  border: none;
+  border-top: 1.5px solid #e5e7eb;
+  margin: 16px 0;
+}
+
+/* ── Section titles ── */
+.apd-section-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: #111827;
+  text-transform: lowercase;
+}
+
+/* ── Monetary row ── */
+.apd-monetary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.apd-monetary-amount {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+}
+.apd-monetary-unit {
+  font-size: 16px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* ── Progress bars ── */
 .apd-progress-info {
   display: flex;
   justify-content: space-between;
@@ -31,11 +311,20 @@
   background: linear-gradient(90deg, #3b82f6, #60a5fa);
 }
 
-.apd-inkind-item-wrapper {
-  margin-bottom: 12px;
+/* ── In-kind items ── */
+.apd-inkind-item {
+  display: flex;
+  margin: 4px 0;
+  font-size: 14px;
+  border-bottom: 1px dotted #e5e7eb;
+  padding-bottom: 4px;
 }
 
-/* Volunteer scheduling info */
+.apd-inkind-item-wrapper {
+  margin-bottom: 14px;
+}
+
+/* ── Volunteer section ── */
 .apd-volunteer-info {
   display: flex;
   flex-direction: column;
@@ -74,111 +363,7 @@
   font-weight: 500;
 }
 
-/* Title actions and SAVE button */
-.apd-title-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.apd-save-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1.25rem;
-  background: white;
-  border: 2px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #4b5563;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.apd-save-btn:hover {
-  border-color: #f59e0b;
-  color: #f59e0b;
-  transform: translateY(-1px);
-}
-
-.apd-save-btn.saved {
-  background: #fef3c7;
-  border-color: #f59e0b;
-  color: #92400e;
-}
-
-.apd-secondary-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-  flex-wrap: wrap;
-}
-
-.apd-doc-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background-color: #f0f9ff;
-  border: 1px solid #93c5fd;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1e40af;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.apd-doc-btn:hover {
-  background-color: #e0f2fe;
-  border-color: #3b82f6;
-}
-
-.apd-support-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background-color: #16a34a;
-  border: 1px solid #15803d;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #ffffff;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.apd-support-btn:hover {
-  background-color: #15803d;
-  border-color: #166534;
-}
-
-.apd-verified-badge {
-  margin-left: 0.6rem;
-  border: 1px solid #34d399;
-  background: #d1fae5;
-  color: #047857;
-  border-radius: 999px;
-  padding: 0.2rem 0.58rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.apd-verified-badge:hover {
-  background: #bbf7d0;
-}
-
-.apd-verified-badge:focus-visible {
-  outline: 2px solid #059669;
-  outline-offset: 2px;
-}
-
+/* ── Budget section ── */
 .apd-budget-section {
   margin: 0.4rem 0;
 }
@@ -252,7 +437,36 @@
   font-weight: 600;
 }
 
+/* ── Admin action buttons (kept for AdminProjectDetail reuse) ── */
+.apd-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.apd-btn {
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.apd-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.apd-btn-approve  { background: #16a34a; }
+.apd-btn-reject   { background: #ef4444; }
+.apd-rejected-label { font-size: 14px; color: #ef4444; font-weight: 600; }
+
+/* ── Responsive ── */
 @media (max-width: 760px) {
+  .apd-card {
+    padding: 20px 16px;
+  }
+
   .apd-budget-layout {
     grid-template-columns: 1fr;
     justify-items: center;
@@ -261,382 +475,14 @@
   .apd-budget-legend {
     width: 100%;
   }
-}
 
-.detail-header {
-  background: #ffffff;
-  padding: 24px 32px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.greeting {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.detail-main {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 36px 32px;
-}
-
-.loading-message,
-.error-message {
-  text-align: center;
-  padding: 3rem;
-  font-size: 1rem;
-  color: #6b7280;
-}
-
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  color: #2563eb;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 8px 0;
-  margin-bottom: 32px;
-  transition: color 0.2s;
-  font-family: inherit;
-}
-
-.back-btn:hover {
-  color: #1d4ed8;
-}
-
-.project-info {
-  margin-bottom: 48px;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 28px;
-  border: 1px solid #e5e7eb;
-}
-
-.project-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 24px 0;
-  line-height: 1.3;
-}
-
-.project-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.meta-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.meta-label {
-  font-size: 0.8rem;
-  color: #9ca3af;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.meta-value {
-  font-size: 0.95rem;
-  color: #1f2937;
-  font-weight: 500;
-}
-
-.priority-badge-detail {
-  display: inline-block;
-  padding: 0.4rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  width: fit-content;
-}
-
-.priority-high {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.priority-medium {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.priority-low {
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-.project-description {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.project-description h3 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #9ca3af;
-  margin: 0 0 0.75rem 0;
-  font-weight: 600;
-}
-
-.project-description p {
-  font-size: 0.95rem;
-  color: #4b5563;
-  line-height: 1.6;
-  margin: 0;
-}
-
-.project-dates {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.project-dates h3 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #9ca3af;
-  margin: 0 0 0.75rem 0;
-  font-weight: 600;
-}
-
-.dates-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  font-size: 0.95rem;
-  color: #4b5563;
-}
-
-.date-label {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.support-section {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 28px;
-  border: 1px solid #e5e7eb;
-  margin-bottom: 24px;
-}
-
-.section-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 20px 0;
-  text-transform: lowercase;
-}
-
-.support-details {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.support-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: #9ca3af;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.stat-value-large {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.progress-container {
-  margin-top: 1rem;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 12px;
-  background: #e5e7eb;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #2daa6e, #22c55e);
-  border-radius: 6px;
-  transition: width 0.3s ease;
-}
-
-.progress-fill.volunteer {
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-}
-
-.inventory-section {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 28px;
-  border: 1px solid #e5e7eb;
-  margin-bottom: 24px;
-}
-
-.inventory-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 24px 0;
-  text-transform: lowercase;
-}
-
-.inventory-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.inventory-item {
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-
-.item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.inventory-name {
-  font-size: 0.95rem;
-  color: #1f2937;
-  font-weight: 600;
-}
-
-.inventory-status {
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: lowercase;
-  letter-spacing: 0.05em;
-}
-
-.item-details {
-  font-size: 0.85rem;
-  color: #6b7280;
-  margin-bottom: 8px;
-}
-
-.progress-container-small {
-  margin-top: 8px;
-}
-
-.progress-bar-small {
-  width: 100%;
-  height: 8px;
-  background: #e5e7eb;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-fill-small {
-  height: 100%;
-  background: linear-gradient(90deg, #2daa6e, #22c55e);
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-  margin-top: 32px;
-}
-
-.donate-btn,
-.share-btn {
-  flex: 1;
-  padding: 1rem 2rem;
-  border: none;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.donate-btn {
-  background: #2563eb;
-  color: white;
-}
-
-.donate-btn:hover {
-  background: #1d4ed8;
-}
-
-.share-btn {
-  background: #f3f4f6;
-  color: #1f2937;
-  border: 1px solid #e5e7eb;
-}
-
-.share-btn:hover {
-  background: #e5e7eb;
-}
-
-@media (max-width: 768px) {
-  .detail-main {
-    padding: 24px 16px;
-  }
-
-  .project-title {
-    font-size: 1.5rem;
-  }
-
-  .project-meta-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .support-details {
-    grid-template-columns: 1fr;
-  }
-
-  .inventory-section,
-  .support-section,
-  .project-info {
-    padding: 20px;
-  }
-
-  .item-header {
+  .apd-secondary-actions {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
   }
 
-  .action-buttons {
-    flex-direction: column;
+  .apd-support-btn,
+  .apd-doc-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

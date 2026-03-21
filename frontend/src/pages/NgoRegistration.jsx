@@ -27,6 +27,7 @@ export default function NgoRegistration() {
     email: "",
     password: "",
     country: "Philippines",
+    bio: "",
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -87,6 +88,7 @@ export default function NgoRegistration() {
           email: formData.email.trim(),
           password: formData.password,
           country: formData.country,
+          bio: formData.bio.trim() || null,
         }),
       });
 
@@ -187,6 +189,25 @@ export default function NgoRegistration() {
             ))}
           </select>
           {errors.country && <span className="field-error">{errors.country}</span>}
+
+          {/* ── Optional profile fields ── */}
+          <div className="optional-section">
+            <p className="optional-label">Optional — you can fill this in later</p>
+
+            <label htmlFor="bio">
+              Organization Bio
+              <span className="field-hint"> — mission statement or short description</span>
+            </label>
+            <textarea
+              id="bio"
+              name="bio"
+              rows={3}
+              placeholder="Briefly describe your organization's mission and the communities you serve..."
+              value={formData.bio}
+              onChange={handleChange}
+              className="bio-textarea"
+            />
+          </div>
 
           <button type="submit" className="submit-btn" disabled={submitting}>
             {submitting ? "Submitting..." : "Register NGO"}
