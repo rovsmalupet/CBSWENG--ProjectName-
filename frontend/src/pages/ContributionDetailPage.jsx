@@ -46,56 +46,6 @@ const DEFAULT_BUDGET_BREAKDOWN = [
   { label: "Operations", percentage: 10 },
 ];
 
-const BUDGET_COLORS = ["#f97316", "#0891b2", "#16a34a", "#7c3aed", "#f43f5e", "#0ea5e9"];
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-};
-
-const percent = (current, target) => {
-  const safeCurrent = Number(current ?? 0);
-  const safeTarget = Number(target ?? 0);
-  if (safeTarget <= 0) return 0;
-  return Math.min(100, Math.round((safeCurrent / safeTarget) * 100));
-};
-
-const normalizeBudgetBreakdown = (raw) => {
-  if (!Array.isArray(raw) || raw.length === 0) {
-    return DEFAULT_BUDGET_BREAKDOWN;
-  }
-
-  const cleaned = raw
-    .map((item) => ({
-      label: String(item?.label || "Category").trim(),
-      percentage: Number(item?.percentage ?? 0),
-    }))
-    .filter((item) => item.label && item.percentage > 0);
-
-  if (cleaned.length === 0) {
-    return DEFAULT_BUDGET_BREAKDOWN;
-  }
-
-  const total = cleaned.reduce((sum, item) => sum + item.percentage, 0);
-  if (total <= 0) {
-    return DEFAULT_BUDGET_BREAKDOWN;
-  }
-
-  let assigned = 0;
-  const normalized = cleaned.map((item, index) => {
-    if (index === cleaned.length - 1) {
-      return { ...item, percentage: Math.max(0, 100 - assigned) };
-    }
-    const value = Math.round((item.percentage / total) * 100);
-    assigned += value;
-    return { ...item, percentage: value };
-  });
-
-  return normalized;
-};
-
-const formatCurrency = (value) => `PHP ${Number(value || 0).toLocaleString()}`;
-
 export default function ContributionDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -125,17 +75,6 @@ export default function ContributionDetailPage() {
   const monetary = project.supportTypes?.monetary;
   const inKind = project.supportTypes?.inKind ?? [];
   const volunteer = project.supportTypes?.volunteer;
-  const budgetBreakdown = normalizeBudgetBreakdown(project.budgetBreakdown);
-  const totalBudget = Number(monetary?.targetAmount ?? 0);
-
-  let start = 0;
-  const pieParts = budgetBreakdown.map((item, index) => {
-    const color = BUDGET_COLORS[index % BUDGET_COLORS.length];
-    const end = start + item.percentage;
-    const segment = `${color} ${start}% ${end}%`;
-    start = end;
-    return segment;
-  });
 
   return (
     <div className="apd-page">
@@ -189,45 +128,6 @@ export default function ContributionDetailPage() {
         )}
 
         {project.description && <p className="apd-description">{project.description}</p>}
-
-        <hr className="apd-divider" />
-        <section className="apd-budget-section">
-          <div className="apd-budget-header">
-            <h2 className="apd-section-title">budget breakdown</h2>
-            <span className="apd-budget-note">
-              {totalBudget > 0
-                ? `Based on campaign goal: ${formatCurrency(totalBudget)}`
-                : "Budget split percentages provided by campaign"}
-            </span>
-          </div>
-
-          <div className="apd-budget-layout">
-            <div
-              className="apd-budget-pie"
-              role="img"
-              aria-label="Campaign budget allocation pie chart"
-              style={{ background: `conic-gradient(${pieParts.join(", ")})` }}
-            />
-
-            <div className="apd-budget-legend">
-              {budgetBreakdown.map((item, index) => (
-                <div key={`${item.label}-${index}`} className="apd-budget-row">
-                  <span
-                    className="apd-budget-dot"
-                    style={{ backgroundColor: BUDGET_COLORS[index % BUDGET_COLORS.length] }}
-                  />
-                  <span className="apd-budget-label">{item.label}</span>
-                  <span className="apd-budget-percent">{item.percentage}%</span>
-                  <span className="apd-budget-amount">
-                    {totalBudget > 0
-                      ? formatCurrency(Math.round((totalBudget * item.percentage) / 100))
-                      : "-"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         <hr className="apd-divider" />
 
