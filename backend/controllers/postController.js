@@ -477,6 +477,7 @@ export const addContribution = async (req, res) => {
 
     let partnershipId = null;
     let donorName = "Anonymous";
+    const contributionStatus = req.user?.role === "donor" ? "Pending" : "Confirmed";
 
     // registered donors create/maintain an org partnership when they contribute.
     if (req.user?.role === "donor") {
@@ -525,7 +526,7 @@ export const addContribution = async (req, res) => {
           type: "Monetary",
           amount: parseFloat(entry.amount),
           ...proofData,
-          status: "Confirmed",
+          status: contributionStatus,
         },
       });
       if (monetaryOption) {
@@ -548,7 +549,7 @@ export const addContribution = async (req, res) => {
           inKindItemId: entry.itemId,
           quantity: parseFloat(entry.quantity),
           ...proofData,
-          status: "Confirmed",
+          status: contributionStatus,
         },
       });
       await prisma.postInKindItem.update({
@@ -568,7 +569,7 @@ export const addContribution = async (req, res) => {
           type: "Volunteer",
           volunteerCount: Math.round(entry.count),
           ...proofData,
-          status: "Confirmed",
+          status: contributionStatus,
         },
       });
       if (volunteerOption) {
