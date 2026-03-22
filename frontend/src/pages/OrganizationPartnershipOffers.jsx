@@ -12,6 +12,7 @@ export default function OrganizationPartnershipOffers() {
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("pending");
   const [search, setSearch] = useState("");
+  const [profileModal, setProfileModal] = useState(null);
 
   useEffect(() => {
     const loadOffers = async () => {
@@ -150,12 +151,74 @@ export default function OrganizationPartnershipOffers() {
                   >
                     View Project
                   </button>
+                  <button
+                    className="view-profile-btn"
+                    onClick={() => setProfileModal(offer)}
+                  >
+                    View Profile
+                  </button>
                 </div>
               </article>
             ))}
           </div>
         )}
       </main>
+
+      {profileModal && (
+        <div className="profile-modal-overlay" onClick={() => setProfileModal(null)}>
+          <div className="profile-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="profile-modal-close" onClick={() => setProfileModal(null)}>
+              ✕
+            </button>
+
+            <div className="profile-modal-header">
+              <h2>{profileModal.companyName}</h2>
+              <p className="profile-email">{profileModal.donorEmail}</p>
+            </div>
+
+            <div className="profile-modal-body">
+              <div className="profile-section">
+                <h3>Profile Information</h3>
+                <div className="profile-info">
+                  <div className="info-row">
+                    <span className="info-label">Affiliation:</span>
+                    <span className="info-value">{profileModal.donorAffiliation || "Not specified"}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Country:</span>
+                    <span className="info-value">{profileModal.sector}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Bio:</span>
+                    <span className="info-value">{profileModal.donorBio || "No bio provided"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {profileModal.donorProjects && profileModal.donorProjects.length > 0 && (
+                <div className="profile-section">
+                  <h3>Projects Supported</h3>
+                  <div className="profile-projects">
+                    {profileModal.donorProjects.map((project) => (
+                      <div key={project.id} className="profile-project-item">
+                        <h4>{project.projectName}</h4>
+                        <p className="project-priority">Priority: {project.priority}</p>
+                        {project.causes && project.causes.length > 0 && (
+                          <div className="project-causes">
+                            {project.causes.map((cause) => (
+                              <span key={cause} className="cause-tag">{cause}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

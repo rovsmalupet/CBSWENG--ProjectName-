@@ -738,6 +738,8 @@ export const getOrgPartnershipOffers = async (req, res) => {
             lastName: true,
             email: true,
             country: true,
+            affiliation: true,
+            bio: true,
           },
         },
         contributions: {
@@ -787,6 +789,16 @@ export const getOrgPartnershipOffers = async (req, res) => {
         const supportTypes = new Set(contributions.map((c) => c.type));
         const supportFocus = Array.from(supportTypes).join(", ");
 
+        // Get all unique projects this donor has contributed to with this org
+        const donorProjects = Array.from(
+          new Map(
+            partnership.contributions.map((c) => [
+              c.postId,
+              c.post,
+            ])
+          ).values()
+        );
+
         return {
           id: `${partnership.id}-${postId}`,
           companyName: `${donor.firstName} ${donor.lastName}`.trim(),
@@ -803,6 +815,9 @@ export const getOrgPartnershipOffers = async (req, res) => {
           partnershipId: partnership.id,
           donorId: donor.id,
           donorEmail: donor.email,
+          donorAffiliation: donor.affiliation || "",
+          donorBio: donor.bio || "",
+          donorProjects: donorProjects,
           createdAt: partnership.createdAt,
         };
       });
