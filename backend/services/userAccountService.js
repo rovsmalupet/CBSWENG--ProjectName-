@@ -81,6 +81,9 @@ export const registerUser = async ({
   password,
   role,
   orgName,
+  country,    // for Donor registration
+  affiliation, // for Donor registration
+  bio,        // for Donor registration
 }) => {
   // ── Validation ──────────────────────────────────────────────────────────────
   if (!firstName?.trim() || !surname?.trim()) {
@@ -98,6 +101,13 @@ export const registerUser = async ({
   const normalizedRole = (role || "donor").toLowerCase();
   if (!["donor", "ngo"].includes(normalizedRole)) {
     return { status: 400, body: { error: "Invalid role." } };
+  }
+
+  // ── Donor-specific validation ─────────────────────────────────────────────
+  if (normalizedRole === "donor") {
+    if (!affiliation?.trim()) {
+      return { status: 400, body: { error: "Affiliation is required for donors." } };
+    }
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -121,6 +131,9 @@ export const registerUser = async ({
         lastName: surname.trim(),  // frontend uses surname, Donor model uses lastName
         email: normalizedEmail,
         password: hashedPassword,
+        country: country || "Philippines",  // default to Philippines if not provided
+        affiliation: affiliation.trim(),    // required field
+        bio: bio?.trim() || null,           // optional field
         isVerified: true,           // donors are auto-verified
         status: "Approved",         // donors don't need admin approval
       },
@@ -143,6 +156,8 @@ export const registerUser = async ({
         surname: surname.trim(),
         email: normalizedEmail,
         password: hashedPassword,
+        country: country || "Philippines",  // default to Philippines if not provided
+        bio: bio?.trim() || null,           // optional field
         isVerified: false,          // NGOs must be approved by admin first
         status: "Pending",
       },

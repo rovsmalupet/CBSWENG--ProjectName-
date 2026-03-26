@@ -5,8 +5,9 @@ export const register = async (req, res) => {
     const result = await registerUser(req.body);
     res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({ error: "Failed to register user." });
+    console.error("Registration error:", error.message);
+    console.error("Stack trace:", error.stack);
+    res.status(500).json({ error: error.message || "Failed to register user." });
   }
 };
 
@@ -15,8 +16,9 @@ export const login = async (req, res) => {
     const result = await loginUser(req.body);
     res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ error: "Failed to login." });
+    console.error("Login error:", error.message);
+    console.error("Stack trace:", error.stack);
+    res.status(500).json({ error: error.message || "Failed to login." });
   }
 };
 
