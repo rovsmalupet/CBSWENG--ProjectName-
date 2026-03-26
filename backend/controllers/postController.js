@@ -126,6 +126,39 @@ const getMonetaryGoalReachedAtMap = (postsById, monetaryContributions) => {
 };
 
 /**
+ * combineDateAndTime: Combines a date string (YYYY-MM-DD) and optional time string (HH:MM)
+ * into an ISO-8601 DateTime format that Prisma expects.
+ * 
+ * @param {string} dateStr - Date in YYYY-MM-DD format (e.g., "2026-03-26")
+ * @param {string} timeStr - Time in HH:MM format (e.g., "09:12"), optional
+ * @returns {Date|null} ISO-8601 DateTime or null if dateStr is not provided
+ */
+const combineDateAndTime = (dateStr, timeStr) => {
+  if (!dateStr) return null;
+  
+  try {
+    // Default to midnight if no time provided
+    const time = timeStr || "00:00";
+    
+    // Combine into ISO string: YYYY-MM-DDTHH:MM:SS.000Z
+    const isoString = `${dateStr}T${time}:00.000Z`;
+    
+    const dateObj = new Date(isoString);
+    
+    // Validate that the date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.warn(`Invalid date/time combination: ${dateStr} ${time}`);
+      return null;
+    }
+    
+    return dateObj;
+  } catch (err) {
+    console.error(`Error combining date and time: ${dateStr} ${timeStr}`, err);
+    return null;
+  }
+};
+
+/**
  * buildPostData: Parses the request body into structured data ready for Prisma.
  */
 const buildPostData = (body) => {
@@ -171,10 +204,8 @@ const buildPostData = (body) => {
     causes: causes ?? [],
     location,
     priority,
-    startDate: startDate || null,
-    endDate: endDate || null,
-    startTime: startTime || null,
-    endTime: endTime || null,
+    startDate: combineDateAndTime(startDate, startTime),
+    endDate: combineDateAndTime(endDate, endTime),
     inKindItems: inKind.map((i) => ({
       itemName: i.itemName,
       targetQuantity: i.targetQuantity,
