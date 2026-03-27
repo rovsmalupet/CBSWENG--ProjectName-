@@ -424,7 +424,7 @@ async function main() {
       projectName: "Child Rights Advocacy and Protection Campaign",
       description:
         "Community awareness campaign on child rights and protection in Iloilo",
-      causes: ["qualityEducation", "noChildAbuse"],
+      causes: ["qualityEducation", "peaceAndJustice"],
       location: "Iloilo",
       priority: "High",
       overallStatus: "Unapproved",
@@ -447,7 +447,7 @@ async function main() {
       projectName: "Mangrove Reforestation Project",
       description:
         "Plant and maintain 10,000 mangrove trees to restore coastal ecosystems",
-      causes: ["climateAction", "lifeBelow", "sustainableCities"],
+      causes: ["climateAction", "lifeBelowWater", "sustainableCities"],
       location: "Laguna Province",
       priority: "High",
       overallStatus: "Approved",
@@ -500,7 +500,7 @@ async function main() {
     data: {
       projectName: "Community Solar Energy Initiative",
       description: "Install solar panels in 20 barangay health centers",
-      causes: ["cleenEnergy", "sustainableCities", "affordableEnergy"],
+      causes: ["affordableEnergy", "sustainableCities"],
       location: "Nueva Ecija",
       priority: "High",
       overallStatus: "Approved",
@@ -519,7 +519,7 @@ async function main() {
       projectName: "Organic Farming for Smallhold Farmers",
       description:
         "Training and support for 300 farmers to transition to organic farming",
-      causes: ["noHunger", "goodHealth", "sustainableAgriculture"],
+      causes: ["zeroHunger", "goodHealth", "responsibleConsumption"],
       location: "Nueva Vizcaya",
       priority: "Medium",
       overallStatus: "Unapproved",
@@ -570,7 +570,7 @@ async function main() {
       projectName: "River Cleanup and Monitoring Program",
       description:
         "Monthly river cleanup activities and water quality monitoring",
-      causes: ["cleanWater", "lifeBelow"],
+      causes: ["cleanWater", "lifeBelowWater"],
       location: "Laguna de Bay",
       priority: "High",
       overallStatus: "Unapproved",
