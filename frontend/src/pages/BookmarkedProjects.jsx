@@ -2,6 +2,57 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/BookmarkedProjects.css";
 
+const CAUSE_STYLES = {
+  noPoverty: { label: "Poverty", bg: "#E5243B", color: "#fff" },
+  zeroHunger: { label: "Hunger", bg: "#DDA63A", color: "#fff" },
+  goodHealth: { label: "Healthcare", bg: "#4C9F38", color: "#fff" },
+  qualityEducation: {
+    label: "Quality Education",
+    bg: "#C5192D",
+    color: "#fff",
+  },
+  genderEquality: { label: "Gender Equality", bg: "#FF3A21", color: "#fff" },
+  cleanWater: { label: "Clean Water", bg: "#26BDE2", color: "#fff" },
+  affordableEnergy: {
+    label: "Affordable Energy",
+    bg: "#FCC30B",
+    color: "#1a1a1a",
+  },
+  decentWork: {
+    label: "Livelihood And Skills Training",
+    bg: "#A21942",
+    color: "#fff",
+  },
+  industry: { label: "Industry & Innovation", bg: "#FD6925", color: "#fff" },
+  reducedInequalities: {
+    label: "Reduced Inequalities",
+    bg: "#DD1367",
+    color: "#fff",
+  },
+  sustainableCities: { label: "Cities & Relief", bg: "#FD9D24", color: "#fff" },
+  responsibleConsumption: {
+    label: "Responsible Consumption",
+    bg: "#BF8B2E",
+    color: "#fff",
+  },
+  climateAction: { label: "Environment", bg: "#3F7E44", color: "#fff" },
+  lifeBelowWater: { label: "Life Below Water", bg: "#0A97D9", color: "#fff" },
+  lifeOnLand: { label: "Life on Land", bg: "#56C02B", color: "#fff" },
+  peaceAndJustice: { label: "Peace & Justice", bg: "#00689D", color: "#fff" },
+  partnerships: { label: "Partnerships", bg: "#19486A", color: "#fff" },
+  others: { label: "Others", bg: "#6b7280", color: "#fff" },
+};
+
+const normalizeCauseKey = (raw) => {
+  if (!raw) return "others";
+  if (CAUSE_STYLES[raw]) return raw;
+  const normalized = raw.toLowerCase().replace(/[\s_\-]+/g, "");
+  const match = Object.keys(CAUSE_STYLES).find(
+    (key) => key.toLowerCase() === normalized,
+  );
+  return match || "others";
+};
+
 export default function BookmarkedProjects() {
   const navigate = useNavigate();
 
@@ -77,33 +128,13 @@ export default function BookmarkedProjects() {
   };
 
   const getCauseDisplay = (cause) => {
-    const causeMap = {
-      disasterRelief: "disaster relief",
-      healthAndMedical: "health & medical",
-      educationAndChildren: "education",
-      environmentAndClimate: "environment",
-      povertyAndHunger: "poverty & hunger",
-      communityDevelopment: "community dev",
-      livelihoodAndSkillsTraining: "livelihood",
-      animalWelfare: "animal welfare",
-      others: "others",
-    };
-    return causeMap[cause] || cause;
+    const normalized = normalizeCauseKey(cause);
+    return CAUSE_STYLES[normalized].label;
   };
 
   const getCauseColor = (cause) => {
-    const colors = {
-      disasterRelief: "#ef4444",
-      healthAndMedical: "#3b82f6",
-      educationAndChildren: "#8b5cf6",
-      environmentAndClimate: "#10b981",
-      povertyAndHunger: "#f59e0b",
-      communityDevelopment: "#06b6d4",
-      livelihoodAndSkillsTraining: "#ec4899",
-      animalWelfare: "#84cc16",
-      others: "#6b7280",
-    };
-    return colors[cause] || "#6b7280";
+    const normalized = normalizeCauseKey(cause);
+    return CAUSE_STYLES[normalized].bg;
   };
 
   const formatCurrency = (value) => {
@@ -221,7 +252,16 @@ export default function BookmarkedProjects() {
                         title="remove bookmark"
                         aria-label="remove bookmark"
                       >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                         </svg>
                       </button>
