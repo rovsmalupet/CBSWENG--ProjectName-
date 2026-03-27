@@ -183,8 +183,9 @@ const buildPostData = (body) => {
     causes: causes ?? [],
     location,
     priority,
-    startDate: startDate || null,
-    endDate: endDate || null,
+    // AFTER
+    startDate: startDate ? new Date(startDate).toISOString() : null,
+    endDate: endDate ? new Date(endDate).toISOString() : null,
     startTime: startTime || null,
     endTime: endTime || null,
     inKindItems: validInKindItems.map((i) => ({
