@@ -110,14 +110,21 @@ const getMonetaryGoalReachedAtMap = (postsById, monetaryContributions) => {
     if (!post) continue;
 
     const monetary = post.supportTypes?.monetary;
-    if (!monetary?.enabled || !monetary.targetAmount || monetary.targetAmount <= 0) {
+    if (
+      !monetary?.enabled ||
+      !monetary.targetAmount ||
+      monetary.targetAmount <= 0
+    ) {
       continue;
     }
 
     runningTotals[contribution.postId] =
       (runningTotals[contribution.postId] ?? 0) + (contribution.amount ?? 0);
 
-    if (!reachedAtMap[contribution.postId] && runningTotals[contribution.postId] >= monetary.targetAmount) {
+    if (
+      !reachedAtMap[contribution.postId] &&
+      runningTotals[contribution.postId] >= monetary.targetAmount
+    ) {
       reachedAtMap[contribution.postId] = contribution.createdAt;
     }
   }
@@ -270,10 +277,12 @@ export const getAllPosts = async (req, res) => {
         },
       },
     });
-    res.json(posts.map((post) => ({
-      ...formatPost(post),
-      lastAudit: post.auditLogs[0] ?? null,
-    })));
+    res.json(
+      posts.map((post) => ({
+        ...formatPost(post),
+        lastAudit: post.auditLogs[0] ?? null,
+      })),
+    );
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -386,7 +395,10 @@ export const updatePost = async (req, res) => {
       include: { inKindItems: true, supportOptions: true, organization: true },
     });
 
-    res.json({ message: "Post updated successfully", post: formatPost(updated) });
+    res.json({
+      message: "Post updated successfully",
+      post: formatPost(updated),
+    });
   } catch (err) {
     if (err.code === "P2025") {
       return res.status(404).json({ error: "Post not found" });
@@ -444,7 +456,13 @@ export const updatePostStatus = async (req, res) => {
     const { postId } = req.params;
     const { overallStatus } = req.body;
 
-    const validStatuses = ["Pending", "Approved", "Unapproved", "Edited", "Deleted"];
+    const validStatuses = [
+      "Pending",
+      "Approved",
+      "Unapproved",
+      "Edited",
+      "Deleted",
+    ];
     if (!validStatuses.includes(overallStatus)) {
       return res.status(400).json({ error: "Invalid status value." });
     }
@@ -493,7 +511,8 @@ export const addContribution = async (req, res) => {
     // When donor uploads proof via FormData, arrays arrive as JSON strings.
     if (typeof monetary === "string") monetary = JSON.parse(monetary || "[]");
     if (typeof inKind === "string") inKind = JSON.parse(inKind || "[]");
-    if (typeof volunteer === "string") volunteer = JSON.parse(volunteer || "[]");
+    if (typeof volunteer === "string")
+      volunteer = JSON.parse(volunteer || "[]");
 
     // Fetch post with support options and in-kind items
     const post = await prisma.post.findUnique({
@@ -504,11 +523,14 @@ export const addContribution = async (req, res) => {
 
     let partnershipId = null;
     let donorName = "Anonymous";
-    const contributionStatus = req.user?.role === "donor" ? "Pending" : "Confirmed";
+    const contributionStatus =
+      req.user?.role === "donor" ? "Pending" : "Confirmed";
 
     // registered donors create/maintain an org partnership when they contribute.
     if (req.user?.role === "donor") {
-      const donor = await prisma.donor.findUnique({ where: { id: req.user.id } });
+      const donor = await prisma.donor.findUnique({
+        where: { id: req.user.id },
+      });
       if (donor) {
         donorName = `${donor.firstName} ${donor.lastName}`.trim();
         const partnership = await prisma.donorOrganizationPartner.upsert({
@@ -528,8 +550,12 @@ export const addContribution = async (req, res) => {
       }
     }
 
-    const monetaryOption = post.supportOptions.find((o) => o.type === "Monetary");
-    const volunteerOption = post.supportOptions.find((o) => o.type === "Volunteer");
+    const monetaryOption = post.supportOptions.find(
+      (o) => o.type === "Monetary",
+    );
+    const volunteerOption = post.supportOptions.find(
+      (o) => o.type === "Volunteer",
+    );
 
     const proofData = req.file
       ? {
@@ -666,7 +692,8 @@ export const getMyDonorPartnerships = async (req, res) => {
       for (const contribution of partnership.contributions) {
         if (contribution.type !== "Monetary" || !contribution.postId) continue;
         partnershipMonetaryContributionsByPost[contribution.postId] =
-          (partnershipMonetaryContributionsByPost[contribution.postId] ?? 0) + 1;
+          (partnershipMonetaryContributionsByPost[contribution.postId] ?? 0) +
+          1;
       }
 
       for (const contribution of partnership.contributions) {
@@ -704,13 +731,18 @@ export const getMyDonorPartnerships = async (req, res) => {
         orderBy: { createdAt: "asc" },
       });
 
-      const reachedAtMap = getMonetaryGoalReachedAtMap(postsById, monetaryContributions);
+      const reachedAtMap = getMonetaryGoalReachedAtMap(
+        postsById,
+        monetaryContributions,
+      );
 
       for (const partnership of result) {
         partnership.projects = (partnership.projects || []).map((project) => {
           const monetary = project.supportTypes?.monetary;
-          const hasMonetaryGoal = monetary?.enabled && (monetary.targetAmount ?? 0) > 0;
-          const donorContributedMonetary = (partnershipMonetaryContributionsByPost[project.id] ?? 0) > 0;
+          const hasMonetaryGoal =
+            monetary?.enabled && (monetary.targetAmount ?? 0) > 0;
+          const donorContributedMonetary =
+            (partnershipMonetaryContributionsByPost[project.id] ?? 0) > 0;
 
           if (!hasMonetaryGoal || !donorContributedMonetary) {
             return {
@@ -729,7 +761,7 @@ export const getMyDonorPartnerships = async (req, res) => {
               goalMet,
               targetAmount,
               currentAmount,
-              reachedAt: goalMet ? reachedAtMap[project.id] ?? null : null,
+              reachedAt: goalMet ? (reachedAtMap[project.id] ?? null) : null,
               message: goalMet
                 ? "Fundraising goal reached. Thank you for helping this project succeed."
                 : "Fundraising is still in progress.",
@@ -799,55 +831,57 @@ export const getOrgPartnershipOffers = async (req, res) => {
       }
 
       // Create an offer for each post
-      return Object.entries(postContributions).map(([postId, contributions]) => {
-        const post = contributions[0]?.post;
-        const donor = partnership.donor;
+      return Object.entries(postContributions).map(
+        ([postId, contributions]) => {
+          const post = contributions[0]?.post;
+          const donor = partnership.donor;
 
-        // Calculate total contribution value
-        const totalAmount = contributions
-          .filter((c) => c.type === "Monetary" && c.amount)
-          .reduce((sum, c) => sum + (c.amount ?? 0), 0);
+          // Calculate total contribution value
+          const totalAmount = contributions
+            .filter((c) => c.type === "Monetary" && c.amount)
+            .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
-        const volunteerCount = contributions
-          .filter((c) => c.type === "Volunteer" && c.volunteerCount)
-          .reduce((sum, c) => sum + (c.volunteerCount ?? 0), 0);
+          const volunteerCount = contributions
+            .filter((c) => c.type === "Volunteer" && c.volunteerCount)
+            .reduce((sum, c) => sum + (c.volunteerCount ?? 0), 0);
 
-        // Determine support focus based on contribution types
-        const supportTypes = new Set(contributions.map((c) => c.type));
-        const supportFocus = Array.from(supportTypes).join(", ");
+          // Determine support focus based on contribution types
+          const supportTypes = new Set(contributions.map((c) => c.type));
+          const supportFocus = Array.from(supportTypes).join(", ");
 
-        // Get all unique projects this donor has contributed to with this org
-        const donorProjects = Array.from(
-          new Map(
-            partnership.contributions.map((c) => [
-              c.postId,
-              c.post,
-            ])
-          ).values()
-        );
+          // Get all unique projects this donor has contributed to with this org
+          const donorProjects = Array.from(
+            new Map(
+              partnership.contributions.map((c) => [c.postId, c.post]),
+            ).values(),
+          );
 
-        return {
-          id: `${partnership.id}-${postId}`,
-          companyName: `${donor.firstName} ${donor.lastName}`.trim(),
-          sector: donor.country || "International",
-          supportFocus: supportFocus || "Various Support",
-          annualBudget: "N/A",
-          certifications: [],
-          projectId: postId,
-          projectName: post?.projectName || "Unknown Project",
-          projectPriority: post?.priority || "Medium",
-          proposedValue: totalAmount > 0 ? `PHP ${totalAmount.toLocaleString("en-PH")}` : "In-Kind Support",
-          volunteerHours: volunteerCount,
-          status: "pending",
-          partnershipId: partnership.id,
-          donorId: donor.id,
-          donorEmail: donor.email,
-          donorAffiliation: donor.affiliation || "",
-          donorBio: donor.bio || "",
-          donorProjects: donorProjects,
-          createdAt: partnership.createdAt,
-        };
-      });
+          return {
+            id: `${partnership.id}-${postId}`,
+            companyName: `${donor.firstName} ${donor.lastName}`.trim(),
+            sector: donor.country || "International",
+            supportFocus: supportFocus || "Various Support",
+            annualBudget: "N/A",
+            certifications: [],
+            projectId: postId,
+            projectName: post?.projectName || "Unknown Project",
+            projectPriority: post?.priority || "Medium",
+            proposedValue:
+              totalAmount > 0
+                ? `PHP ${totalAmount.toLocaleString("en-PH")}`
+                : "In-Kind Support",
+            volunteerHours: volunteerCount,
+            status: "pending",
+            partnershipId: partnership.id,
+            donorId: donor.id,
+            donorEmail: donor.email,
+            donorAffiliation: donor.affiliation || "",
+            donorBio: donor.bio || "",
+            donorProjects: donorProjects,
+            createdAt: partnership.createdAt,
+          };
+        },
+      );
     });
 
     res.json(offers);
