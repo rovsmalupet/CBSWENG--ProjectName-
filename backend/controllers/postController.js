@@ -148,6 +148,11 @@ const buildPostData = (body) => {
   const inKind = supportTypes?.inKind ?? [];
   const supportOptionsData = [];
 
+  // Validate and filter inKind items
+  const validInKindItems = Array.isArray(inKind) 
+    ? inKind.filter(i => i && i.itemName && typeof i.targetQuantity === 'number' && i.targetQuantity > 0)
+    : [];
+
   if (monetary?.enabled) {
     supportOptionsData.push({
       type: "Monetary",
@@ -175,10 +180,10 @@ const buildPostData = (body) => {
     endDate: endDate || null,
     startTime: startTime || null,
     endTime: endTime || null,
-    inKindItems: inKind.map((i) => ({
-      itemName: i.itemName,
-      targetQuantity: i.targetQuantity,
-      unit: i.unit ?? null,
+    inKindItems: validInKindItems.map((i) => ({
+      itemName: String(i.itemName).trim(),
+      targetQuantity: Number(i.targetQuantity),
+      unit: i.unit ? String(i.unit).trim() : null,
     })),
     supportOptionsData,
   };
@@ -200,8 +205,19 @@ export const createPost = async (req, res) => {
         .json({ error: "projectName and at least one cause are required" });
     }
 
+    // Validate orgId exists
+    if (!req.user?.id) {
+      console.error("Missing or invalid user ID in auth");
+      return res.status(401).json({ error: "Authentication failed: Missing user ID" });
+    }
+
     const data = buildPostData(req.body);
     const { inKindItems, supportOptionsData, ...postFields } = data;
+
+    // Validate at least one support option is selected
+    if (supportOptionsData.length === 0 && inKindItems.length === 0) {
+      return res.status(400).json({ error: "At least one support type must be selected" });
+    }
 
     const post = await prisma.post.create({
       data: {
@@ -219,8 +235,19 @@ export const createPost = async (req, res) => {
       post: formatPost(post),
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error("Error creating post:", {
+      message: err.message,
+      code: err.code,
+      meta: err.meta,
+      stack: err.stack,
+      body: req.body,
+      userId: req.user?.id,
+    });
+    res.status(500).json({ 
+      error: err.message,
+      code: err.code,
+      details: process.env.NODE_ENV === 'development' ? err.meta : undefined
+    });
   }
 };
 
