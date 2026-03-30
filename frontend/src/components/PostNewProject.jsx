@@ -274,9 +274,14 @@ export default function PostNewProject({ onProjectCreated }) {
               </div>
             )}
 
-            <button type="submit" className="postProjectSubmitBtn" disabled={status === "loading"}>
-              {status === "loading" ? "Publishing..." : "Publish Verified Project"}
-            </button>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button type="submit" className="postProjectSubmitBtn" disabled={status === "loading"}>
+                {status === "loading" ? "Publishing..." : "Publish Verified Project"}
+              </button>
+              <button type="button" className="postProjectCancelBtn" onClick={() => navigate("/project-ledger")} disabled={status === "loading"}>
+                Cancel
+              </button>
+            </div>
           </div>
         </form>
       </div>

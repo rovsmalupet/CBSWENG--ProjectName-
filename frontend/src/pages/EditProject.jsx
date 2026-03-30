@@ -309,9 +309,14 @@ export default function EditProject() {
               </div>
             )}
 
-            <button type="submit" className="postProjectSubmitBtn" disabled={status === "loading"}>
-              {status === "loading" ? "Updating..." : "Update Project"}
-            </button>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button type="submit" className="postProjectSubmitBtn" disabled={status === "loading"}>
+                {status === "loading" ? "Updating..." : "Update Project"}
+              </button>
+              <button type="button" className="postProjectCancelBtn" onClick={() => navigate("/project-ledger")} disabled={status === "loading"}>
+                Cancel
+              </button>
+            </div>
           </div>
         </form>
 

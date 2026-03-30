@@ -242,6 +242,32 @@
   cursor: not-allowed;
 }
 
+/* Cancel button */
+.postProjectCancelBtn {
+  padding: 14px;
+  background-color: #e2e8f0;
+  color: #1a202c;
+  border: 1px solid #cbd5e0;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  font-family: inherit;
+  margin-top: auto;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.postProjectCancelBtn:hover:not(:disabled) {
+  background-color: #cbd5e0;
+  border-color: #a0aec0;
+}
+
+.postProjectCancelBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .postProjectChips {
   display: flex;
   flex-wrap: wrap;
