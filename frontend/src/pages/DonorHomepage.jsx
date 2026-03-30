@@ -312,8 +312,8 @@ export default function DonorHomepage() {
                       title={bookmarkedProjects.includes(campaign.id) ? "Remove bookmark" : "Bookmark project"}
                       aria-label={bookmarkedProjects.includes(campaign.id) ? "Remove bookmark" : "Bookmark project"}
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedProjects.includes(campaign.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedProjects.includes(campaign.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
                       </svg>
                     </button>
                   </div>
