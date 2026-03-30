@@ -4,22 +4,23 @@ import "../css/UnapprovedProjects.css";
 import Navbar from "../components/Navbar.jsx";
 
 const CAUSE_STYLES = {
-  educationAndChildren: { label: "EDUCATION", bg: "#dbeafe", color: "#1d4ed8" },
-  healthAndMedical: { label: "HEALTH", bg: "#dcfce7", color: "#15803d" },
-  disasterRelief: { label: "URGENT RELIEF", bg: "#fee2e2", color: "#b91c1c" },
-  environmentAndClimate: {
-    label: "ENVIRONMENT",
-    bg: "#d1fae5",
-    color: "#065f46",
-  },
-  povertyAndHunger: { label: "POVERTY", bg: "#fef9c3", color: "#92400e" },
-  communityDevelopment: { label: "COMMUNITY", bg: "#ede9fe", color: "#6d28d9" },
-  livelihoodAndSkillsTraining: {
-    label: "LIVELIHOOD",
-    bg: "#ffedd5",
-    color: "#c2410c",
-  },
-  animalWelfare: { label: "ANIMALS", bg: "#fce7f3", color: "#be185d" },
+  noPoverty: { label: "NO POVERTY", bg: "#fef9c3", color: "#92400e" },
+  zeroHunger: { label: "ZERO HUNGER", bg: "#fef9c3", color: "#92400e" },
+  goodHealth: { label: "HEALTH", bg: "#dcfce7", color: "#15803d" },
+  qualityEducation: { label: "EDUCATION", bg: "#dbeafe", color: "#1d4ed8" },
+  genderEquality: { label: "GENDER EQUALITY", bg: "#fce7f3", color: "#be185d" },
+  cleanWater: { label: "CLEAN WATER", bg: "#d1fae5", color: "#065f46" },
+  affordableEnergy: { label: "ENERGY", bg: "#fef3c7", color: "#b45309" },
+  decentWork: { label: "DECENT WORK", bg: "#ede9fe", color: "#6d28d9" },
+  industry: { label: "INDUSTRY", bg: "#e0e7ff", color: "#3730a3" },
+  reducedInequalities: { label: "INEQUALITY", bg: "#ffedd5", color: "#c2410c" },
+  sustainableCities: { label: "CITIES", bg: "#ede9fe", color: "#6d28d9" },
+  responsibleConsumption: { label: "CONSUMPTION", bg: "#d1fae5", color: "#065f46" },
+  climateAction: { label: "CLIMATE", bg: "#d1fae5", color: "#065f46" },
+  lifeBelowWater: { label: "OCEANS", bg: "#dbeafe", color: "#1d4ed8" },
+  lifeOnLand: { label: "LAND", bg: "#dcfce7", color: "#15803d" },
+  peaceAndJustice: { label: "PEACE", bg: "#fee2e2", color: "#b91c1c" },
+  partnerships: { label: "PARTNERSHIPS", bg: "#f3f4f6", color: "#374151" },
   others: { label: "OTHERS", bg: "#f3f4f6", color: "#374151" },
 };
 
