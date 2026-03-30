@@ -50,6 +50,11 @@ const formatDateTime = (dateStr) => {
   return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
+const displayAction = (action) => {
+  if (action === "Unapproved") return "Rejected";
+  return action;
+};
+
 export default function AdminProjectDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -272,7 +277,7 @@ export default function AdminProjectDetail() {
               <ul className="apd-audit-list">
                 {auditLogs.map((log) => (
                   <li key={log.id} className="apd-audit-item">
-                    <span className="apd-audit-action">{log.action}</span>
+                    <span className="apd-audit-action">{displayAction(log.action)}</span>
                     {" by "}
                     <span className="apd-audit-admin">{log.admin.firstName} {log.admin.lastName}</span>
                     <span className="apd-audit-date"> · {formatDateTime(log.createdAt)}</span>

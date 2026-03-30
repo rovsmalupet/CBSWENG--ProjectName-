@@ -180,14 +180,14 @@ export default function ViewProjects() {
                         color: statusColor(project.overallStatus).color,
                       }}
                     >
-                      {project.overallStatus}
+                      {displayStatus(project.overallStatus)}
                     </span>
                   </td>
                   <td style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}>
                     {project.lastAudit ? (
                       <>
                         <span style={{ fontWeight: "600", color: "#374151" }}>
-                          {project.lastAudit.action}
+                          {displayAction(project.lastAudit.action)}
                         </span>
                         {" by "}
                         {project.lastAudit.admin.firstName}{" "}
@@ -239,4 +239,14 @@ function statusColor(status) {
     default:
       return { bg: "#f3f4f6", color: "#374151" };
   }
+}
+
+function displayStatus(status) {
+  if (status === "Unapproved") return "Rejected";
+  return status;
+}
+
+function displayAction(action) {
+  if (action === "Unapproved") return "Rejected";
+  return action;
 }
