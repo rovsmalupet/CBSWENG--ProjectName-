@@ -73,14 +73,16 @@
 
 /* ── Priority badge ── */
 .apd-priority {
+  display: inline-block;
   border-radius: 999px;
-  padding: 2px 12px;
-  font-size: 12px;
+  padding: 3px 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.05em;
   border-width: 2px;
   border-style: solid;
   white-space: nowrap;
+  width: fit-content;
 }
 .apd-priority-high   { background: #f1d8d8; border-color: #ff3131; color: #ff3131; }
 .apd-priority-medium { background: #f1e5d8; border-color: #ff751f; color: #ff751f; }

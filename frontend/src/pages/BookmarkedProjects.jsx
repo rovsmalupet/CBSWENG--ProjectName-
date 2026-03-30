@@ -240,11 +240,6 @@ export default function BookmarkedProjects() {
                             {getCauseDisplay(cause)}
                           </span>
                         ))}
-                        <span
-                          className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}
-                        >
-                          {campaign.priority?.toLowerCase() || "medium"}
-                        </span>
                       </div>
                       <button
                         className="bookmark-btn bookmarked"
@@ -268,6 +263,11 @@ export default function BookmarkedProjects() {
                     <h4 className="campaign-title" title={campaign.projectName}>
                       {truncateText(campaign.projectName, 60)}
                     </h4>
+                    <span
+                      className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}
+                    >
+                      {campaign.priority?.toLowerCase() || "medium"}
+                    </span>
                     <p
                       className="campaign-description"
                       title={campaign.description}

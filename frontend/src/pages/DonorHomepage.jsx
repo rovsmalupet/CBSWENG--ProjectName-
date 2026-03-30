@@ -302,9 +302,6 @@ export default function DonorHomepage() {
                           </span>
                         );
                       })}
-                      <span className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}>
-                        {campaign.priority?.toLowerCase() || "medium"}
-                      </span>
                     </div>
                     <button
                       className={`bookmark-btn ${bookmarkedProjects.includes(campaign.id) ? "bookmarked" : ""}`}
@@ -319,6 +316,9 @@ export default function DonorHomepage() {
                   </div>
 
                   <h4 className="campaign-title" title={campaign.projectName}>{truncateText(campaign.projectName, 60)}</h4>
+                  <span className={`priority-badge priority-${campaign.priority?.toLowerCase()}`}>
+                    {campaign.priority?.toLowerCase() || "medium"}
+                  </span>
                   <p className="campaign-description" title={campaign.description}>{truncateText(campaign.description, 100)}</p>
 
                   <div className="campaign-meta">
