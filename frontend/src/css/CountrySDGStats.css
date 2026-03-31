@@ -36,9 +36,9 @@
 }
 
 .country-flag-large {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
+  width: 150px;
+  height: 100px;
+  object-fit: contain;
   border-radius: 8px;
 }
 
