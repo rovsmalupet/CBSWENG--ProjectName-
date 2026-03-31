@@ -132,7 +132,7 @@ const CountrySDGStats = () => {
 
         <div className="asean-score-container">
           <img 
-            src={`/pictures/AseanScores/${country === 'philippines' ? 'ph.png' : country}.png`} 
+            src={`/pictures/AseanScores/${country}.png`} 
             alt={`${countryData.name} ASEAN Score`}
             className="asean-score-image"
           />
