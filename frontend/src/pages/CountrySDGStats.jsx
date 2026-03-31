@@ -3,23 +3,23 @@ import { useParams, useNavigate } from 'react-router-dom';
 import '../css/CountrySDGStats.css';
 
 const SDG_LIST = [
-  { key: 'noPoverty', label: 'No Poverty' },
-  { key: 'zeroHunger', label: 'Zero Hunger' },
-  { key: 'goodHealth', label: 'Good Health' },
-  { key: 'qualityEducation', label: 'Quality Education' },
-  { key: 'genderEquality', label: 'Gender Equality' },
-  { key: 'cleanWater', label: 'Clean Water' },
-  { key: 'affordableEnergy', label: 'Affordable Energy' },
-  { key: 'decentWork', label: 'Decent Work' },
-  { key: 'industry', label: 'Industry & Innovation' },
-  { key: 'reducedInequalities', label: 'Reduced Inequalities' },
-  { key: 'sustainableCities', label: 'Sustainable Cities' },
-  { key: 'responsibleConsumption', label: 'Responsible Consumption' },
-  { key: 'climateAction', label: 'Climate Action' },
-  { key: 'lifeBelowWater', label: 'Life Below Water' },
-  { key: 'lifeOnLand', label: 'Life on Land' },
-  { key: 'peaceAndJustice', label: 'Peace & Justice' },
-  { key: 'partnerships', label: 'Partnerships' },
+  { key: 'noPoverty', label: 'No Poverty', fileName: 'poverty.png' },
+  { key: 'zeroHunger', label: 'Zero Hunger', fileName: 'hunger.png' },
+  { key: 'goodHealth', label: 'Good Health', fileName: 'healthcare.png' },
+  { key: 'qualityEducation', label: 'Quality Education', fileName: 'quality education.png' },
+  { key: 'genderEquality', label: 'Gender Equality', fileName: 'gender equality.png' },
+  { key: 'cleanWater', label: 'Clean Water', fileName: 'clean water.png' },
+  { key: 'affordableEnergy', label: 'Affordable Energy', fileName: 'affordable energy.png' },
+  { key: 'decentWork', label: 'Decent Work', fileName: 'livelihood and skills training.png' },
+  { key: 'industry', label: 'Industry & Innovation', fileName: 'industry and innovation.png' },
+  { key: 'reducedInequalities', label: 'Reduced Inequalities', fileName: 'reduced inequalities.png' },
+  { key: 'sustainableCities', label: 'Sustainable Cities', fileName: 'cities and relief.png' },
+  { key: 'responsibleConsumption', label: 'Responsible Consumption', fileName: 'responsible consumption.png' },
+  { key: 'climateAction', label: 'Climate Action', fileName: 'environment.png' },
+  { key: 'lifeBelowWater', label: 'Life Below Water', fileName: 'life below water.png' },
+  { key: 'lifeOnLand', label: 'Life on Land', fileName: 'life on land.png' },
+  { key: 'peaceAndJustice', label: 'Peace & Justice', fileName: 'peace and justice.png' },
+  { key: 'partnerships', label: 'Partnerships', fileName: 'partnerships.png' },
 ];
 
 const CountrySDGStats = () => {
@@ -141,11 +141,11 @@ const CountrySDGStats = () => {
                 title={sdg.label}
               >
                 <img
-                  src={`/pictures/SDGLogos/${sdg.key}.svg`}
+                  src={`/pictures/SDGLogos/${sdg.fileName}`}
                   alt={sdg.label}
                   className="sdg-logo"
                   onError={(e) => {
-                    e.target.src = `/pictures/SDGLogos/${sdg.key}.png`;
+                    e.target.src = `/pictures/SDGLogos/${sdg.fileName}`;
                   }}
                 />
                 <span className="sdg-label">{sdg.label}</span>
