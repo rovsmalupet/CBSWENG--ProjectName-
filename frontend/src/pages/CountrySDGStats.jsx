@@ -90,7 +90,7 @@ const CountrySDGStats = () => {
   }
 
   const handleSDGClick = (sdgKey) => {
-    navigate('/donor/home', {
+    navigate('/donor', {
       state: {
         selectedCountry: countryData.name,
         selectedSDG: sdgKey,
