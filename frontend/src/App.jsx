@@ -22,6 +22,7 @@ import NgoRegistration from "./pages/NgoRegistration.jsx";
 import DonorRegistration from "./pages/DonorRegistration.jsx";
 import ProjectDocumentation from "./pages/ProjectDocumentation.jsx";
 import OrganizationVerification from "./pages/OrganizationVerification.jsx";
+import ASEANSelection from "./pages/ASEANSelection.jsx";
 
 function RequireRole({ allowedRoles, children }) {
   const token = localStorage.getItem("token");
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="/add-contribution/:id" element={<RequireRole allowedRoles={["donor", "ngo"]}><AddContribution /></RequireRole>} />
         <Route path="/contribution-detail/:id" element={<RequireRole allowedRoles={["ngo"]}><ContributionDetailPage /></RequireRole>} />
         <Route path="/donor" element={<RequireRole allowedRoles={["donor"]}><DonorHomepage /></RequireRole>} />
+        <Route path="/donor/asean" element={<RequireRole allowedRoles={["donor"]}><ASEANSelection /></RequireRole>} />
         <Route path="/donor/bookmarks" element={<RequireRole allowedRoles={["donor"]}><BookmarkedProjects /></RequireRole>} />
         <Route path="/donor/partnerships" element={<RequireRole allowedRoles={["donor"]}><CorporatePartnerships /></RequireRole>} />
         <Route path="/project/:id" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><ProjectDetailPage /></RequireRole>} />
