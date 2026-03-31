@@ -56,6 +56,18 @@
   margin-bottom: 40px;
 }
 
+.asean-score-container {
+  margin-bottom: 40px;
+}
+
+.asean-score-image {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
 .stat-card {
   background-color: #f9fafb;
   border: 2px solid #e5e7eb;

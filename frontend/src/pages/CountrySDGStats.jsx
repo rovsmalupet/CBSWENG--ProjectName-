@@ -130,6 +130,14 @@ const CountrySDGStats = () => {
           </div>
         </div>
 
+        <div className="asean-score-container">
+          <img 
+            src={`/pictures/AseanScores/${country === 'philippines' ? 'ph.png' : country}.png`} 
+            alt={`${countryData.name} ASEAN Score`}
+            className="asean-score-image"
+          />
+        </div>
+
         <div className="sdg-section">
           <h3 className="sdg-title">Click an SDG to view related campaigns</h3>
           <div className="sdg-grid">
