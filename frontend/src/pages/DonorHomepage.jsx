@@ -58,8 +58,9 @@ export default function DonorHomepage() {
 
   const [filters, setFilters] = useState(() => {
     const selectedCountry = location.state?.selectedCountry;
+    const selectedSDG = location.state?.selectedSDG;
     return {
-      cause: "Any",
+      cause: selectedSDG || "Any",
       urgency: "Any",
       country: selectedCountry || userCountry,
       region: "Any",

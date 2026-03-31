@@ -84,25 +84,56 @@
   color: #2563eb;
 }
 
-.view-campaigns-btn {
-  width: 100%;
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
+.sdg-section {
+  margin-top: 50px;
+  text-align: left;
+}
+
+.sdg-title {
+  font-size: 16px;
   font-weight: 600;
+  color: #374151;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.sdg-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+
+.sdg-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background-color: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 15px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  text-align: center;
 }
 
-.view-campaigns-btn:hover {
-  background-color: #1d4ed8;
+.sdg-button:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+  transform: translateY(-2px);
 }
 
-.view-campaigns-btn:active {
-  background-color: #1e40af;
+.sdg-logo {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.sdg-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1.2;
 }
 
 @media (max-width: 768px) {
@@ -121,6 +152,24 @@
 
   .stat-value {
     font-size: 24px;
+  }
+
+  .sdg-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+  }
+
+  .sdg-button {
+    padding: 12px;
+  }
+
+  .sdg-logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sdg-label {
+    font-size: 10px;
   }
 }
 
@@ -148,5 +197,23 @@
 
   .stat-value {
     font-size: 20px;
+  }
+
+  .sdg-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .sdg-button {
+    padding: 10px;
+  }
+
+  .sdg-logo {
+    width: 35px;
+    height: 35px;
+  }
+
+  .sdg-label {
+    font-size: 9px;
   }
 }

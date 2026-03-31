@@ -2,6 +2,26 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import '../css/CountrySDGStats.css';
 
+const SDG_LIST = [
+  { key: 'noPoverty', label: 'No Poverty' },
+  { key: 'zeroHunger', label: 'Zero Hunger' },
+  { key: 'goodHealth', label: 'Good Health' },
+  { key: 'qualityEducation', label: 'Quality Education' },
+  { key: 'genderEquality', label: 'Gender Equality' },
+  { key: 'cleanWater', label: 'Clean Water' },
+  { key: 'affordableEnergy', label: 'Affordable Energy' },
+  { key: 'decentWork', label: 'Decent Work' },
+  { key: 'industry', label: 'Industry & Innovation' },
+  { key: 'reducedInequalities', label: 'Reduced Inequalities' },
+  { key: 'sustainableCities', label: 'Sustainable Cities' },
+  { key: 'responsibleConsumption', label: 'Responsible Consumption' },
+  { key: 'climateAction', label: 'Climate Action' },
+  { key: 'lifeBelowWater', label: 'Life Below Water' },
+  { key: 'lifeOnLand', label: 'Life on Land' },
+  { key: 'peaceAndJustice', label: 'Peace & Justice' },
+  { key: 'partnerships', label: 'Partnerships' },
+];
+
 const CountrySDGStats = () => {
   const { country } = useParams();
   const navigate = useNavigate();
@@ -69,6 +89,15 @@ const CountrySDGStats = () => {
     );
   }
 
+  const handleSDGClick = (sdgKey) => {
+    navigate('/donor/home', {
+      state: {
+        selectedCountry: countryData.name,
+        selectedSDG: sdgKey,
+      },
+    });
+  };
+
   return (
     <div className="stats-container">
       <button className="back-button" onClick={() => navigate('/donor/asean')}>
@@ -101,9 +130,29 @@ const CountrySDGStats = () => {
           </div>
         </div>
 
-        <button className="view-campaigns-btn" onClick={() => navigate('/donor/home')}>
-          View Campaigns
-        </button>
+        <div className="sdg-section">
+          <h3 className="sdg-title">Click an SDG to view related campaigns</h3>
+          <div className="sdg-grid">
+            {SDG_LIST.map((sdg) => (
+              <button
+                key={sdg.key}
+                className="sdg-button"
+                onClick={() => handleSDGClick(sdg.key)}
+                title={sdg.label}
+              >
+                <img
+                  src={`/pictures/SDGLogos/${sdg.key}.svg`}
+                  alt={sdg.label}
+                  className="sdg-logo"
+                  onError={(e) => {
+                    e.target.src = `/pictures/SDGLogos/${sdg.key}.png`;
+                  }}
+                />
+                <span className="sdg-label">{sdg.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
