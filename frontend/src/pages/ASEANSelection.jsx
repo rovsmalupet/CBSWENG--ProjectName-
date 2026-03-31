@@ -16,10 +16,9 @@ const ASEAN_COUNTRIES = [
 
 export default function ASEANSelection() {
   const navigate = useNavigate();
-  const firstName = localStorage.getItem("userFirstName") || "Donor";
 
-  const handleCountrySelect = (country) => {
-    navigate("/donor", { state: { selectedCountry: country } });
+  const handleCountryClick = (country) => {
+    navigate(`/donor/country/${country.name.toLowerCase()}`);
   };
 
   const handleBack = () => {
@@ -41,7 +40,7 @@ export default function ASEANSelection() {
             <button
               key={country.name}
               className="country-card"
-              onClick={() => handleCountrySelect(country.name)}
+              onClick={() => handleCountryClick(country)}
             >
               <div className="country-flag">
                 <img
@@ -57,6 +56,8 @@ export default function ASEANSelection() {
           ))}
         </div>
       </div>
+
+
     </div>
   );
 }
