@@ -63,7 +63,15 @@ export default function CorporatePartnerships() {
           Back
         </button>
 
-        <h1 className="partnerships-title">My Current Partnerships</h1>
+        <div className="partnerships-title-row">
+          <button 
+            className="view-payments-btn" 
+            onClick={() => navigate("/payment-history")}
+          >
+            View Payments
+          </button>
+          <h1 className="partnerships-title">My Current Partnerships</h1>
+        </div>
         <p className="partnerships-subtitle">
           Projects where your donor account is already verified through active org partnerships.
         </p>

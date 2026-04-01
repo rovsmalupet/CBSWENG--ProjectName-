@@ -162,11 +162,11 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
 
       <div className="ac-invoice-total">
         <span className="ac-invoice-total-label">Total Amount to Pay</span>
-        <span className="ac-invoice-total-amount">{fmtPHP(totalMonetary + totalInKind + total)}</span>
+        <span className="ac-invoice-total-amount">{fmtPHP(totalMonetary + total)}</span>
       </div>
 
       <p className="ac-invoice-note">
-        <strong>Note:</strong> You will be charged the full amount including your donation + transaction fees. Transaction fees help cover payment processing and platform maintenance.
+        <strong>Note:</strong> You will be charged for your monetary donation + transaction fees. In-kind donations are contributed as materials, not charged separately—the fees shown for in-kind items cover their administrative processing.
       </p>
     </div>
   );
@@ -386,12 +386,11 @@ export default function AddContribution() {
       }
 
       // Calculate fees
-      const fees = calculateFees(monetaryRows, volRows, inKindRows, inKind.length > 0 ? inKindRows : {});
+      const fees = calculateFees(monetaryRows, volRows, inKindRows, project.supportTypes?.inKind || []);
       const totalMonetary = fees.totalMonetary;
-      const totalInKind = fees.totalInKind;
 
       setPaymentBreakdown({
-        donationAmount: totalMonetary + totalInKind,
+        donationAmount: totalMonetary,
         monetaryFee: fees.monetaryFee,
         volunteerFee: fees.volunteerFee,
         inKindFee: fees.inKindFee,
@@ -815,7 +814,7 @@ export default function AddContribution() {
           <>
             <div className="ac-save-row">
               <button className="ac-save-btn" onClick={handleInitiatePayment} disabled={saving}>
-                {saving ? "PROCESSING…" : "💳 PAY & SAVE"}
+                {saving ? "PROCESSING…" : "PAY & SAVE"}
               </button>
             </div>
 
