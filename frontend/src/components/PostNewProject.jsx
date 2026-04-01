@@ -82,8 +82,8 @@ export default function PostNewProject({ onProjectCreated }) {
     }
     if (supportTypes.inKind) {
       for (const item of inKindItems) {
-        if (!item.itemName.trim() || !item.unit.trim() || !item.targetQuantity || Number(item.targetQuantity) <= 0) {
-          setErrorMsg("All in-kind items must have a name, positive quantity, and unit."); setStatus("error"); return;
+        if (!item.itemName.trim() || !item.unit.trim() || !item.targetQuantity || Number(item.targetQuantity) <= 0 || !item.pricePerUnit || Number(item.pricePerUnit) <= 0) {
+          setErrorMsg("All in-kind items must have a name, positive quantity, unit, and positive price per unit."); setStatus("error"); return;
         }
       }
     }
