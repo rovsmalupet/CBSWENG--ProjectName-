@@ -710,6 +710,7 @@ export const getMyDonorPartnerships = async (req, res) => {
       return {
         id: partnership.id,
         createdAt: partnership.createdAt,
+        status: partnership.status,
         organization: partnership.organization,
         projects: uniquePosts,
         totalContributions: partnership.contributions.length,

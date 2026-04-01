@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { StripePaymentModal } from "../components/StripePayment";
 import "../css/AddContribution.css";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -30,44 +29,6 @@ const newVolRow = () => ({
   endTime: "",
 });
 
-// ── calculate transaction fees ──────────────────────────────────────────────
-const calculateFees = (monetaryRows, volRows, inKindRows, inKindItems) => {
-  // 3% of total monetary donation
-  const totalMonetary = monetaryRows.reduce(
-    (sum, r) => sum + (parseFloat(r.amount) || 0),
-    0
-  );
-  const monetaryFee = totalMonetary * 0.03;
-
-  // 50 PHP per volunteer (capped at 500 PHP)
-  const totalVolunteers = volRows.reduce(
-    (sum, r) => sum + (parseInt(r.count) || 0),
-    0
-  );
-  const volunteerFee = Math.min(totalVolunteers * 50, 500);
-
-  // 3% of total in-kind donations
-  const totalInKind = Object.entries(inKindRows).reduce((sum, [itemId, rows]) => {
-    const item = inKindItems.find((i) => i.id === itemId);
-    const itemTotal = rows.reduce(
-      (itemSum, r) => itemSum + (parseFloat(r.quantity) || 0) * (item?.pricePerUnit || 0),
-      0
-    );
-    return sum + itemTotal;
-  }, 0);
-  const inKindFee = totalInKind * 0.03;
-
-  return {
-    monetaryFee,
-    volunteerFee,
-    inKindFee,
-    total: monetaryFee + volunteerFee + inKindFee,
-    totalMonetary,
-    totalVolunteers,
-    totalInKind,
-  };
-};
-
 // ── AddBtn ───────────────────────────────────────────────────────────────────
 function AddBtn({ onClick, title }) {
   return (
@@ -93,82 +54,6 @@ function RemoveBtn({ onClick }) {
     >
       ×
     </button>
-  );
-}
-
-// ── Invoice ─────────────────────────────────────────────────────────────────
-function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
-  const fees = calculateFees(monetaryRows, volRows, inKindRows, inKindItems);
-  const { monetaryFee, volunteerFee, inKindFee, total, totalMonetary, totalVolunteers, totalInKind } = fees;
-
-  // Don't show invoice if nothing is entered
-  if (totalMonetary === 0 && totalVolunteers === 0 && totalInKind === 0) {
-    return null;
-  }
-
-  return (
-    <div className="ac-invoice">
-      <h3 className="ac-invoice-title">💳 Payment Summary</h3>
-      
-      <div className="ac-invoice-section">
-        <div className="ac-invoice-section-title">Your Donation</div>
-        {totalMonetary > 0 && (
-          <div className="ac-invoice-value-row">
-            <span className="ac-invoice-value-label">Monetary donation</span>
-            <span className="ac-invoice-value-amount">{fmtPHP(totalMonetary)}</span>
-          </div>
-        )}
-        {totalInKind > 0 && (
-          <div className="ac-invoice-value-row">
-            <span className="ac-invoice-value-label">In-kind donation (estimated value)</span>
-            <span className="ac-invoice-value-amount">{fmtPHP(totalInKind)}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="ac-invoice-divider"></div>
-      
-      <div className="ac-invoice-table">
-        <div className="ac-invoice-section-title">Transaction Fees</div>
-        {totalMonetary > 0 && (
-          <div className="ac-invoice-row">
-            <span className="ac-invoice-desc">
-              Monetary fee: {fmtPHP(totalMonetary)} × 3%
-            </span>
-            <span className="ac-invoice-amount">{fmtPHP(monetaryFee)}</span>
-          </div>
-        )}
-
-        {totalVolunteers > 0 && (
-          <div className="ac-invoice-row">
-            <span className="ac-invoice-desc">
-              Volunteer fee: {totalVolunteers} volunteers × ₱50 (max: ₱500)
-            </span>
-            <span className="ac-invoice-amount">{fmtPHP(volunteerFee)}</span>
-          </div>
-        )}
-
-        {totalInKind > 0 && (
-          <div className="ac-invoice-row">
-            <span className="ac-invoice-desc">
-              In-kind fee: {fmtPHP(totalInKind)} × 3%
-            </span>
-            <span className="ac-invoice-amount">{fmtPHP(inKindFee)}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="ac-invoice-divider"></div>
-
-      <div className="ac-invoice-total">
-        <span className="ac-invoice-total-label">Total Amount to Pay</span>
-        <span className="ac-invoice-total-amount">{fmtPHP(totalMonetary + total)}</span>
-      </div>
-
-      <p className="ac-invoice-note">
-        <strong>Note:</strong> You will be charged for your monetary donation + transaction fees.
-      </p>
-    </div>
   );
 }
 
@@ -218,20 +103,11 @@ export default function AddContribution() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [proofFile, setProofFile] = useState(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentBreakdown, setPaymentBreakdown] = useState(null);
 
   // Entry state
   const [monetaryRows, setMonetaryRows] = useState([newMonetaryRow()]);
   const [inKindRows, setInKindRows] = useState({});
   const [volRows, setVolRows] = useState([newVolRow()]);
-
-  // ── cleanup on unmount ──
-  useEffect(() => {
-    return () => {
-      setShowPaymentModal(false);
-    };
-  }, []);
 
   // ── fetch project ──
   useEffect(() => {
@@ -288,132 +164,7 @@ export default function AddContribution() {
   }, []);
 
   // ── save ──
-  const handlePaymentSuccess = async (paymentIntentId) => {
-    setSaving(true);
-    try {
-      const resolveDonorName = (row) =>
-        isDonor ? donorDisplayName : row.donorName || "Anonymous";
-
-      const monetary = monetaryRows
-        .filter((r) => parseFloat(r.amount) > 0)
-        .map((r) => ({
-          donorName: resolveDonorName(r),
-          amount: parseFloat(r.amount),
-        }));
-
-      const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
-        rows
-          .filter((r) => parseFloat(r.quantity) > 0)
-          .map((r) => ({
-            donorName: resolveDonorName(r),
-            itemId,
-            quantity: parseFloat(r.quantity),
-          })),
-      );
-
-      const volunteer = volRows
-        .filter((r) => parseInt(r.count) > 0)
-        .map((r) => ({
-          donorName: resolveDonorName(r),
-          count: parseInt(r.count),
-          startDate: r.startDate,
-          endDate: r.endDate,
-          startTime: r.startTime,
-          endTime: r.endTime,
-        }));
-
-      const { getApiUrl } = await import("../config/api");
-      const token = localStorage.getItem("token");
-
-      const formData = new FormData();
-      formData.append("monetary", JSON.stringify(monetary));
-      formData.append("inKind", JSON.stringify(inKind));
-      formData.append("volunteer", JSON.stringify(volunteer));
-      formData.append("paymentIntentId", paymentIntentId);
-
-      if (isDonor && userId) {
-        formData.append("donorId", userId);
-      }
-
-      if (proofFile) {
-        formData.append("proofFile", proofFile);
-      }
-
-      const response = await fetch(getApiUrl(`/posts/${id}/contribute`), {
-        method: "PATCH",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-
-      const updated = await response.json();
-      if (!response.ok) {
-        throw new Error(updated.error || "Failed to save contribution.");
-      }
-
-      setProject(updated.post);
-      setMonetaryRows([newMonetaryRow()]);
-      const resetInKind = {};
-      (updated.post.supportTypes?.inKind ?? []).forEach((item) => {
-        resetInKind[item.id] = [newInKindRow()];
-      });
-      setInKindRows(resetInKind);
-      setVolRows([newVolRow()]);
-      setProofFile(null);
-      setShowPaymentModal(false);
-
-      setSuccessMsg("Payment processed and contribution saved successfully! Thank you for your generous support!");
-      setTimeout(() => setSuccessMsg(""), 5000);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save after payment: " + (err.message ?? "Unknown error"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleInitiatePayment = async () => {
-    try {
-      // Validate that at least one contribution is entered
-      const monetary = monetaryRows
-        .filter((r) => parseFloat(r.amount) > 0);
-
-      const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
-        rows
-          .filter((r) => parseFloat(r.quantity) > 0),
-      );
-
-      const volunteer = volRows
-        .filter((r) => parseInt(r.count) > 0);
-
-      if (monetary.length === 0 && inKind.length === 0 && volunteer.length === 0) {
-        alert("Please enter at least one contribution before paying.");
-        return;
-      }
-
-      // Calculate fees
-      const fees = calculateFees(monetaryRows, volRows, inKindRows, project.supportTypes?.inKind || []);
-      const totalMonetary = fees.totalMonetary;
-
-      setPaymentBreakdown({
-        donationAmount: totalMonetary,
-        monetaryFee: fees.monetaryFee,
-        volunteerFee: fees.volunteerFee,
-        inKindFee: fees.inKindFee,
-      });
-
-      setShowPaymentModal(true);
-    } catch (err) {
-      console.error(err);
-      alert("Error calculating payment: " + (err.message ?? "Unknown error"));
-    }
-  };
-
-  // ── old save (keeping as backup, not used directly anymore) ──
   const handleSave = async () => {
-    // This is now triggered via payment flow
-    // For non-monetary contributions, we can still use direct save
     setSaving(true);
     try {
       const resolveDonorName = (row) =>
@@ -640,14 +391,7 @@ export default function AddContribution() {
 
               return (
                 <div key={item.id}>
-                  <div className="ac-item-title">
-                    {item.itemName}
-                    {item.pricePerUnit && (
-                      <span className="ac-item-price-tag">
-                        estimated @ {fmtPHP(item.pricePerUnit)}/{unitLabel}
-                      </span>
-                    )}
-                  </div>
+                  <div className="ac-item-title">{item.itemName}</div>
 
                   <ProgressBar
                     current={item.currentQuantity ?? 0}
@@ -719,6 +463,7 @@ export default function AddContribution() {
           <div className="ac-section">
             <div className="ac-vol-header">
               <h2 className="ac-section-title">Volunteer</h2>
+              <span className="ac-sorted-note">Sorted by date and time</span>
             </div>
 
             <ProgressBar
@@ -812,33 +557,12 @@ export default function AddContribution() {
           </div>
         )}
 
-        {/* ── INVOICE ────────────────────────────────────────────────── */}
         {anySection && (
-          <Invoice monetaryRows={monetaryRows} volRows={volRows} inKindRows={inKindRows} inKindItems={inKind} />
-        )}
-
-        {anySection && (
-          <>
-            <div className="ac-save-row">
-              <button className="ac-save-btn" onClick={handleInitiatePayment} disabled={saving}>
-                {saving ? "PROCESSING…" : "PAY & SAVE"}
-              </button>
-            </div>
-
-            {paymentBreakdown && (
-              <StripePaymentModal
-                isOpen={showPaymentModal}
-                onClose={() => setShowPaymentModal(false)}
-                postId={id}
-                donationAmount={paymentBreakdown.donationAmount}
-                monetaryFee={paymentBreakdown.monetaryFee}
-                volunteerFee={paymentBreakdown.volunteerFee}
-                inKindFee={paymentBreakdown.inKindFee}
-                projectName={project.projectName}
-                onPaymentSuccess={handlePaymentSuccess}
-              />
-            )}
-          </>
+          <div className="ac-save-row">
+            <button className="ac-save-btn" onClick={handleSave} disabled={saving}>
+              {saving ? "SAVING…" : "SAVE"}
+            </button>
+          </div>
         )}
       </main>
     </div>

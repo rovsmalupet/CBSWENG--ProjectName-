@@ -46,6 +46,32 @@ export default function CorporatePartnerships() {
     });
   };
 
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case "pending":
+        return "badge-pending";
+      case "approved":
+        return "badge-approved";
+      case "rejected":
+        return "badge-rejected";
+      default:
+        return "badge-pending";
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "pending":
+        return "Pending";
+      case "approved":
+        return "Approved";
+      case "rejected":
+        return "Rejected";
+      default:
+        return "Pending";
+    }
+  };
+
   return (
     <div className="partnerships-page">
       <main className="partnerships-main">
@@ -64,13 +90,13 @@ export default function CorporatePartnerships() {
         </button>
 
         <div className="partnerships-title-row">
+          <h1 className="partnerships-title">My Current Partnerships</h1>
           <button 
             className="view-payments-btn" 
             onClick={() => navigate("/payment-history")}
           >
             View Payments
           </button>
-          <h1 className="partnerships-title">My Current Partnerships</h1>
         </div>
         <p className="partnerships-subtitle">
           Projects where your donor account is already verified through active org partnerships.
@@ -89,7 +115,12 @@ export default function CorporatePartnerships() {
             {partnerships.map((partnership) => (
               <section key={partnership.id} className="partnership-card">
                 <div className="partnership-header">
-                  <h2>{partnership.organization?.orgName || "Organization"}</h2>
+                  <div className="partnership-header-left">
+                    <h2>{partnership.organization?.orgName || "Organization"}</h2>
+                    <span className={`partnership-status ${getStatusBadgeClass(partnership.status)}`}>
+                      {getStatusLabel(partnership.status)}
+                    </span>
+                  </div>
                   <span className="partnership-meta">
                     {partnership.totalContributions} contribution{partnership.totalContributions !== 1 ? "s" : ""}
                   </span>

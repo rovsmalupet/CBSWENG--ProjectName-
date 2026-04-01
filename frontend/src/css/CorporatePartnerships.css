@@ -71,10 +71,40 @@
   gap: 0.75rem;
 }
 
+.partnership-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .partnership-header h2 {
   margin: 0;
   font-size: 1.12rem;
   color: #1e293b;
+}
+
+.partnership-status {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.partnership-status.badge-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.partnership-status.badge-approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.partnership-status.badge-rejected {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .partnership-meta {

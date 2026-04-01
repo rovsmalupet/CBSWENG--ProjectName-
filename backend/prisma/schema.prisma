@@ -196,7 +196,9 @@ model DonorOrganizationPartner {
   donor         Donor          @relation(fields: [donorId], references: [id], onDelete: Cascade)
   orgId         String
   organization  Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  status        String         @default("pending") // pending, approved, rejected
   createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   contributions Contribution[]
 
   @@unique([donorId, orgId])
