@@ -5,6 +5,13 @@ import "../css/PaymentStatusWidget.css";
 const fmtPHP = (n) =>
   "₱" + Number(n ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
 
+const calculateAmount = (payment) => {
+  return (payment.monetaryContribution || 0) + 
+         (payment.monetaryTransactionFee || 0) + 
+         (payment.volunteerTransactionFee || 0) + 
+         (payment.inKindTransactionFee || 0);
+};
+
 export function PaymentStatusWidget({ projectId, showSummary = true }) {
   const [paymentData, setPaymentData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +105,7 @@ export function PaymentStatusWidget({ projectId, showSummary = true }) {
                     </div>
                     <div className="psw-payment-status">✅ Paid</div>
                   </div>
-                  <div className="psw-payment-amount">{fmtPHP(payment.amount)}</div>
+                  <div className="psw-payment-amount">{fmtPHP(calculateAmount(payment))}</div>
                 </div>
               ))}
             </div>

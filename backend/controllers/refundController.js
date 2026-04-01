@@ -49,9 +49,11 @@ export const issueRefund = async (req, res) => {
     }
 
     // Issue refund via Stripe
+    // Calculate amount as sum of all fees and donation
+    const paymentAmount = payment.monetaryContribution + payment.monetaryTransactionFee + payment.volunteerTransactionFee + payment.inKindTransactionFee;
     const stripeRefund = await getStripe().refunds.create({
       payment_intent: payment.paymentIntentId,
-      amount: Math.round(payment.amount * 100), // Convert to cents
+      amount: Math.round(paymentAmount * 100), // Convert to cents
       metadata: {
         reason,
         postId: payment.postId,
@@ -63,7 +65,7 @@ export const issueRefund = async (req, res) => {
       data: {
         paymentId,
         refundIntentId: stripeRefund.id,
-        amount: payment.amount,
+        amount: paymentAmount,
         currency: payment.currency,
         status: stripeRefund.status,
         reason,
@@ -78,7 +80,7 @@ export const issueRefund = async (req, res) => {
       data: {
         refundIntentId: stripeRefund.id,
         refundStatus: stripeRefund.status,
-        refundAmount: payment.amount,
+        refundAmount: paymentAmount,
         refundReason: reason,
         refundedAt: new Date(),
       },

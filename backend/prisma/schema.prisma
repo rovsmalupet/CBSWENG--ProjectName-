@@ -221,7 +221,6 @@ model PasswordResetToken {
 model Payment {
   id              String  @id @default(uuid())
   paymentIntentId String  @unique // Stripe payment intent ID
-  amount          Float // amount in PHP
   currency        String  @default("PHP")
   status          String // "succeeded", "processing", "requires_action", etc.
   description     String?

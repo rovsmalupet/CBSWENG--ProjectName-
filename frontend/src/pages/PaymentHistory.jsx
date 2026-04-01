@@ -36,6 +36,13 @@ const StatusBadge = ({ status }) => {
   return <span className={`ph-badge ph-badge-${config.color}`}>{config.label}</span>;
 };
 
+const calculateAmount = (payment) => {
+  return (payment.monetaryContribution || 0) + 
+         (payment.monetaryTransactionFee || 0) + 
+         (payment.volunteerTransactionFee || 0) + 
+         (payment.inKindTransactionFee || 0);
+};
+
 export default function PaymentHistory() {
   const navigate = useNavigate();
   const donorId = localStorage.getItem("userId");
@@ -165,7 +172,7 @@ export default function PaymentHistory() {
                       </div>
                     </td>
                     <td>
-                      <div className="ph-amount">{fmtPHP(payment.amount)}</div>
+                      <div className="ph-amount">{fmtPHP(calculateAmount(payment))}</div>
                     </td>
                     <td>
                       <StatusBadge status={payment.status} />
@@ -215,7 +222,7 @@ export default function PaymentHistory() {
 
                 <div className="ph-detail-group">
                   <label className="ph-detail-label">Amount Paid</label>
-                  <div className="ph-detail-value ph-detail-amount">{fmtPHP(selectedPayment.amount)}</div>
+                  <div className="ph-detail-value ph-detail-amount">{fmtPHP(calculateAmount(selectedPayment))}</div>
                 </div>
 
                 <div className="ph-detail-group">

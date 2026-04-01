@@ -130,7 +130,6 @@ export const confirmPayment = async (req, res) => {
     const payment = await prisma.payment.create({
       data: {
         paymentIntentId: paymentIntentId,
-        amount: paymentIntent.amount / 100, // Store in PHP
         currency: paymentIntent.currency.toUpperCase(),
         status: paymentIntent.status, // Use actual status from Stripe
         postId,
@@ -171,7 +170,10 @@ export const getPaymentHistory = async (req, res) => {
       where: { postId },
       select: {
         id: true,
-        amount: true,
+        monetaryContribution: true,
+        monetaryTransactionFee: true,
+        volunteerTransactionFee: true,
+        inKindTransactionFee: true,
         currency: true,
         status: true,
         createdAt: true,
@@ -185,8 +187,11 @@ export const getPaymentHistory = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
-    // Calculate total payments
-    const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+    // Calculate total payments (amount = sum of all fees and donation)
+    const totalAmount = payments.reduce(
+      (sum, p) => sum + p.monetaryContribution + p.monetaryTransactionFee + p.volunteerTransactionFee + p.inKindTransactionFee,
+      0
+    );
 
     res.json({
       postId,
@@ -264,7 +269,11 @@ export const getPaymentsByDonor = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
-    const totalSpent = payments.reduce((sum, p) => sum + p.amount, 0);
+    // Calculate totalSpent (amount = sum of all fees and donation)
+    const totalSpent = payments.reduce(
+      (sum, p) => sum + p.monetaryContribution + p.monetaryTransactionFee + p.volunteerTransactionFee + p.inKindTransactionFee,
+      0
+    );
     const successfulPayments = payments.filter((p) => p.status === "succeeded");
 
     res.json({
@@ -319,7 +328,11 @@ export const getPaymentsByProject = async (req, res) => {
     });
 
     const successfulPayments = payments.filter((p) => p.status === "succeeded");
-    const totalReceived = successfulPayments.reduce((sum, p) => sum + p.amount, 0);
+    // Calculate totalReceived (amount = sum of all fees and donation)
+    const totalReceived = successfulPayments.reduce(
+      (sum, p) => sum + p.monetaryContribution + p.monetaryTransactionFee + p.volunteerTransactionFee + p.inKindTransactionFee,
+      0
+    );
 
     res.json({
       projectId,
