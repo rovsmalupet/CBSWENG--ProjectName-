@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { StripePaymentModal } from "../components/StripePayment";
 import "../css/AddContribution.css";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -217,6 +218,8 @@ export default function AddContribution() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [proofFile, setProofFile] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentBreakdown, setPaymentBreakdown] = useState(null);
 
   // Entry state
   const [monetaryRows, setMonetaryRows] = useState([newMonetaryRow()]);
@@ -278,7 +281,133 @@ export default function AddContribution() {
   }, []);
 
   // ── save ──
+  const handlePaymentSuccess = async (paymentIntentId) => {
+    setSaving(true);
+    try {
+      const resolveDonorName = (row) =>
+        isDonor ? donorDisplayName : row.donorName || "Anonymous";
+
+      const monetary = monetaryRows
+        .filter((r) => parseFloat(r.amount) > 0)
+        .map((r) => ({
+          donorName: resolveDonorName(r),
+          amount: parseFloat(r.amount),
+        }));
+
+      const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
+        rows
+          .filter((r) => parseFloat(r.quantity) > 0)
+          .map((r) => ({
+            donorName: resolveDonorName(r),
+            itemId,
+            quantity: parseFloat(r.quantity),
+          })),
+      );
+
+      const volunteer = volRows
+        .filter((r) => parseInt(r.count) > 0)
+        .map((r) => ({
+          donorName: resolveDonorName(r),
+          count: parseInt(r.count),
+          startDate: r.startDate,
+          endDate: r.endDate,
+          startTime: r.startTime,
+          endTime: r.endTime,
+        }));
+
+      const { getApiUrl } = await import("../config/api");
+      const token = localStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append("monetary", JSON.stringify(monetary));
+      formData.append("inKind", JSON.stringify(inKind));
+      formData.append("volunteer", JSON.stringify(volunteer));
+      formData.append("paymentIntentId", paymentIntentId);
+
+      if (isDonor && userId) {
+        formData.append("donorId", userId);
+      }
+
+      if (proofFile) {
+        formData.append("proofFile", proofFile);
+      }
+
+      const response = await fetch(getApiUrl(`/posts/${id}/contribute`), {
+        method: "PATCH",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      const updated = await response.json();
+      if (!response.ok) {
+        throw new Error(updated.error || "Failed to save contribution.");
+      }
+
+      setProject(updated.post);
+      setMonetaryRows([newMonetaryRow()]);
+      const resetInKind = {};
+      (updated.post.supportTypes?.inKind ?? []).forEach((item) => {
+        resetInKind[item.id] = [newInKindRow()];
+      });
+      setInKindRows(resetInKind);
+      setVolRows([newVolRow()]);
+      setProofFile(null);
+      setShowPaymentModal(false);
+
+      setSuccessMsg("Payment processed and contribution saved successfully! Thank you for your generous support!");
+      setTimeout(() => setSuccessMsg(""), 5000);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save after payment: " + (err.message ?? "Unknown error"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInitiatePayment = async () => {
+    try {
+      // Validate that at least one contribution is entered
+      const monetary = monetaryRows
+        .filter((r) => parseFloat(r.amount) > 0);
+
+      const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
+        rows
+          .filter((r) => parseFloat(r.quantity) > 0),
+      );
+
+      const volunteer = volRows
+        .filter((r) => parseInt(r.count) > 0);
+
+      if (monetary.length === 0 && inKind.length === 0 && volunteer.length === 0) {
+        alert("Please enter at least one contribution before paying.");
+        return;
+      }
+
+      // Calculate fees
+      const fees = calculateFees(monetaryRows, volRows, inKindRows, inKind.length > 0 ? inKindRows : {});
+      const totalMonetary = fees.totalMonetary;
+      const totalInKind = fees.totalInKind;
+
+      setPaymentBreakdown({
+        donationAmount: totalMonetary + totalInKind,
+        monetaryFee: fees.monetaryFee,
+        volunteerFee: fees.volunteerFee,
+        inKindFee: fees.inKindFee,
+      });
+
+      setShowPaymentModal(true);
+    } catch (err) {
+      console.error(err);
+      alert("Error calculating payment: " + (err.message ?? "Unknown error"));
+    }
+  };
+
+  // ── old save (keeping as backup, not used directly anymore) ──
   const handleSave = async () => {
+    // This is now triggered via payment flow
+    // For non-monetary contributions, we can still use direct save
     setSaving(true);
     try {
       const resolveDonorName = (row) =>
@@ -683,11 +812,27 @@ export default function AddContribution() {
         )}
 
         {anySection && (
-          <div className="ac-save-row">
-            <button className="ac-save-btn" onClick={handleSave} disabled={saving}>
-              {saving ? "SAVING…" : "SAVE"}
-            </button>
-          </div>
+          <>
+            <div className="ac-save-row">
+              <button className="ac-save-btn" onClick={handleInitiatePayment} disabled={saving}>
+                {saving ? "PROCESSING…" : "💳 PAY & SAVE"}
+              </button>
+            </div>
+
+            {paymentBreakdown && (
+              <StripePaymentModal
+                isOpen={showPaymentModal}
+                onClose={() => setShowPaymentModal(false)}
+                postId={id}
+                donationAmount={paymentBreakdown.donationAmount}
+                monetaryFee={paymentBreakdown.monetaryFee}
+                volunteerFee={paymentBreakdown.volunteerFee}
+                inKindFee={paymentBreakdown.inKindFee}
+                projectName={project.projectName}
+                onPaymentSuccess={handlePaymentSuccess}
+              />
+            )}
+          </>
         )}
       </main>
     </div>
