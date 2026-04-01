@@ -137,6 +137,11 @@ export const confirmPayment = async (req, res) => {
         userId: req.user.id,
         userRole: req.user.role,
         description: paymentIntent.description,
+        // Extract fee breakdown from Stripe metadata
+        monetaryContribution: parseFloat(paymentIntent.metadata?.donationAmount || 0),
+        monetaryTransactionFee: parseFloat(paymentIntent.metadata?.monetaryFee || 0),
+        volunteerTransactionFee: parseFloat(paymentIntent.metadata?.volunteerFee || 0),
+        inKindTransactionFee: parseFloat(paymentIntent.metadata?.inKindFee || 0),
       },
     });
 

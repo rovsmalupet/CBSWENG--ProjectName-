@@ -232,6 +232,12 @@ model Payment {
   userId   String // who made the payment (donor or org ID)
   userRole String // "donor" or "ngo"
 
+  // Payment breakdown
+  monetaryContribution   Float @default(0) // actual donation amount
+  monetaryTransactionFee Float @default(0) // 3% of monetary donation
+  volunteerTransactionFee Float @default(0) // 50 PHP per volunteer (capped at 500)
+  inKindTransactionFee   Float @default(0) // 3% of in-kind donation
+
   // Refund tracking
   refundIntentId String? // Stripe refund ID (if refunded)
   refundedAt     DateTime? // when the refund was processed

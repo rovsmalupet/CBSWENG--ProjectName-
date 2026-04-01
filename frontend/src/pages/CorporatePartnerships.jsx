@@ -140,7 +140,6 @@ export default function CorporatePartnerships() {
                           onClick={() => navigate(`/project/${project.id}`)}
                         >
                           <span className="project-name">{project.projectName}</span>
-                          <span className="project-status">{project.overallStatus}</span>
                         </button>
 
                         {project.fundraisingUpdate && (
