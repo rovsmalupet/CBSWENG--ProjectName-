@@ -109,10 +109,31 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
     <div className="ac-invoice">
       <h3 className="ac-invoice-title">Transaction Fee Invoice</h3>
       
+      <div className="ac-invoice-section">
+        <div className="ac-invoice-section-title">Estimated Donation Values</div>
+        {totalMonetary > 0 && (
+          <div className="ac-invoice-value-row">
+            <span className="ac-invoice-value-label">Monetary donations</span>
+            <span className="ac-invoice-value-amount">{fmtPHP(totalMonetary)}</span>
+          </div>
+        )}
+        {totalInKind > 0 && (
+          <div className="ac-invoice-value-row">
+            <span className="ac-invoice-value-label">In-kind donations (estimated)</span>
+            <span className="ac-invoice-value-amount">{fmtPHP(totalInKind)}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="ac-invoice-divider"></div>
+      
       <div className="ac-invoice-table">
+        <div className="ac-invoice-section-title">Fee Breakdown</div>
         {totalMonetary > 0 && (
           <div className="ac-invoice-row">
-            <span className="ac-invoice-desc">3% fee on monetary donation</span>
+            <span className="ac-invoice-desc">
+              Monetary fee: {fmtPHP(totalMonetary)} × 3%
+            </span>
             <span className="ac-invoice-amount">{fmtPHP(monetaryFee)}</span>
           </div>
         )}
@@ -120,7 +141,7 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
         {totalVolunteers > 0 && (
           <div className="ac-invoice-row">
             <span className="ac-invoice-desc">
-              Volunteer fee ({totalVolunteers} volunteers × ₱50, max rate: ₱500)
+              Volunteer fee: {totalVolunteers} volunteers × ₱50 (max: ₱500)
             </span>
             <span className="ac-invoice-amount">{fmtPHP(volunteerFee)}</span>
           </div>
@@ -128,7 +149,9 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
 
         {totalInKind > 0 && (
           <div className="ac-invoice-row">
-            <span className="ac-invoice-desc">3% fee on in-kind donations</span>
+            <span className="ac-invoice-desc">
+              In-kind fee: {fmtPHP(totalInKind)} × 3%
+            </span>
             <span className="ac-invoice-amount">{fmtPHP(inKindFee)}</span>
           </div>
         )}
@@ -482,7 +505,14 @@ export default function AddContribution() {
 
               return (
                 <div key={item.id}>
-                  <div className="ac-item-title">{item.itemName}</div>
+                  <div className="ac-item-title">
+                    {item.itemName}
+                    {item.pricePerUnit && (
+                      <span className="ac-item-price-tag">
+                        estimated @ {fmtPHP(item.pricePerUnit)}/{unitLabel}
+                      </span>
+                    )}
+                  </div>
 
                   <ProgressBar
                     current={item.currentQuantity ?? 0}
@@ -554,7 +584,6 @@ export default function AddContribution() {
           <div className="ac-section">
             <div className="ac-vol-header">
               <h2 className="ac-section-title">Volunteer</h2>
-              <span className="ac-sorted-note">Sorted by date and time</span>
             </div>
 
             <ProgressBar
