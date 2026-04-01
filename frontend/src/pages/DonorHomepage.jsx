@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getApiUrl } from "../config/api.js";
 import "../css/DonorHomepage.css";
 
@@ -41,6 +41,7 @@ const normalizeCauseKey = (raw) => {
 
 export default function DonorHomepage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const firstName = localStorage.getItem("userFirstName") || "Donor";
   const userId = localStorage.getItem("userId");
   const userCountry = localStorage.getItem("userCountry") || "Philippines";
@@ -55,11 +56,15 @@ export default function DonorHomepage() {
     try { return JSON.parse(saved); } catch { return []; }
   });
 
-  const [filters, setFilters] = useState({
-    cause: "Any",
-    urgency: "Any",
-    country: userCountry,
-    region: "Any",
+  const [filters, setFilters] = useState(() => {
+    const selectedCountry = location.state?.selectedCountry;
+    const selectedSDG = location.state?.selectedSDG;
+    return {
+      cause: selectedSDG || "Any",
+      urgency: "Any",
+      country: selectedCountry || userCountry,
+      region: "Any",
+    };
   });
 
   useEffect(() => {
@@ -208,6 +213,7 @@ export default function DonorHomepage() {
       <div className="donor-header">
         <h2 className="greeting">Hello, {firstName}!</h2>
         <div className="donor-header-actions">
+          <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/asean")}>ASEAN</button>
           <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/partnerships")}>PARTNERSHIPS</button>
           <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/bookmarks")}>BOOKMARKS</button>
           <button className="switch-account-btn" onClick={handleLogout}>LOGOUT</button>
