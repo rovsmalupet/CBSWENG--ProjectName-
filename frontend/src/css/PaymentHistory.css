@@ -364,6 +364,24 @@
   line-height: 1.5;
 }
 
+.ph-breakdown-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0 0;
+}
+
+.ph-breakdown-list li {
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.ph-breakdown-list li strong {
+  color: #111827;
+  font-weight: 600;
+}
+
 /* ── Modal Footer ─────────────────────────────────────────────────────────── */
 .ph-modal-footer {
   display: flex;

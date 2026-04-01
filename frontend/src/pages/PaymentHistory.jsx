@@ -238,12 +238,23 @@ export default function PaymentHistory() {
                 </div>
               </div>
 
-              {selectedPayment.description && (
-                <div className="ph-detail-description">
-                  <label className="ph-detail-label">Description</label>
-                  <p className="ph-detail-desc-text">{selectedPayment.description}</p>
-                </div>
-              )}
+              <div className="ph-detail-description">
+                <label className="ph-detail-label">Breakdown</label>
+                <ul className="ph-breakdown-list">
+                  <li>
+                    <strong>Monetary contribution:</strong> {fmtPHP(selectedPayment.monetaryContribution || 0)}
+                  </li>
+                  <li>
+                    <strong>Monetary transaction fee:</strong> {fmtPHP(selectedPayment.monetaryTransactionFee || 0)}
+                  </li>
+                  <li>
+                    <strong>In-Kind transaction fee:</strong> {fmtPHP(selectedPayment.inKindTransactionFee || 0)}
+                  </li>
+                  <li>
+                    <strong>Volunteer transaction fee:</strong> {fmtPHP(selectedPayment.volunteerTransactionFee || 0)}
+                  </li>
+                </ul>
+              </div>
 
               <div className="ph-modal-footer">
                 <button
