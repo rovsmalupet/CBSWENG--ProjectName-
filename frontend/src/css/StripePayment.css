@@ -175,7 +175,7 @@
 }
 
 .sp-amount-display-label {
-  color: #111827;
+  color: #0d3061;
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -185,14 +185,14 @@
   flex-direction: column;
   gap: 6px;
   padding-top: 8px;
-  border-top: 1px solid #f59e0b;
+  border-top: 1px solid #1f2937;
 }
 
 .sp-amount-detail-line {
   display: flex;
   justify-content: space-between;
   font-size: 0.9rem;
-  color: #78350f;
+  color: #132031;
 }
 
 .sp-amount-detail-total {

@@ -213,7 +213,6 @@ function StripePaymentForm({
                 },
               },
               hidePostalCode: true,
-              disableLinkSaveForFutureUse: true,
             }}
           />
         </div>
