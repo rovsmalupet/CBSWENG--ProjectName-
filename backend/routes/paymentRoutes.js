@@ -5,6 +5,8 @@ import {
   confirmPayment,
   getPaymentHistory,
   getPaymentById,
+  getPaymentsByDonor,
+  getPaymentsByProject,
 } from "../controllers/paymentController.js";
 
 const router = express.Router();
@@ -31,6 +33,20 @@ router.get(
   authenticate,
   authorizeRoles("ngo", "admin"),
   getPaymentHistory
+);
+
+// Get all payments made by a donor (for donor's payment history page)
+router.get(
+  "/donor/:donorId",
+  authenticate,
+  getPaymentsByDonor
+);
+
+// Get all payments received for a project (for org/admin view)
+router.get(
+  "/project/:projectId",
+  authenticate,
+  getPaymentsByProject
 );
 
 // Get single payment details

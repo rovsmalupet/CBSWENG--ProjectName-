@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import PaymentStatusWidget from "../components/PaymentStatusWidget";
 import "../css/ProjectDetailPage.css";
 import { apiFetch, getApiUrl } from "../config/api.js";
 
@@ -269,6 +270,10 @@ export default function ProjectDetailPage() {
                 style={{ width: `${percent(monetary.currentAmount, monetary.targetAmount)}%` }}
               />
             </div>
+
+            {/* ── Payment Status Widget for Org/Admin ── */}
+            <PaymentStatusWidget projectId={id} />
+
             <hr className="apd-divider" />
           </>
         )}

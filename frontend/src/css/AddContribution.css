@@ -105,7 +105,7 @@
   border-radius: 99px;
   transition: width 0.35s ease;
 }
-.ac-progress-fill.monetary  { background: #3b82f6; }
+.ac-progress-fill.monetary  { background: #2F6C4F; }
 .ac-progress-fill.inkind    { background: #8b5cf6; }
 .ac-progress-fill.volunteer { background: #22c55e; }
 

@@ -1,0 +1,240 @@
+/* ──────────────────────────────────────────────────────────────────────────────
+   Payment Status Widget CSS - On-Brand
+   ────────────────────────────────────────────────────────────────────────────── */
+
+.psw-widget {
+  background: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.psw-widget:hover {
+  border-color: #2F6C4F;
+  box-shadow: 0 4px 12px rgba(47, 108, 79, 0.15);
+}
+
+.psw-widget.psw-error {
+  background: #ffffff;
+  border-color: #ef4444;
+  cursor: default;
+}
+
+.psw-widget.psw-error:hover {
+  transform: none;
+  border-color: #ef4444;
+}
+
+.psw-error-text {
+  margin: 0;
+  font-size: 0.95rem;
+  text-align: center;
+  color: #ef4444;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.psw-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.psw-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.psw-icon {
+  font-size: 1.5rem;
+}
+
+.psw-label {
+  color: #111827;
+}
+
+.psw-amount {
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: right;
+  color: #059669;
+}
+
+/* ── Details Section ────────────────────────────────────────────────────── */
+.psw-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* ── Stats ──────────────────────────────────────────────────────────────── */
+.psw-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.psw-stat {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 0.8rem;
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.psw-stat-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.psw-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ── Breakdown ──────────────────────────────────────────────────────────── */
+.psw-breakdown {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.psw-breakdown-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  color: #374151;
+  letter-spacing: 0.3px;
+}
+
+.psw-payment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.psw-payment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.psw-payment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.psw-payment-date {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.psw-payment-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #059669;
+}
+
+.psw-payment-amount {
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: right;
+  color: #059669;
+}
+
+.psw-more {
+  text-align: center;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* ── Scrollbar Styling ───────────────────────────────────────────────────── */
+.psw-details::-webkit-scrollbar {
+  width: 6px;
+}
+
+.psw-details::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.psw-details::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.psw-details::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .psw-widget {
+    padding: 1.25rem;
+  }
+
+  .psw-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .psw-amount {
+    text-align: left;
+    font-size: 1.5rem;
+  }
+
+  .psw-title {
+    font-size: 1rem;
+  }
+
+  .psw-icon {
+    font-size: 1.3rem;
+  }
+
+  .psw-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .psw-stat {
+    padding: 0.6rem;
+  }
+
+  .psw-stat-label {
+    font-size: 0.75rem;
+  }
+
+  .psw-stat-value {
+    font-size: 1.1rem;
+  }
+}

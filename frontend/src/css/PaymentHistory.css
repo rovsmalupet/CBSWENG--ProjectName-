@@ -1,0 +1,437 @@
+/* ──────────────────────────────────────────────────────────────────────────────
+   Payment History Page Styles - On-Brand
+   ────────────────────────────────────────────────────────────────────────────── */
+
+.ph-page {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 2rem 1rem;
+  font-family: "DM Sans", sans-serif;
+}
+
+.ph-main {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.ph-back-btn {
+  background: none;
+  border: none;
+  color: #2F6C4F;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  padding: 0;
+  font-weight: 500;
+  transition: color 0.2s;
+  font-family: inherit;
+}
+
+.ph-back-btn:hover {
+  color: #1f4c34;
+}
+
+/* ── Title & Subtitle ─────────────────────────────────────────────────────── */
+.ph-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.ph-subtitle {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0 0 2rem 0;
+}
+
+/* ── Stats Cards ──────────────────────────────────────────────────────────── */
+.ph-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.ph-stat-card {
+  background: #2F6C4F;
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(47, 108, 79, 0.2);
+  transition: all 0.2s ease;
+}
+
+.ph-stat-card:hover {
+  box-shadow: 0 4px 12px rgba(47, 108, 79, 0.3);
+}
+
+.ph-stat-card.ph-stat-success {
+  background: #059669;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+.ph-stat-card.ph-stat-success:hover {
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.ph-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.ph-stat-label {
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+/* ── Error ────────────────────────────────────────────────────────────────── */
+.ph-error {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+/* ── Loading & Empty States ───────────────────────────────────────────────── */
+.ph-loading,
+.ph-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #6b7280;
+}
+
+.ph-loading p,
+.ph-empty p {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem 0;
+  color: #374151;
+}
+
+.ph-empty small {
+  font-size: 0.95rem;
+  color: #9ca3af;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.ph-table-wrapper {
+  overflow-x: auto;
+}
+
+.ph-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.ph-table thead {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ph-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.ph-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s;
+}
+
+.ph-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.ph-table td {
+  padding: 1rem;
+  color: #374151;
+}
+
+.ph-date-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.ph-date {
+  font-weight: 500;
+  color: #111827;
+}
+
+.ph-time {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.ph-project-cell {
+  display: flex;
+  align-items: center;
+}
+
+.ph-project-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.ph-amount {
+  font-weight: 700;
+  color: #059669;
+  font-size: 1.05rem;
+}
+
+/* ── Status Badge ─────────────────────────────────────────────────────────── */
+.ph-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.ph-badge-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ph-badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ph-badge-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.ph-badge-info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.ph-badge-secondary {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* ── Details Button ───────────────────────────────────────────────────────── */
+.ph-details-btn {
+  background: #2F6C4F;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+
+.ph-details-btn:hover {
+  background: #1f4c34;
+}
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+.ph-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.ph-modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+}
+
+.ph-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ph-modal-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.ph-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  font-family: inherit;
+}
+
+.ph-modal-close:hover {
+  color: #111827;
+}
+
+.ph-modal-body {
+  padding: 1.5rem;
+}
+
+/* ── Detail Groups ────────────────────────────────────────────────────────── */
+.ph-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ph-detail-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.ph-detail-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5px;
+}
+
+.ph-detail-value {
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.ph-detail-value.ph-monospace {
+  font-family: "Monaco", "Courier New", monospace;
+  font-size: 0.85rem;
+  background: #f3f4f6;
+  padding: 0.5rem;
+  border-radius: 4px;
+  user-select: all;
+}
+
+.ph-detail-value.ph-detail-amount {
+  font-size: 1.4rem;
+  color: #059669;
+  font-weight: 700;
+}
+
+.ph-detail-description {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.ph-detail-desc-text {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+/* ── Modal Footer ─────────────────────────────────────────────────────────── */
+.ph-modal-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.ph-btn {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.ph-btn-primary {
+  background: #2F6C4F;
+  color: white;
+}
+
+.ph-btn-primary:hover {
+  background: #1f4c34;
+}
+
+.ph-btn-secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.ph-btn-secondary:hover {
+  background: #d1d5db;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ph-main {
+    padding: 1.5rem;
+  }
+
+  .ph-title {
+    font-size: 1.5rem;
+  }
+
+  .ph-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .ph-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ph-table {
+    font-size: 0.9rem;
+  }
+
+  .ph-table th,
+  .ph-table td {
+    padding: 0.75rem;
+  }
+
+  .ph-modal-content {
+    max-width: calc(100% - 2rem);
+  }
+}

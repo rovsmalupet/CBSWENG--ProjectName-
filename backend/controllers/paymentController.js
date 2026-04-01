@@ -208,7 +208,7 @@ export const getPaymentById = async (req, res) => {
       where: { id: paymentId },
       include: {
         post: {
-          select: { projectName: true },
+          select: { id: true, projectName: true },
         },
         user: {
           select: { id: true, role: true },
@@ -227,9 +227,111 @@ export const getPaymentById = async (req, res) => {
   }
 };
 
+/**
+ * Get all payments made by a specific donor (for their contribution history)
+ */
+export const getPaymentsByDonor = async (req, res) => {
+  try {
+    const { donorId } = req.params;
+
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Users can only view their own payments (unless admin)
+    if (req.user.id !== donorId && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    const payments = await prisma.payment.findMany({
+      where: { userId: donorId },
+      include: {
+        post: {
+          select: {
+            id: true,
+            projectName: true,
+            description: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const totalSpent = payments.reduce((sum, p) => sum + p.amount, 0);
+    const successfulPayments = payments.filter((p) => p.status === "succeeded");
+
+    res.json({
+      donorId,
+      totalPayments: payments.length,
+      successfulPayments: successfulPayments.length,
+      totalSpent,
+      payments,
+    });
+  } catch (err) {
+    console.error("Get donor payments error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Get all payments received for a specific project (for org/admin dashboard)
+ */
+export const getPaymentsByProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Verify user is the org that owns this project or is an admin
+    const post = await prisma.post.findUnique({
+      where: { id: projectId },
+      select: { organizationId: true },
+    });
+
+    if (!post) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    if (req.user.id !== post.organizationId && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    const payments = await prisma.payment.findMany({
+      where: { postId: projectId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const successfulPayments = payments.filter((p) => p.status === "succeeded");
+    const totalReceived = successfulPayments.reduce((sum, p) => sum + p.amount, 0);
+
+    res.json({
+      projectId,
+      totalPayments: payments.length,
+      successfulPayments: successfulPayments.length,
+      totalReceived,
+      payments,
+    });
+  } catch (err) {
+    console.error("Get project payments error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export default {
   createPaymentIntent,
   confirmPayment,
   getPaymentHistory,
   getPaymentById,
+  getPaymentsByDonor,
+  getPaymentsByProject,
 };
