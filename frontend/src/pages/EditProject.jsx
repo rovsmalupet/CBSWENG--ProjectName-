@@ -297,7 +297,7 @@ export default function EditProject() {
                       <input className="postProjectInput" placeholder="Enter item" value={item.itemName} onChange={(e) => handleInKindChange(item.id, "itemName", e.target.value)} />
                       <input className="postProjectInput" type="number" placeholder="Qty" value={item.targetQuantity} onChange={(e) => handleInKindChange(item.id, "targetQuantity", e.target.value)} />
                       <input className="postProjectInput" placeholder="Unit" value={item.unit} onChange={(e) => handleInKindChange(item.id, "unit", e.target.value)} />
-                      <input className="postProjectInput" type="number" placeholder="Optional" value={item.pricePerUnit} onChange={(e) => handleInKindChange(item.id, "pricePerUnit", e.target.value)} />
+                      <input className="postProjectInput" type="number" placeholder="PHP" value={item.pricePerUnit} onChange={(e) => handleInKindChange(item.id, "pricePerUnit", e.target.value)} />
                       <button type="button" className="postProjectDeleteRowBtn" onClick={() => setInKindItems((prev) => prev.filter((i) => i.id !== item.id))} disabled={inKindItems.length === 1}>✕</button>
                     </div>
                   ))}
