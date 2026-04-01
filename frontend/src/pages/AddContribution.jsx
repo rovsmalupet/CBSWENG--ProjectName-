@@ -30,7 +30,7 @@ const newVolRow = () => ({
 });
 
 // ── calculate transaction fees ──────────────────────────────────────────────
-const calculateFees = (monetaryRows, volRows, inKindRows) => {
+const calculateFees = (monetaryRows, volRows, inKindRows, inKindItems) => {
   // 3% of total monetary donation
   const totalMonetary = monetaryRows.reduce(
     (sum, r) => sum + (parseFloat(r.amount) || 0),
@@ -45,14 +45,16 @@ const calculateFees = (monetaryRows, volRows, inKindRows) => {
   );
   const volunteerFee = Math.min(totalVolunteers * 50, 500);
 
-  // TODO: 3% of total in-kind donations
-  // (commented out for now as price per unit is not yet available)
-  // const totalInKind = Object.values(inKindRows).flat().reduce(
-  //   (sum, r) => sum + (parseFloat(r.quantity) || 0) * (r.pricePerUnit || 0),
-  //   0
-  // );
-  // const inKindFee = totalInKind * 0.03;
-  const inKindFee = 0;
+  // 3% of total in-kind donations
+  const totalInKind = Object.entries(inKindRows).reduce((sum, [itemId, rows]) => {
+    const item = inKindItems.find((i) => i.id === itemId);
+    const itemTotal = rows.reduce(
+      (itemSum, r) => itemSum + (parseFloat(r.quantity) || 0) * (item?.pricePerUnit || 0),
+      0
+    );
+    return sum + itemTotal;
+  }, 0);
+  const inKindFee = totalInKind * 0.03;
 
   return {
     monetaryFee,
@@ -61,6 +63,7 @@ const calculateFees = (monetaryRows, volRows, inKindRows) => {
     total: monetaryFee + volunteerFee + inKindFee,
     totalMonetary,
     totalVolunteers,
+    totalInKind,
   };
 };
 
@@ -93,12 +96,12 @@ function RemoveBtn({ onClick }) {
 }
 
 // ── Invoice ─────────────────────────────────────────────────────────────────
-function Invoice({ monetaryRows, volRows, inKindRows }) {
-  const fees = calculateFees(monetaryRows, volRows, inKindRows);
-  const { monetaryFee, volunteerFee, inKindFee, total, totalMonetary, totalVolunteers } = fees;
+function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
+  const fees = calculateFees(monetaryRows, volRows, inKindRows, inKindItems);
+  const { monetaryFee, volunteerFee, inKindFee, total, totalMonetary, totalVolunteers, totalInKind } = fees;
 
   // Don't show invoice if nothing is entered
-  if (totalMonetary === 0 && totalVolunteers === 0 && inKindFee === 0) {
+  if (totalMonetary === 0 && totalVolunteers === 0 && totalInKind === 0) {
     return null;
   }
 
@@ -117,19 +120,18 @@ function Invoice({ monetaryRows, volRows, inKindRows }) {
         {totalVolunteers > 0 && (
           <div className="ac-invoice-row">
             <span className="ac-invoice-desc">
-              Volunteer fee ({totalVolunteers} volunteers × ₱50, capped at ₱500)
+              Volunteer fee ({totalVolunteers} volunteers × ₱50, max rate: ₱500)
             </span>
             <span className="ac-invoice-amount">{fmtPHP(volunteerFee)}</span>
           </div>
         )}
 
-        {/* In-kind donation fee (commented out until price per unit is available) */}
-        {/* {inKindFee > 0 && (
+        {totalInKind > 0 && (
           <div className="ac-invoice-row">
             <span className="ac-invoice-desc">3% fee on in-kind donations</span>
             <span className="ac-invoice-amount">{fmtPHP(inKindFee)}</span>
           </div>
-        )} */}
+        )}
       </div>
 
       <div className="ac-invoice-divider"></div>
@@ -648,7 +650,7 @@ export default function AddContribution() {
 
         {/* ── INVOICE ────────────────────────────────────────────────── */}
         {anySection && (
-          <Invoice monetaryRows={monetaryRows} volRows={volRows} inKindRows={inKindRows} />
+          <Invoice monetaryRows={monetaryRows} volRows={volRows} inKindRows={inKindRows} inKindItems={inKind} />
         )}
 
         {anySection && (

@@ -224,7 +224,10 @@ export default function AdminProjectDetail() {
           <>
             <h2 className="apd-section-title">In-Kind</h2>
             {inKind.map((item) => (
-              <p key={item.id} className="apd-inkind-item"><strong>{item.itemName}</strong> — {item.targetQuantity} {item.unit}</p>
+              <p key={item.id} className="apd-inkind-item">
+                <strong>{item.itemName}</strong> — {item.targetQuantity} {item.unit}
+                {item.pricePerUnit && <span className="apd-inkind-price"> @ ₱{Number(item.pricePerUnit).toLocaleString()}/unit</span>}
+              </p>
             ))}
             <hr className="apd-divider" />
           </>

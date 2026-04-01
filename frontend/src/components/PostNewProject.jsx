@@ -29,6 +29,7 @@ const newRow = () => ({
   itemName: "",
   targetQuantity: "",
   unit: "",
+  pricePerUnit: "",
 });
 
 export default function PostNewProject({ onProjectCreated }) {
@@ -99,7 +100,7 @@ export default function PostNewProject({ onProjectCreated }) {
       endTime: timeEnabled ? form.endTime : null,
       supportTypes: {
         monetary: { enabled: supportTypes.monetary && !!form.monetarySupport, targetAmount: supportTypes.monetary ? Number(form.monetarySupport) : 0 },
-        inKind: supportTypes.inKind ? inKindItems.map((i) => ({ itemName: i.itemName, targetQuantity: Number(i.targetQuantity), unit: i.unit })) : [],
+        inKind: supportTypes.inKind ? inKindItems.map((i) => ({ itemName: i.itemName, targetQuantity: Number(i.targetQuantity), unit: i.unit, pricePerUnit: i.pricePerUnit ? Number(i.pricePerUnit) : null })) : [],
         volunteer: { enabled: supportTypes.volunteer && !!form.volunteerQuantity, targetVolunteers: supportTypes.volunteer ? Number(form.volunteerQuantity) : 0 },
       },
     };
@@ -249,16 +250,18 @@ export default function PostNewProject({ onProjectCreated }) {
               <div>
                 <div className="postProjectInKindHeader">
                   <span className="postProjectLabel">Enter Item Needed</span>
-                  <span className="postProjectLabel">Specify Quantity</span>
-                  <span className="postProjectLabel">Enter Unit</span>
+                  <span className="postProjectLabel">Quantity</span>
+                  <span className="postProjectLabel">Unit</span>
+                  <span className="postProjectLabel">Price/Unit (PHP)</span>
                   <button type="button" className="postProjectAddBtn" onClick={() => setInKindItems((prev) => [...prev, newRow()])} title="Add item">+</button>
                 </div>
                 <div className="postProjectInKindList">
                   {inKindItems.map((item) => (
                     <div key={item.id} className="postProjectInKindRow">
                       <input className="postProjectInput" placeholder="Enter item" value={item.itemName} onChange={(e) => handleInKindChange(item.id, "itemName", e.target.value)} />
-                      <input className="postProjectInput" type="number" placeholder="Enter quantity" value={item.targetQuantity} onChange={(e) => handleInKindChange(item.id, "targetQuantity", e.target.value)} />
-                      <input className="postProjectInput" placeholder="Enter unit" value={item.unit} onChange={(e) => handleInKindChange(item.id, "unit", e.target.value)} />
+                      <input className="postProjectInput" type="number" placeholder="Qty" value={item.targetQuantity} onChange={(e) => handleInKindChange(item.id, "targetQuantity", e.target.value)} />
+                      <input className="postProjectInput" placeholder="Unit" value={item.unit} onChange={(e) => handleInKindChange(item.id, "unit", e.target.value)} />
+                      <input className="postProjectInput" type="number" placeholder="Optional" value={item.pricePerUnit} onChange={(e) => handleInKindChange(item.id, "pricePerUnit", e.target.value)} />
                       <button type="button" className="postProjectDeleteRowBtn" onClick={() => setInKindItems((prev) => prev.filter((i) => i.id !== item.id))} title="Remove item" disabled={inKindItems.length === 1}>✕</button>
                     </div>
                   ))}

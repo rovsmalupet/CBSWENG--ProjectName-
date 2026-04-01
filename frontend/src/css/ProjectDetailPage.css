@@ -313,6 +313,13 @@
   padding-bottom: 4px;
 }
 
+.apd-inkind-price {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
 .apd-inkind-item-wrapper {
   margin-bottom: 14px;
 }

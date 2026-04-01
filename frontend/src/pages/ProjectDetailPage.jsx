@@ -281,6 +281,7 @@ export default function ProjectDetailPage() {
               <div key={item.id} className="apd-inkind-item-wrapper">
                 <p className="apd-inkind-item">
                   <strong>{item.itemName}</strong> — {item.targetQuantity} {item.unit ?? "units"}
+                  {item.pricePerUnit && <span className="apd-inkind-price"> @ ₱{Number(item.pricePerUnit).toLocaleString()}/unit</span>}
                 </p>
                 <div className="apd-progress-info">
                   <span>collected: {item.currentQuantity ?? 0} {item.unit ?? "units"}</span>

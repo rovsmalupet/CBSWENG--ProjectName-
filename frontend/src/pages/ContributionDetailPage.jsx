@@ -167,7 +167,10 @@ export default function ContributionDetailPage() {
             <h2 className="apd-section-title">in-kind</h2>
             {inKind.map((item) => (
               <div key={item.id} className="apd-inkind-item-wrapper">
-                <p className="apd-inkind-item"><strong>{item.itemName}</strong> — {item.targetQuantity} {item.unit ?? "units"}</p>
+                <p className="apd-inkind-item">
+                  <strong>{item.itemName}</strong> — {item.targetQuantity} {item.unit ?? "units"}
+                  {item.pricePerUnit && <span className="apd-inkind-price"> @ ₱{Number(item.pricePerUnit).toLocaleString()}/unit</span>}
+                </p>
                 <div className="apd-progress-info">
                   <span>collected: {item.currentQuantity ?? 0} {item.unit ?? "units"}</span>
                   <span>{percent(item.currentQuantity, item.targetQuantity)}% complete</span>
