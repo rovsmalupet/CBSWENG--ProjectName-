@@ -25,11 +25,11 @@ const fmtTime = (dateStr) => {
 
 const StatusBadge = ({ status }) => {
   const statusMap = {
-    succeeded: { label: "✅ Paid", color: "success" },
-    processing: { label: "⏳ Processing", color: "warning" },
-    failed: { label: "❌ Failed", color: "danger" },
-    refunded: { label: "🔄 Refunded", color: "info" },
-    pending: { label: "⏸️ Pending", color: "secondary" },
+    succeeded: { label: "Paid", color: "success" },
+    processing: { label: "Processing", color: "warning" },
+    failed: { label: "Failed", color: "danger" },
+    refunded: { label: "Refunded", color: "info" },
+    pending: { label: "Pending", color: "secondary" },
   };
 
   const config = statusMap[status] || statusMap.pending;

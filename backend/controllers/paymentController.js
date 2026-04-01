@@ -119,19 +119,20 @@ export const confirmPayment = async (req, res) => {
     // Retrieve payment intent from Stripe to verify it succeeded
     const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
 
-    if (paymentIntent.status !== "succeeded") {
+    // Allow both 'succeeded' and 'processing' statuses - processing will finalize later
+    if (paymentIntent.status !== "succeeded" && paymentIntent.status !== "processing") {
       return res.status(400).json({
         error: `Payment not successful. Status: ${paymentIntent.status}`,
       });
     }
 
-    // Record payment in database
+    // Record payment in database with the actual Stripe status
     const payment = await prisma.payment.create({
       data: {
         paymentIntentId: paymentIntentId,
         amount: paymentIntent.amount / 100, // Store in PHP
         currency: paymentIntent.currency.toUpperCase(),
-        status: "succeeded",
+        status: paymentIntent.status, // Use actual status from Stripe
         postId,
         userId: req.user.id,
         description: paymentIntent.description,

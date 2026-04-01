@@ -212,6 +212,8 @@ function StripePaymentForm({
                   color: "#ef4444",
                 },
               },
+              hidePostalCode: true,
+              disableLinkSaveForFutureUse: true,
             }}
           />
         </div>

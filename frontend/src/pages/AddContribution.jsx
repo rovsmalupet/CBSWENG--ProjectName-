@@ -166,7 +166,7 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
       </div>
 
       <p className="ac-invoice-note">
-        <strong>Note:</strong> You will be charged for your monetary donation + transaction fees. In-kind donations are contributed as materials, not charged separately—the fees shown for in-kind items cover their administrative processing.
+        <strong>Note:</strong> You will be charged for your monetary donation + transaction fees.
       </p>
     </div>
   );
