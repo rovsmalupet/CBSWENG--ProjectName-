@@ -226,6 +226,13 @@ export default function AddContribution() {
   const [inKindRows, setInKindRows] = useState({});
   const [volRows, setVolRows] = useState([newVolRow()]);
 
+  // ── cleanup on unmount ──
+  useEffect(() => {
+    return () => {
+      setShowPaymentModal(false);
+    };
+  }, []);
+
   // ── fetch project ──
   useEffect(() => {
     const load = async () => {

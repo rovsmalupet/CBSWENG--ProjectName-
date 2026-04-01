@@ -135,6 +135,7 @@ export const confirmPayment = async (req, res) => {
         status: paymentIntent.status, // Use actual status from Stripe
         postId,
         userId: req.user.id,
+        userRole: req.user.role,
         description: paymentIntent.description,
       },
     });
