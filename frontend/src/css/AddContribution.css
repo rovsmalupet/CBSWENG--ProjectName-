@@ -409,3 +409,76 @@
   border-color: #6b84d4;
   box-shadow: 0 0 0 3px rgba(107, 132, 212, 0.12);
 }
+
+/* ── Invoice Component ── */
+.ac-invoice {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  background: #fafafa;
+}
+
+.ac-invoice-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px;
+}
+
+.ac-invoice-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ac-invoice-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.9rem;
+}
+
+.ac-invoice-desc {
+  color: #374151;
+  font-weight: 500;
+}
+
+.ac-invoice-amount {
+  color: #111827;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ac-invoice-divider {
+  height: 1px;
+  background: #d1d5db;
+  margin: 12px 0;
+}
+
+.ac-invoice-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.ac-invoice-total-label {
+  color: #111827;
+}
+
+.ac-invoice-total-amount {
+  color: #16a34a;
+  font-size: 1.15rem;
+}
+
+.ac-invoice-note {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 12px 0 0;
+  font-style: italic;
+}

@@ -29,6 +29,41 @@ const newVolRow = () => ({
   endTime: "",
 });
 
+// ── calculate transaction fees ──────────────────────────────────────────────
+const calculateFees = (monetaryRows, volRows, inKindRows) => {
+  // 3% of total monetary donation
+  const totalMonetary = monetaryRows.reduce(
+    (sum, r) => sum + (parseFloat(r.amount) || 0),
+    0
+  );
+  const monetaryFee = totalMonetary * 0.03;
+
+  // 50 PHP per volunteer (capped at 500 PHP)
+  const totalVolunteers = volRows.reduce(
+    (sum, r) => sum + (parseInt(r.count) || 0),
+    0
+  );
+  const volunteerFee = Math.min(totalVolunteers * 50, 500);
+
+  // TODO: 3% of total in-kind donations
+  // (commented out for now as price per unit is not yet available)
+  // const totalInKind = Object.values(inKindRows).flat().reduce(
+  //   (sum, r) => sum + (parseFloat(r.quantity) || 0) * (r.pricePerUnit || 0),
+  //   0
+  // );
+  // const inKindFee = totalInKind * 0.03;
+  const inKindFee = 0;
+
+  return {
+    monetaryFee,
+    volunteerFee,
+    inKindFee,
+    total: monetaryFee + volunteerFee + inKindFee,
+    totalMonetary,
+    totalVolunteers,
+  };
+};
+
 // ── AddBtn ───────────────────────────────────────────────────────────────────
 function AddBtn({ onClick, title }) {
   return (
@@ -54,6 +89,60 @@ function RemoveBtn({ onClick }) {
     >
       ×
     </button>
+  );
+}
+
+// ── Invoice ─────────────────────────────────────────────────────────────────
+function Invoice({ monetaryRows, volRows, inKindRows }) {
+  const fees = calculateFees(monetaryRows, volRows, inKindRows);
+  const { monetaryFee, volunteerFee, inKindFee, total, totalMonetary, totalVolunteers } = fees;
+
+  // Don't show invoice if nothing is entered
+  if (totalMonetary === 0 && totalVolunteers === 0 && inKindFee === 0) {
+    return null;
+  }
+
+  return (
+    <div className="ac-invoice">
+      <h3 className="ac-invoice-title">Transaction Fee Invoice</h3>
+      
+      <div className="ac-invoice-table">
+        {totalMonetary > 0 && (
+          <div className="ac-invoice-row">
+            <span className="ac-invoice-desc">3% fee on monetary donation</span>
+            <span className="ac-invoice-amount">{fmtPHP(monetaryFee)}</span>
+          </div>
+        )}
+
+        {totalVolunteers > 0 && (
+          <div className="ac-invoice-row">
+            <span className="ac-invoice-desc">
+              Volunteer fee ({totalVolunteers} volunteers × ₱50, capped at ₱500)
+            </span>
+            <span className="ac-invoice-amount">{fmtPHP(volunteerFee)}</span>
+          </div>
+        )}
+
+        {/* In-kind donation fee (commented out until price per unit is available) */}
+        {/* {inKindFee > 0 && (
+          <div className="ac-invoice-row">
+            <span className="ac-invoice-desc">3% fee on in-kind donations</span>
+            <span className="ac-invoice-amount">{fmtPHP(inKindFee)}</span>
+          </div>
+        )} */}
+      </div>
+
+      <div className="ac-invoice-divider"></div>
+
+      <div className="ac-invoice-total">
+        <span className="ac-invoice-total-label">Total Transaction Fee</span>
+        <span className="ac-invoice-total-amount">{fmtPHP(total)}</span>
+      </div>
+
+      <p className="ac-invoice-note">
+        This fee covers the cost of the transaction and platform maintenance.
+      </p>
+    </div>
   );
 }
 
@@ -555,6 +644,11 @@ export default function AddContribution() {
             />
             {proofFile && <p className="ac-proof-file">Selected: {proofFile.name}</p>}
           </div>
+        )}
+
+        {/* ── INVOICE ────────────────────────────────────────────────── */}
+        {anySection && (
+          <Invoice monetaryRows={monetaryRows} volRows={volRows} inKindRows={inKindRows} />
         )}
 
         {anySection && (
