@@ -11,17 +11,17 @@ datasource db {
 // ORGANIZATION
 
 model Organization {
-  id            String        @id @default(uuid())
-  orgName       String
-  firstName     String
-  surname       String
-  email         String        @unique
-  password      String        // always store hashed, never plain text
-  country       ASEANCountry  @default(Philippines)
-  bio           String?       // org mission statement / about section
-  isVerified    Boolean       @default(false)
-  status        AccountStatus @default(Pending)
-  createdAt     DateTime      @default(now())
+  id         String        @id @default(uuid())
+  orgName    String
+  firstName  String
+  surname    String
+  email      String        @unique
+  password   String // always store hashed, never plain text
+  country    ASEANCountry  @default(Philippines)
+  bio        String? // org mission statement / about section
+  isVerified Boolean       @default(false)
+  status     AccountStatus @default(Pending)
+  createdAt  DateTime      @default(now())
 
   posts         Post[]
   donorPartners DonorOrganizationPartner[]
@@ -30,30 +30,30 @@ model Organization {
 // DONOR
 
 model Donor {
-  id            String        @id @default(uuid())
-  firstName     String
-  lastName      String
-  email         String        @unique
-  password      String
-  country       ASEANCountry  @default(Philippines)
-  affiliation   String        // company or organization they represent
-  bio           String?       // personal bio / about me
-  isVerified    Boolean       @default(false)
-  status        AccountStatus @default(Pending)
-  createdAt     DateTime      @default(now())
+  id          String        @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String        @unique
+  password    String
+  country     ASEANCountry  @default(Philippines)
+  affiliation String // company or organization they represent
+  bio         String? // personal bio / about me
+  isVerified  Boolean       @default(false)
+  status      AccountStatus @default(Pending)
+  createdAt   DateTime      @default(now())
 
-  partnerOrgs   DonorOrganizationPartner[]
+  partnerOrgs DonorOrganizationPartner[]
 }
 
 // ADMIN
 
 model Admin {
-  id        String         @id @default(uuid())
+  id        String   @id @default(uuid())
   firstName String
   lastName  String
-  email     String         @unique
-  password  String         // always store hashed, never plain text
-  createdAt DateTime       @default(now())
+  email     String   @unique
+  password  String // always store hashed, never plain text
+  createdAt DateTime @default(now())
 
   auditLogs PostAuditLog[]
 }
@@ -61,21 +61,21 @@ model Admin {
 // POST
 
 model Post {
-  id             String              @id @default(uuid())
-  orgId          String
-  organization   Organization        @relation(fields: [orgId], references: [id])
-  projectName    String
-  description    String?
+  id              String       @id @default(uuid())
+  orgId           String
+  organization    Organization @relation(fields: [orgId], references: [id])
+  projectName     String
+  description     String?
   budgetBreakdown Json?
-  causes         CauseEnum[]
-  location       String?
-  priority       Priority            @default(Medium)
-  overallStatus  PostStatus          @default(Pending)
-  startDate      DateTime?
-  endDate        DateTime?
-  startTime      String?
-  endTime        String?
-  createdAt      DateTime            @default(now())
+  causes          CauseEnum[]
+  location        String?
+  priority        Priority     @default(Medium)
+  overallStatus   PostStatus   @default(Pending)
+  startDate       DateTime?
+  endDate         DateTime?
+  startTime       String?
+  endTime         String?
+  createdAt       DateTime     @default(now())
 
   supportOptions PostSupportOption[]
   inKindItems    PostInKindItem[]
@@ -112,26 +112,25 @@ model DocumentUpload {
   createdAt   DateTime     @default(now())
 }
 
-
 // POST SUPPORT OPTION
 
 // Each row represents one support type (Monetary or Volunteer) for a post.
 // A post can only have one row per type, enforced by @@unique.
 model PostSupportOption {
-  id            String        @id @default(uuid())
-  postId        String
-  post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  type          SupportType
+  id     String      @id @default(uuid())
+  postId String
+  post   Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type   SupportType
 
   // Monetary fields
   targetAmount  Float?
-  currentAmount Float         @default(0)
+  currentAmount Float  @default(0)
 
   // Volunteer fields
-  targetCount   Int?
-  currentCount  Int           @default(0)
+  targetCount  Int?
+  currentCount Int  @default(0)
 
-  status        SupportStatus @default(Open)
+  status SupportStatus @default(Open)
 
   @@unique([postId, type])
 }
@@ -139,17 +138,17 @@ model PostSupportOption {
 // POST IN-KIND ITEM
 
 model PostInKindItem {
-  id              String         @id @default(uuid())
+  id              String        @id @default(uuid())
   postId          String
-  post            Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
   itemName        String
   targetQuantity  Float
-  currentQuantity Float          @default(0)
+  currentQuantity Float         @default(0)
   unit            String?
-  pricePerUnit    Float?         // price per unit for transaction fee calculation
-  status          SupportStatus  @default(Open)
+  pricePerUnit    Float? // price per unit for transaction fee calculation
+  status          SupportStatus @default(Open)
 
-  contributions   Contribution[]
+  contributions Contribution[]
 }
 
 // CONTRIBUTION
@@ -158,33 +157,33 @@ model PostInKindItem {
 // - donorName is always filled (org types this in for manual entries)
 // - partnershipId is null for manual entries, populated for registered donors
 model Contribution {
-  id             String                    @id @default(uuid())
-  donorName      String                    // always filled
-  partnershipId  String?                   // null for unregistered donors
-  partnership    DonorOrganizationPartner? @relation(fields: [partnershipId], references: [id], onDelete: SetNull)
-  postId         String
-  post           Post                      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  type           SupportType
+  id            String                    @id @default(uuid())
+  donorName     String // always filled
+  partnershipId String? // null for unregistered donors
+  partnership   DonorOrganizationPartner? @relation(fields: [partnershipId], references: [id], onDelete: SetNull)
+  postId        String
+  post          Post                      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type          SupportType
 
   // Monetary — only populated when type = Monetary
-  amount         Float?
+  amount Float?
 
   // Volunteer — only populated when type = Volunteer
   volunteerCount Int?
 
   // InKind — only populated when type = InKind
-  inKindItemId   String?
-  inKindItem     PostInKindItem?           @relation(fields: [inKindItemId], references: [id], onDelete: SetNull)
-  quantity       Float?
+  inKindItemId String?
+  inKindItem   PostInKindItem? @relation(fields: [inKindItemId], references: [id], onDelete: SetNull)
+  quantity     Float?
 
   // Optional proof of donation upload from donor
-  proofFileName  String?
-  proofFilePath  String?
-  proofMimeType  String?
-  proofFileSize  Int?
+  proofFileName String?
+  proofFilePath String?
+  proofMimeType String?
+  proofFileSize Int?
 
-  status         ContributionStatus        @default(Pending)
-  createdAt      DateTime                  @default(now())
+  status    ContributionStatus @default(Pending)
+  createdAt DateTime           @default(now())
 }
 
 // DONOR ORGANIZATION PARTNER
@@ -192,13 +191,13 @@ model Contribution {
 // Created when a registered donor's contribution is confirmed.
 // contributions[] holds all confirmed contributions made by this donor to this org.
 model DonorOrganizationPartner {
-  id             String         @id @default(uuid())
-  donorId        String
-  donor          Donor          @relation(fields: [donorId], references: [id], onDelete: Cascade)
-  orgId          String
-  organization   Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  createdAt      DateTime       @default(now())
-  contributions  Contribution[]
+  id            String         @id @default(uuid())
+  donorId       String
+  donor         Donor          @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  orgId         String
+  organization  Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  contributions Contribution[]
 
   @@unique([donorId, orgId])
 }
@@ -208,7 +207,7 @@ model DonorOrganizationPartner {
 // Tokens expire after 24 hours and are deleted after use.
 model PasswordResetToken {
   id        String   @id @default(uuid())
-  email     String   // email of user requesting password reset
+  email     String // email of user requesting password reset
   token     String   @unique // unique reset token
   expiresAt DateTime // expiration timestamp (24 hours from creation)
   isUsed    Boolean  @default(false) // marked true after password is successfully reset
@@ -218,50 +217,53 @@ model PasswordResetToken {
 // PAYMENT
 // Records transaction fees paid through Stripe
 model Payment {
-  id                String    @id @default(uuid())
-  paymentIntentId   String    @unique // Stripe payment intent ID
-  amount            Float     // amount in PHP
-  currency          String    @default("PHP")
-  status            String    // "succeeded", "processing", "requires_action", etc.
-  description       String?
-  
-  postId            String    // which project/post this payment is for
-  post              Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
-  userId            String    // who made the payment (donor or org ID)
-  userRole          String    // "donor" or "ngo"
-  
+  id              String  @id @default(uuid())
+  paymentIntentId String  @unique // Stripe payment intent ID
+  amount          Float // amount in PHP
+  currency        String  @default("PHP")
+  status          String // "succeeded", "processing", "requires_action", etc.
+  description     String?
+
+  postId String // which project/post this payment is for
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId   String // who made the payment (donor or org ID)
+  userRole String // "donor" or "ngo"
+
   // Refund tracking
-  refundIntentId    String?   // Stripe refund ID (if refunded)
-  refundedAt        DateTime? // when the refund was processed
-  refundStatus      String?   // "succeeded", "failed", "pending"
-  refundAmount      Float?    // refunded amount (may be partial)
-  refundReason      String?   // reason for refund (e.g., "contribution_declined")
-  
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  refundIntentId String? // Stripe refund ID (if refunded)
+  refundedAt     DateTime? // when the refund was processed
+  refundStatus   String? // "succeeded", "failed", "pending"
+  refundAmount   Float? // refunded amount (may be partial)
+  refundReason   String? // reason for refund (e.g., "contribution_declined")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Refund    Refund?
 }
 
 // REFUND
 // Records all refund transactions separately for audit trail
 model Refund {
-  id                String   @id @default(uuid())
-  paymentId         String   @unique // link back to original payment
-  payment           Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  
-  refundIntentId    String   @unique // Stripe refund transaction ID
-  amount            Float    // amount refunded in PHP
-  currency          String   @default("PHP")
-  status            String   // "succeeded", "failed", "pending"
-  reason            String?  // reason for refund
-  
+  id        String  @id @default(uuid())
+  paymentId String  @unique // link back to original payment
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  refundIntentId String  @unique // Stripe refund transaction ID
+  amount         Float // amount refunded in PHP
+  currency       String  @default("PHP")
+  status         String // "succeeded", "failed", "pending"
+  reason         String? // reason for refund
+
   // Context
-  contributionId    String?  // which contribution was declined (if applicable)
-  processedBy       String?  // admin ID who processed this refund
-  processedByRole   String?  // "admin" or "system"
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  contributionId  String? // which contribution was declined (if applicable)
+  processedBy     String? // admin ID who processed this refund
+  processedByRole String? // "admin" or "system"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Post      Post?    @relation(fields: [postId], references: [id])
+  postId    String?
 }
 
 // ENUMS
@@ -286,23 +288,23 @@ enum SupportType {
 }
 
 enum CauseEnum {
-  noPoverty                   // SDG 1  — No Poverty
-  zeroHunger                  // SDG 2  — Zero Hunger
-  goodHealth                  // SDG 3  — Good Health and Well-being
-  qualityEducation            // SDG 4  — Quality Education
-  genderEquality              // SDG 5  — Gender Equality
-  cleanWater                  // SDG 6  — Clean Water and Sanitation
-  affordableEnergy            // SDG 7  — Affordable and Clean Energy
-  decentWork                  // SDG 8  — Decent Work and Economic Growth
-  industry                    // SDG 9  — Industry, Innovation and Infrastructure
-  reducedInequalities         // SDG 10 — Reduced Inequalities
-  sustainableCities           // SDG 11 — Sustainable Cities and Communities
-  responsibleConsumption      // SDG 12 — Responsible Consumption and Production
-  climateAction               // SDG 13 — Climate Action
-  lifeBelowWater              // SDG 14 — Life Below Water
-  lifeOnLand                  // SDG 15 — Life on Land
-  peaceAndJustice             // SDG 16 — Peace, Justice and Strong Institutions
-  partnerships                // SDG 17 — Partnerships for the Goals
+  noPoverty // SDG 1  — No Poverty
+  zeroHunger // SDG 2  — Zero Hunger
+  goodHealth // SDG 3  — Good Health and Well-being
+  qualityEducation // SDG 4  — Quality Education
+  genderEquality // SDG 5  — Gender Equality
+  cleanWater // SDG 6  — Clean Water and Sanitation
+  affordableEnergy // SDG 7  — Affordable and Clean Energy
+  decentWork // SDG 8  — Decent Work and Economic Growth
+  industry // SDG 9  — Industry, Innovation and Infrastructure
+  reducedInequalities // SDG 10 — Reduced Inequalities
+  sustainableCities // SDG 11 — Sustainable Cities and Communities
+  responsibleConsumption // SDG 12 — Responsible Consumption and Production
+  climateAction // SDG 13 — Climate Action
+  lifeBelowWater // SDG 14 — Life Below Water
+  lifeOnLand // SDG 15 — Life on Land
+  peaceAndJustice // SDG 16 — Peace, Justice and Strong Institutions
+  partnerships // SDG 17 — Partnerships for the Goals
   others
 }
 
@@ -326,16 +328,16 @@ enum SupportStatus {
 }
 
 enum AccountStatus {
-  Pending   // just registered, not yet reviewed
-  Approved  // verified and active
-  Rejected  // denied by admin
-  Active    // approved and currently active
+  Pending // just registered, not yet reviewed
+  Approved // verified and active
+  Rejected // denied by admin
+  Active // approved and currently active
 }
 
 enum ContributionStatus {
-  Pending    // logged, waiting for org to confirm
-  Confirmed  // org verified the contribution
-  Declined   // org rejected the contribution
+  Pending // logged, waiting for org to confirm
+  Confirmed // org verified the contribution
+  Declined // org rejected the contribution
 }
 
 enum DocumentType {
