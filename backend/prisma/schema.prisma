@@ -82,6 +82,8 @@ model Post {
   contributions  Contribution[]
   auditLogs      PostAuditLog[]
   documents      DocumentUpload[]
+  payments       Payment[]
+  refunds        Refund[]
 }
 
 // POST AUDIT LOG
@@ -211,6 +213,55 @@ model PasswordResetToken {
   expiresAt DateTime // expiration timestamp (24 hours from creation)
   isUsed    Boolean  @default(false) // marked true after password is successfully reset
   createdAt DateTime @default(now())
+}
+
+// PAYMENT
+// Records transaction fees paid through Stripe
+model Payment {
+  id                String    @id @default(uuid())
+  paymentIntentId   String    @unique // Stripe payment intent ID
+  amount            Float     // amount in PHP
+  currency          String    @default("PHP")
+  status            String    // "succeeded", "processing", "requires_action", etc.
+  description       String?
+  
+  postId            String    // which project/post this payment is for
+  post              Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  userId            String    // who made the payment (donor or org ID)
+  userRole          String    // "donor" or "ngo"
+  
+  // Refund tracking
+  refundIntentId    String?   // Stripe refund ID (if refunded)
+  refundedAt        DateTime? // when the refund was processed
+  refundStatus      String?   // "succeeded", "failed", "pending"
+  refundAmount      Float?    // refunded amount (may be partial)
+  refundReason      String?   // reason for refund (e.g., "contribution_declined")
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// REFUND
+// Records all refund transactions separately for audit trail
+model Refund {
+  id                String   @id @default(uuid())
+  paymentId         String   @unique // link back to original payment
+  payment           Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  
+  refundIntentId    String   @unique // Stripe refund transaction ID
+  amount            Float    // amount refunded in PHP
+  currency          String   @default("PHP")
+  status            String   // "succeeded", "failed", "pending"
+  reason            String?  // reason for refund
+  
+  // Context
+  contributionId    String?  // which contribution was declined (if applicable)
+  processedBy       String?  // admin ID who processed this refund
+  processedByRole   String?  // "admin" or "system"
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 // ENUMS

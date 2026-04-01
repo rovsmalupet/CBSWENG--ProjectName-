@@ -107,19 +107,19 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
 
   return (
     <div className="ac-invoice">
-      <h3 className="ac-invoice-title">Transaction Fee Invoice</h3>
+      <h3 className="ac-invoice-title">💳 Payment Summary</h3>
       
       <div className="ac-invoice-section">
-        <div className="ac-invoice-section-title">Estimated Donation Values</div>
+        <div className="ac-invoice-section-title">Your Donation</div>
         {totalMonetary > 0 && (
           <div className="ac-invoice-value-row">
-            <span className="ac-invoice-value-label">Monetary donations</span>
+            <span className="ac-invoice-value-label">Monetary donation</span>
             <span className="ac-invoice-value-amount">{fmtPHP(totalMonetary)}</span>
           </div>
         )}
         {totalInKind > 0 && (
           <div className="ac-invoice-value-row">
-            <span className="ac-invoice-value-label">In-kind donations (estimated)</span>
+            <span className="ac-invoice-value-label">In-kind donation (estimated value)</span>
             <span className="ac-invoice-value-amount">{fmtPHP(totalInKind)}</span>
           </div>
         )}
@@ -128,7 +128,7 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
       <div className="ac-invoice-divider"></div>
       
       <div className="ac-invoice-table">
-        <div className="ac-invoice-section-title">Fee Breakdown</div>
+        <div className="ac-invoice-section-title">Transaction Fees</div>
         {totalMonetary > 0 && (
           <div className="ac-invoice-row">
             <span className="ac-invoice-desc">
@@ -160,12 +160,12 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
       <div className="ac-invoice-divider"></div>
 
       <div className="ac-invoice-total">
-        <span className="ac-invoice-total-label">Total Transaction Fee</span>
-        <span className="ac-invoice-total-amount">{fmtPHP(total)}</span>
+        <span className="ac-invoice-total-label">Total Amount to Pay</span>
+        <span className="ac-invoice-total-amount">{fmtPHP(totalMonetary + totalInKind + total)}</span>
       </div>
 
       <p className="ac-invoice-note">
-        This fee covers the cost of the transaction and platform maintenance.
+        <strong>Note:</strong> You will be charged the full amount including your donation + transaction fees. Transaction fees help cover payment processing and platform maintenance.
       </p>
     </div>
   );

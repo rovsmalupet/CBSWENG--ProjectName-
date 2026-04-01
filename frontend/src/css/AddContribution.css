@@ -479,10 +479,15 @@
 }
 
 .ac-invoice-note {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin: 12px 0 0;
-  font-style: italic;
+  font-size: 0.85rem;
+  color: #1f2937;
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 4px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 /* ── Invoice sections (donation values, fee breakdown) ── */

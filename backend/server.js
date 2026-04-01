@@ -4,6 +4,8 @@ import cors from "cors";
 import postRoutes from "./routes/postRoutes.js";
 import organizationRoutes from "./routes/organizationRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import refundRoutes from "./routes/refundRoutes.js";
 import { seedDefaultUsers } from "./services/userAccountService.js";
 import documentRoutes from "./routes/documentRoutes.js";
 
@@ -36,6 +38,8 @@ app.use("/", authRoutes);
 app.use("/posts", postRoutes);
 app.use("/organizations", organizationRoutes);
 app.use("/documents", documentRoutes);
+app.use("/payments", paymentRoutes);
+app.use("/refunds", refundRoutes);
 
 // Health check — useful for Railway and deployment verification
 app.get("/health", (req, res) => {
