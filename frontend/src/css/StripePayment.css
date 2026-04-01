@@ -167,15 +167,15 @@
   flex-direction: column;
   gap: 8px;
   padding: 14px 16px;
-  background: #fef3c7;
-  border: 2px solid #fcd34d;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
   border-radius: 6px;
   font-weight: 600;
   margin-bottom: 16px;
 }
 
 .sp-amount-display-label {
-  color: #92400e;
+  color: #111827;
   font-size: 0.95rem;
   font-weight: 600;
 }

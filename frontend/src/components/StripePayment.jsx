@@ -262,12 +262,6 @@ function StripePaymentForm({
           {loading ? "Processing..." : "Pay Now"}
         </button>
       </div>
-
-      <p className="sp-test-notice">
-        💡 <strong>Test Mode:</strong> Use card{" "}
-        <code>4242 4242 4242 4242</code> to test a successful payment, or{" "}
-        <code>4000 0000 0000 0002</code> to test a decline.
-      </p>
     </form>
   );
 }
