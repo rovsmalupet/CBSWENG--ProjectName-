@@ -12,7 +12,7 @@
 }
 
 .navbar-logo {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 600;
   font-size: 1.2rem;
   color: #2daa6e;
@@ -64,6 +64,7 @@
 }
 
 .navbar-logout-btn {
+  margin-left: auto;
   padding: 0.75rem 1rem;
   background: #ffffff;
   color: #1e3a8a;
@@ -78,6 +79,6 @@
 }
 
 .navbar-logout-btn:hover {
-    background: #eff6ff;
-     border-color: #60a5fa;
+  background: #eff6ff;
+  border-color: #60a5fa;
 }
