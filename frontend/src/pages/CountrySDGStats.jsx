@@ -1,6 +1,5 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar.jsx";
 import "../css/CountrySDGStats.css";
 
 const SDG_LIST = [
@@ -145,7 +144,6 @@ const CountrySDGStats = () => {
 
   return (
     <div className="stats-container">
-      <Navbar />
       <button className="back-button" onClick={() => navigate("/donor/asean")}>
         ← Back
       </button>

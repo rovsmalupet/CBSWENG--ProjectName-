@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar.jsx";
 import "../css/adminHome.css";
 
 const adminCards = [
@@ -51,6 +50,15 @@ export default function AdminHomepage() {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
 
+  const handleLogout = () => {
+    localStorage.removeItem("userFirstName");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userCountry");
+    navigate("/login");
+  };
+
   const handleSearch = (event) => {
     event.preventDefault();
     const query = searchText.trim();
@@ -77,7 +85,6 @@ export default function AdminHomepage() {
 
   return (
     <div className="dashboard-page">
-      <Navbar />
       <main className="dashboard-main">
         <div className="admin-top-actions">
           <button className="back-link" onClick={() => navigate(-1)}>
@@ -92,6 +99,9 @@ export default function AdminHomepage() {
               <path d="M19 12H5M12 5l-7 7 7 7" />
             </svg>
             Back
+          </button>
+          <button className="admin-logout-btn" onClick={handleLogout}>
+            LOGOUT
           </button>
         </div>
 

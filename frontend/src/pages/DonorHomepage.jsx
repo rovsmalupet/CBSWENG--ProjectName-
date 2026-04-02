@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Navbar from "../components/Navbar.jsx";
 import { getApiUrl } from "../config/api.js";
 import "../css/DonorHomepage.css";
 
@@ -354,7 +353,6 @@ export default function DonorHomepage() {
 
   return (
     <div className="donor-homepage">
-      <Navbar />
       <div className="donor-header">
         <h2 className="greeting">Hello, {firstName}!</h2>
         <div className="donor-header-actions">

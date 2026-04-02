@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar.jsx";
 import UploadDocuments from "../components/UploadDocuments.jsx";
 import DocumentsList from "../components/DocumentsList.jsx";
 import { getApiUrl, apiFetch } from "../config/api.js";
@@ -72,7 +71,6 @@ export default function ProjectDocumentation() {
 
   return (
     <div className="project-documentation-page">
-      <Navbar />
       <div className="page-container">
         <div className="page-header">
           <button

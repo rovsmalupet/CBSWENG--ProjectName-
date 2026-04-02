@@ -1,6 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Navbar from "../components/Navbar.jsx";
 import "../css/Adminprojectdetail.css";
 import { apiFetch, getApiUrl } from "../config/api.js";
 
@@ -188,7 +187,6 @@ export default function AdminProjectDetail() {
 
   return (
     <div className="apd-page">
-      <Navbar />
       <button onClick={() => navigate(-1)} className="apd-back-btn">
         <svg
           width="16"

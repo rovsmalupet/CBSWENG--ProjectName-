@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Navbar from "../components/Navbar.jsx";
 
 const CAUSES = [
   { label: "Poverty", key: "noPoverty" },
@@ -246,7 +245,6 @@ export default function EditProject() {
 
   return (
     <div className="postProjectPage">
-      <Navbar />
       <div className="postProjectCard">
         <h2 className="postProjectHeading">Edit Project</h2>
 

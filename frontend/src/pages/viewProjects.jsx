@@ -1,6 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import Navbar from "../components/Navbar.jsx";
 
 export default function ViewProjects() {
   const navigate = useNavigate();
@@ -69,7 +68,6 @@ export default function ViewProjects() {
         minHeight: "100vh",
       }}
     >
-      <Navbar />
       <button
         onClick={() => navigate(-1)}
         style={{

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { StripePaymentModal } from "../components/StripePayment";
-import Navbar from "../components/Navbar.jsx";
 import "../css/AddContribution.css";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -594,7 +593,6 @@ export default function AddContribution() {
 
   return (
     <div className="ac-page">
-      <Navbar />
       <main className="ac-main">
         <button
           className="ac-back-btn"

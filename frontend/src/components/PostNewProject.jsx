@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "./Navbar.jsx";
 
 const CAUSES = [
   { label: "Poverty", key: "noPoverty" },
@@ -205,7 +204,6 @@ export default function PostNewProject({ onProjectCreated }) {
 
   return (
     <div className="postProjectPage">
-      <Navbar />
       <div className="postProjectCard">
         <h2 className="postProjectHeading">Post New Project</h2>
 

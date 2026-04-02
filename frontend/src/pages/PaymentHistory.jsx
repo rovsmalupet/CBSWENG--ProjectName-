@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar.jsx";
 import { getApiUrl, apiFetch } from "../config/api";
 import "../css/PaymentHistory.css";
 
@@ -113,7 +112,6 @@ export default function PaymentHistory() {
 
   return (
     <div className="ph-page">
-      <Navbar />
       <main className="ph-main">
         <button className="ph-back-btn" onClick={() => navigate(-1)}>
           ← Back

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/OrganizationPartnershipOffers.css";
 
@@ -62,6 +63,7 @@ export default function OrganizationPartnershipOffers() {
 
   return (
     <div className="offers-page">
+      <Navbar />
       <main className="offers-main">
         <button className="back-link" onClick={() => navigate(-1)}>
           <svg

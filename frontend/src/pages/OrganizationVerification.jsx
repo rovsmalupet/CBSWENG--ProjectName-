@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Navbar from "../components/Navbar.jsx";
 import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/OrganizationVerification.css";
 
@@ -103,7 +102,6 @@ export default function OrganizationVerification() {
 
   return (
     <div className="orgv-page">
-      <Navbar />
       <main className="orgv-main">
         <button className="orgv-back" onClick={() => navigate(-1)}>
           Back

@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import Navbar from "../components/Navbar.jsx";
+import Navbar from "../components/Navbar";
 import "../css/ActiveProjects.css";
 
 const CAUSE_STYLES = {
