@@ -2,23 +2,25 @@
   min-height: 100vh;
   background-color: #f5f6f8;
   padding: 40px 20px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
 }
 
 .back-button {
   background-color: transparent;
-  border: none;
+  border: 1px solid #2563eb;
   color: #2563eb;
-  font-size: 16px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   margin-bottom: 30px;
-  padding: 0;
-  transition: color 0.3s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .back-button:hover {
-  color: #1d4ed8;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .stats-content {

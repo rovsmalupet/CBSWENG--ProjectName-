@@ -24,10 +24,6 @@ const newVolRow = () => ({
   id: Date.now() + Math.random(),
   count: "",
   donorName: "",
-  startDate: "",
-  endDate: "",
-  startTime: "",
-  endTime: "",
 });
 
 // ── calculate transaction fees ──────────────────────────────────────────────
@@ -337,10 +333,6 @@ export default function AddContribution() {
         .map((r) => ({
           donorName: resolveDonorName(r),
           count: parseInt(r.count),
-          startDate: r.startDate,
-          endDate: r.endDate,
-          startTime: r.startTime,
-          endTime: r.endTime,
         }));
 
       const { getApiUrl } = await import("../config/api");
@@ -472,10 +464,6 @@ export default function AddContribution() {
         .map((r) => ({
           donorName: resolveDonorName(r),
           count: parseInt(r.count),
-          startDate: r.startDate,
-          endDate: r.endDate,
-          startTime: r.startTime,
-          endTime: r.endTime,
         }));
 
       if (
@@ -835,42 +823,6 @@ export default function AddContribution() {
                     </>
                   )}
 
-                  <span className="ac-lbl">On</span>
-                  <input
-                    className="ac-input ac-input-date"
-                    type="date"
-                    value={row.startDate}
-                    onChange={(e) =>
-                      updateVol(row.id, "startDate", e.target.value)
-                    }
-                  />
-                  <span className="ac-lbl">to</span>
-                  <input
-                    className="ac-input ac-input-date"
-                    type="date"
-                    value={row.endDate}
-                    onChange={(e) =>
-                      updateVol(row.id, "endDate", e.target.value)
-                    }
-                  />
-                  <span className="ac-lbl">At</span>
-                  <input
-                    className="ac-input ac-input-time"
-                    type="time"
-                    value={row.startTime}
-                    onChange={(e) =>
-                      updateVol(row.id, "startTime", e.target.value)
-                    }
-                  />
-                  <span className="ac-lbl">to</span>
-                  <input
-                    className="ac-input ac-input-time"
-                    type="time"
-                    value={row.endTime}
-                    onChange={(e) =>
-                      updateVol(row.id, "endTime", e.target.value)
-                    }
-                  />
                   {volRows.length > 1 && (
                     <RemoveBtn
                       onClick={() =>

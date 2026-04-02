@@ -2,7 +2,11 @@
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
-  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  font-family:
+    "DM Sans",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .back-link {
@@ -11,18 +15,20 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   background: none;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #2563eb;
   border-radius: 6px;
-  color: #6b7280;
-  font-size: 0.875rem;
+  color: #2563eb;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   margin-bottom: 1.5rem;
 }
 
 .back-link:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
 }
 
 .page-title {

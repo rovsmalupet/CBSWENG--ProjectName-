@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
 
 .dashboard-page {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   background: #f5f6f8;
   min-height: 100vh;
   color: #1a1a1a;
@@ -16,24 +16,26 @@
 .back-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  color: #2a52be;
+  gap: 0.5rem;
+  color: #2563eb;
   font-size: 0.95rem;
   background: none;
-  border: none;
+  border: 1px solid #2563eb;
   cursor: pointer;
-  padding: 0;
+  padding: 0.5rem 1rem;
   margin-bottom: 2rem;
   font-family: inherit;
-  transition: opacity 0.15s;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
 .back-link:hover {
-  opacity: 0.75;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .dashboard-title {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 700;
   font-size: 2rem;
   color: #1a1a1a;
@@ -100,7 +102,10 @@
   align-items: center;
   gap: 1.25rem;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.15s;
 }
 
 .card:hover {

@@ -1,5 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
+import "../css/ViewProjects.css";
 
 export default function ViewProjects() {
   const navigate = useNavigate();
@@ -60,28 +61,8 @@ export default function ViewProjects() {
   }, [projects, searchQuery]);
 
   return (
-    <div
-      style={{
-        padding: "24px",
-        fontFamily: "sans-serif",
-        background: "#f0f4ff",
-        minHeight: "100vh",
-      }}
-    >
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          background: "none",
-          border: "none",
-          color: "#2563eb",
-          cursor: "pointer",
-          fontSize: "14px",
-          marginBottom: "16px",
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-        }}
-      >
+    <div className="view-projects-page">
+      <button onClick={() => navigate(-1)} className="back-link">
         <svg
           width="16"
           height="16"
@@ -95,9 +76,7 @@ export default function ViewProjects() {
         Back
       </button>
 
-      <h1 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "16px" }}>
-        View all Posts
-      </h1>
+      <h1 className="page-title">View all Posts</h1>
 
       <input
         type="text"

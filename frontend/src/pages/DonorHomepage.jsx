@@ -610,10 +610,10 @@ export default function DonorHomepage() {
                     {monetaryEnabled && (
                       <span className="support-badge">monetary</span>
                     )}
-                    {inKindEnabled && (
+                    {!monetaryEnabled && inKindEnabled && (
                       <span className="support-badge">in-kind</span>
                     )}
-                    {volunteerEnabled && (
+                    {!monetaryEnabled && !inKindEnabled && volunteerEnabled && (
                       <span className="support-badge">volunteer</span>
                     )}
                   </div>
@@ -636,36 +636,39 @@ export default function DonorHomepage() {
                     </div>
                   )}
 
-                  {inKindEnabled && inKindItems.length > 0 && (
-                    <div className="resource-needs">
-                      <div className="resource-section">
-                        <div className="resource-header">
-                          in-kind items needed
-                        </div>
-                        <ul className="inkind-list">
-                          {inKindItems.slice(0, 3).map((item) => {
-                            const itemRemaining = Math.max(
-                              0,
-                              item.targetQuantity - (item.currentQuantity || 0),
-                            );
-                            return (
-                              <li key={item.id} className="inkind-item">
-                                <strong>{item.itemName}</strong>:{" "}
-                                {itemRemaining} {item.unit || "units"}
+                  {!monetaryEnabled &&
+                    inKindEnabled &&
+                    inKindItems.length > 0 && (
+                      <div className="resource-needs">
+                        <div className="resource-section">
+                          <div className="resource-header">
+                            in-kind items needed
+                          </div>
+                          <ul className="inkind-list">
+                            {inKindItems.slice(0, 3).map((item) => {
+                              const itemRemaining = Math.max(
+                                0,
+                                item.targetQuantity -
+                                  (item.currentQuantity || 0),
+                              );
+                              return (
+                                <li key={item.id} className="inkind-item">
+                                  <strong>{item.itemName}</strong>:{" "}
+                                  {itemRemaining} {item.unit || "units"}
+                                </li>
+                              );
+                            })}
+                            {inKindItems.length > 3 && (
+                              <li className="inkind-more">
+                                +{inKindItems.length - 3} more items
                               </li>
-                            );
-                          })}
-                          {inKindItems.length > 3 && (
-                            <li className="inkind-more">
-                              +{inKindItems.length - 3} more items
-                            </li>
-                          )}
-                        </ul>
+                            )}
+                          </ul>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {volunteerEnabled && (
+                  {!monetaryEnabled && !inKindEnabled && volunteerEnabled && (
                     <div className="resource-needs">
                       <div className="resource-section">
                         <div className="resource-header">volunteers needed</div>

@@ -16,19 +16,22 @@
 .back-link {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.5rem;
   background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 0.9rem;
-  font-weight: 500;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s ease;
-  margin-bottom: 24px;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin-bottom: 1.5rem;
 }
 
 .back-link:hover {
-  color: #111827;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 /* ── Title ── */

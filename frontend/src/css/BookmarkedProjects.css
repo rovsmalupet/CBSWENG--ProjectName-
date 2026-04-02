@@ -11,26 +11,34 @@
   background: #ffffff;
   padding: 2rem;
   border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 .back-btn {
   background: none;
-  border: none;
+  border: 1px solid #2563eb;
   color: #2563eb;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0;
-  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   font-family: inherit;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  position: absolute;
+  left: 2rem;
+  border-radius: 6px;
+  margin: 0;
 }
 
 .back-btn:hover {
-  color: #1d4ed8;
+  color: #ffffff;
+  background: #2563eb;
 }
 
 .page-title {
@@ -38,6 +46,7 @@
   font-weight: 600;
   color: #2563eb;
   margin: 0;
+  text-align: center;
 }
 
 .bookmarked-main {
@@ -84,13 +93,14 @@
   padding: 0.75rem 2rem;
   background: #2563eb;
   color: white;
-  border: none;
+  border: 1px solid #2563eb;
   border-radius: 8px;
   font-family: inherit;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  margin: 0;
 }
 
 .browse-btn:hover {
@@ -124,6 +134,7 @@
   cursor: pointer;
   transition: border-color 0.2s;
   min-width: 160px;
+  margin: 0;
 }
 
 .sort-select:hover {
@@ -219,15 +230,17 @@
 
 .bookmark-btn {
   background: none;
-  border: none;
+  border: 1px solid #d1d5db;
   color: #9ca3af;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.5rem;
   transition: all 0.2s;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 6px;
+  margin: 0;
 }
 
 .bookmark-btn:hover {

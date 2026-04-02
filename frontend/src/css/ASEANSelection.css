@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
 
 .asean-selection-page {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   background: #f5f6f8;
   min-height: 100vh;
   color: #1a1a1a;
@@ -17,12 +17,12 @@
 }
 
 .back-btn {
-  background: #2563eb;
-  border: none;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9rem;
-  border-radius: 8px;
+  background: none;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 600;
@@ -30,9 +30,9 @@
 }
 
 .back-btn:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
 }
 
 .asean-title {

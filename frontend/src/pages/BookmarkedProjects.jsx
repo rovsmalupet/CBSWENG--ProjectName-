@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 import "../css/BookmarkedProjects.css";
 
 const CAUSE_STYLES = {
@@ -163,7 +164,7 @@ export default function BookmarkedProjects() {
       <div className="bookmarked-page">
         <div className="bookmarked-header">
           <button onClick={() => navigate("/donor")} className="back-btn">
-            ← back to campaigns
+            ← back
           </button>
           <h2 className="page-title">Bookmarked Projects</h2>
         </div>
@@ -174,9 +175,10 @@ export default function BookmarkedProjects() {
 
   return (
     <div className="bookmarked-page">
+      <Navbar hiddenItems={["bookmarks"]} />
       <div className="bookmarked-header">
         <button onClick={() => navigate("/donor")} className="back-btn">
-          ← back to campaigns
+          ← back
         </button>
         <h2 className="page-title">Bookmarked Projects</h2>
       </div>
