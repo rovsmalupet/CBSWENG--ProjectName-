@@ -1,28 +1,45 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import Navbar from "../components/Navbar.jsx";
 import PaymentStatusWidget from "../components/PaymentStatusWidget";
 import "../css/ProjectDetailPage.css";
 import { apiFetch, getApiUrl } from "../config/api.js";
 
 const CAUSE_STYLES = {
-  noPoverty:              { label: "Poverty",                  bg: "#E5243B", color: "#fff" },
-  zeroHunger:             { label: "Hunger",                   bg: "#DDA63A", color: "#fff" },
-  goodHealth:             { label: "Healthcare",               bg: "#4C9F38", color: "#fff" },
-  qualityEducation:       { label: "Quality Education",        bg: "#C5192D", color: "#fff" },
-  genderEquality:         { label: "Gender Equality",          bg: "#FF3A21", color: "#fff" },
-  cleanWater:             { label: "Clean Water",              bg: "#26BDE2", color: "#fff" },
-  affordableEnergy:       { label: "Affordable Energy",        bg: "#FCC30B", color: "#1a1a1a" },
-  decentWork:             { label: "Livelihood And Skills",    bg: "#A21942", color: "#fff" },
-  industry:               { label: "Industry & Innovation",    bg: "#FD6925", color: "#fff" },
-  reducedInequalities:    { label: "Reduced Inequalities",     bg: "#DD1367", color: "#fff" },
-  sustainableCities:      { label: "Cities & Relief",          bg: "#FD9D24", color: "#fff" },
-  responsibleConsumption: { label: "Responsible Consumption",  bg: "#BF8B2E", color: "#fff" },
-  climateAction:          { label: "Environment",              bg: "#3F7E44", color: "#fff" },
-  lifeBelowWater:         { label: "Life Below Water",         bg: "#0A97D9", color: "#fff" },
-  lifeOnLand:             { label: "Life on Land",             bg: "#56C02B", color: "#fff" },
-  peaceAndJustice:        { label: "Peace & Justice",          bg: "#00689D", color: "#fff" },
-  partnerships:           { label: "Partnerships",             bg: "#19486A", color: "#fff" },
-  others:                 { label: "Others",                   bg: "#6b7280", color: "#fff" },
+  noPoverty: { label: "Poverty", bg: "#E5243B", color: "#fff" },
+  zeroHunger: { label: "Hunger", bg: "#DDA63A", color: "#fff" },
+  goodHealth: { label: "Healthcare", bg: "#4C9F38", color: "#fff" },
+  qualityEducation: {
+    label: "Quality Education",
+    bg: "#C5192D",
+    color: "#fff",
+  },
+  genderEquality: { label: "Gender Equality", bg: "#FF3A21", color: "#fff" },
+  cleanWater: { label: "Clean Water", bg: "#26BDE2", color: "#fff" },
+  affordableEnergy: {
+    label: "Affordable Energy",
+    bg: "#FCC30B",
+    color: "#1a1a1a",
+  },
+  decentWork: { label: "Livelihood And Skills", bg: "#A21942", color: "#fff" },
+  industry: { label: "Industry & Innovation", bg: "#FD6925", color: "#fff" },
+  reducedInequalities: {
+    label: "Reduced Inequalities",
+    bg: "#DD1367",
+    color: "#fff",
+  },
+  sustainableCities: { label: "Cities & Relief", bg: "#FD9D24", color: "#fff" },
+  responsibleConsumption: {
+    label: "Responsible Consumption",
+    bg: "#BF8B2E",
+    color: "#fff",
+  },
+  climateAction: { label: "Environment", bg: "#3F7E44", color: "#fff" },
+  lifeBelowWater: { label: "Life Below Water", bg: "#0A97D9", color: "#fff" },
+  lifeOnLand: { label: "Life on Land", bg: "#56C02B", color: "#fff" },
+  peaceAndJustice: { label: "Peace & Justice", bg: "#00689D", color: "#fff" },
+  partnerships: { label: "Partnerships", bg: "#19486A", color: "#fff" },
+  others: { label: "Others", bg: "#6b7280", color: "#fff" },
 };
 
 const normalizeCauseKey = (raw) => {
@@ -36,35 +53,37 @@ const normalizeCauseKey = (raw) => {
 };
 
 const priorityClass = {
-  High:   "apd-priority-high",
+  High: "apd-priority-high",
   Medium: "apd-priority-medium",
-  Low:    "apd-priority-low",
+  Low: "apd-priority-low",
 };
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "";
   return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric", month: "short", day: "numeric",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
 };
 
 const percent = (current, target) => {
   const safeCurrent = Number(current ?? 0);
-  const safeTarget  = Number(target  ?? 0);
+  const safeTarget = Number(target ?? 0);
   if (safeTarget <= 0) return 0;
   return Math.min(100, Math.round((safeCurrent / safeTarget) * 100));
 };
 
 export default function ProjectDetailPage() {
-  const navigate    = useNavigate();
-  const { id }      = useParams();
-  const userRole    = localStorage.getItem("userRole");
-  const userId      = localStorage.getItem("userId");
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const userRole = localStorage.getItem("userRole");
+  const userId = localStorage.getItem("userId");
   const bookmarkKey = `bookmarkedProjects_${userId}`;
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
+  const [error, setError] = useState("");
   const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
     const saved = localStorage.getItem(bookmarkKey);
     return saved ? JSON.parse(saved) : [];
@@ -84,7 +103,7 @@ export default function ProjectDetailPage() {
   const isBookmarked = bookmarkedProjects.includes(id);
 
   const getBackRoute = () => {
-    if (userRole === "ngo")   return "/dashboard";
+    if (userRole === "ngo") return "/dashboard";
     if (userRole === "admin") return "/admin";
     return "/donor";
   };
@@ -106,7 +125,14 @@ export default function ProjectDetailPage() {
   if (loading) {
     return (
       <div className="apd-page">
-        <div className="apd-card" style={{ textAlign: "center", padding: "60px 28px", color: "#6b7280" }}>
+        <div
+          className="apd-card"
+          style={{
+            textAlign: "center",
+            padding: "60px 28px",
+            color: "#6b7280",
+          }}
+        >
           Loading project…
         </div>
       </div>
@@ -116,7 +142,14 @@ export default function ProjectDetailPage() {
   if (error) {
     return (
       <div className="apd-page">
-        <div className="apd-card" style={{ textAlign: "center", padding: "60px 28px", color: "#ef4444" }}>
+        <div
+          className="apd-card"
+          style={{
+            textAlign: "center",
+            padding: "60px 28px",
+            color: "#ef4444",
+          }}
+        >
           {error}
         </div>
       </div>
@@ -125,31 +158,39 @@ export default function ProjectDetailPage() {
 
   if (!project) return null;
 
-  const monetary  = project.supportTypes?.monetary;
-  const inKind    = project.supportTypes?.inKind ?? [];
+  const monetary = project.supportTypes?.monetary;
+  const inKind = project.supportTypes?.inKind ?? [];
   const volunteer = project.supportTypes?.volunteer;
 
   return (
     <div className="apd-page">
+      <Navbar />
       <button onClick={() => navigate(getBackRoute())} className="apd-back-btn">
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <svg
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
           <path d="M19 12H5M12 5l-7 7 7 7" />
         </svg>
         back to campaigns
       </button>
 
       <div className="apd-card">
-
         {/* ── Title block — left-aligned ── */}
         <div className="apd-title-block">
-
           {/* Row 1: title */}
           <h1 className="apd-title">{project.projectName}</h1>
 
           {/* Row 2: priority badge + bookmark */}
           <div className="apd-title-meta">
             {project.priority && (
-              <span className={`apd-priority ${priorityClass[project.priority] ?? ""}`}>
+              <span
+                className={`apd-priority ${priorityClass[project.priority] ?? ""}`}
+              >
                 {project.priority.toLowerCase()} priority
               </span>
             )}
@@ -159,7 +200,8 @@ export default function ProjectDetailPage() {
                 onClick={toggleBookmark}
               >
                 <svg
-                  width="15" height="15"
+                  width="15"
+                  height="15"
                   viewBox="0 0 24 24"
                   fill={isBookmarked ? "currentColor" : "none"}
                   stroke="currentColor"
@@ -189,7 +231,6 @@ export default function ProjectDetailPage() {
               View Documentation
             </button>
           </div>
-
         </div>
 
         {/* ── Org info ── */}
@@ -199,7 +240,9 @@ export default function ProjectDetailPage() {
             <button
               type="button"
               className="apd-verified-badge"
-              onClick={() => navigate(`/organization/${project.orgId}/verification`)}
+              onClick={() =>
+                navigate(`/organization/${project.orgId}/verification`)
+              }
             >
               Verified NGO
             </button>
@@ -208,8 +251,10 @@ export default function ProjectDetailPage() {
 
         {(project.orgRepresentative || project.orgEmail) && (
           <p className="apd-org-contact">
-            {project.orgRepresentative && <span>{project.orgRepresentative}</span>}
-            {project.orgEmail          && <span>{project.orgEmail}</span>}
+            {project.orgRepresentative && (
+              <span>{project.orgRepresentative}</span>
+            )}
+            {project.orgEmail && <span>{project.orgEmail}</span>}
           </p>
         )}
 
@@ -238,7 +283,11 @@ export default function ProjectDetailPage() {
             {formatDate(project.startDate)}
             {project.endDate ? ` → ${formatDate(project.endDate)}` : ""}
             {(project.startTime || project.endTime) && (
-              <> &nbsp;•&nbsp; {project.startTime || ""}{project.endTime ? ` - ${project.endTime}` : ""}</>
+              <>
+                {" "}
+                &nbsp;•&nbsp; {project.startTime || ""}
+                {project.endTime ? ` - ${project.endTime}` : ""}
+              </>
             )}
           </p>
         )}
@@ -261,13 +310,20 @@ export default function ProjectDetailPage() {
               </span>
             </div>
             <div className="apd-progress-info">
-              <span>raised: ₱{Number(monetary.currentAmount ?? 0).toLocaleString()}</span>
-              <span>{percent(monetary.currentAmount, monetary.targetAmount)}% complete</span>
+              <span>
+                raised: ₱{Number(monetary.currentAmount ?? 0).toLocaleString()}
+              </span>
+              <span>
+                {percent(monetary.currentAmount, monetary.targetAmount)}%
+                complete
+              </span>
             </div>
             <div className="apd-progress-bar">
               <div
                 className="apd-progress-fill"
-                style={{ width: `${percent(monetary.currentAmount, monetary.targetAmount)}%` }}
+                style={{
+                  width: `${percent(monetary.currentAmount, monetary.targetAmount)}%`,
+                }}
               />
             </div>
 
@@ -285,17 +341,31 @@ export default function ProjectDetailPage() {
             {inKind.map((item) => (
               <div key={item.id} className="apd-inkind-item-wrapper">
                 <p className="apd-inkind-item">
-                  <strong>{item.itemName}</strong> — {item.targetQuantity} {item.unit ?? "units"}
-                  {item.pricePerUnit && <span className="apd-inkind-price"> @ ₱{Number(item.pricePerUnit).toLocaleString()}/unit</span>}
+                  <strong>{item.itemName}</strong> — {item.targetQuantity}{" "}
+                  {item.unit ?? "units"}
+                  {item.pricePerUnit && (
+                    <span className="apd-inkind-price">
+                      {" "}
+                      @ ₱{Number(item.pricePerUnit).toLocaleString()}/unit
+                    </span>
+                  )}
                 </p>
                 <div className="apd-progress-info">
-                  <span>collected: {item.currentQuantity ?? 0} {item.unit ?? "units"}</span>
-                  <span>{percent(item.currentQuantity, item.targetQuantity)}% complete</span>
+                  <span>
+                    collected: {item.currentQuantity ?? 0}{" "}
+                    {item.unit ?? "units"}
+                  </span>
+                  <span>
+                    {percent(item.currentQuantity, item.targetQuantity)}%
+                    complete
+                  </span>
                 </div>
                 <div className="apd-progress-bar">
                   <div
                     className="apd-progress-fill"
-                    style={{ width: `${percent(item.currentQuantity, item.targetQuantity)}%` }}
+                    style={{
+                      width: `${percent(item.currentQuantity, item.targetQuantity)}%`,
+                    }}
                   />
                 </div>
               </div>
@@ -311,7 +381,9 @@ export default function ProjectDetailPage() {
             <div className="apd-volunteer-info">
               <div className="apd-volunteer-count">
                 <span className="apd-volunteer-label">volunteers needed:</span>
-                <span className="apd-volunteer-number">{volunteer.targetVolunteers ?? 0}</span>
+                <span className="apd-volunteer-number">
+                  {volunteer.targetVolunteers ?? 0}
+                </span>
               </div>
               {(project.startDate || project.endDate) && (
                 <div className="apd-volunteer-schedule">
@@ -319,12 +391,19 @@ export default function ProjectDetailPage() {
                   <span className="apd-volunteer-dates">
                     {project.startDate &&
                       new Date(project.startDate).toLocaleDateString("en-US", {
-                        month: "2-digit", day: "2-digit", year: "2-digit",
+                        month: "2-digit",
+                        day: "2-digit",
+                        year: "2-digit",
                       })}
                     {project.endDate &&
-                      ` to ${new Date(project.endDate).toLocaleDateString("en-US", {
-                        month: "2-digit", day: "2-digit", year: "2-digit",
-                      })}`}
+                      ` to ${new Date(project.endDate).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "2-digit",
+                          day: "2-digit",
+                          year: "2-digit",
+                        },
+                      )}`}
                   </span>
                 </div>
               )}
@@ -339,18 +418,27 @@ export default function ProjectDetailPage() {
               )}
             </div>
             <div className="apd-progress-info">
-              <span>committed: {volunteer.currentVolunteers ?? 0} volunteers</span>
-              <span>{percent(volunteer.currentVolunteers, volunteer.targetVolunteers)}% complete</span>
+              <span>
+                committed: {volunteer.currentVolunteers ?? 0} volunteers
+              </span>
+              <span>
+                {percent(
+                  volunteer.currentVolunteers,
+                  volunteer.targetVolunteers,
+                )}
+                % complete
+              </span>
             </div>
             <div className="apd-progress-bar">
               <div
                 className="apd-progress-fill apd-progress-fill-volunteer"
-                style={{ width: `${percent(volunteer.currentVolunteers, volunteer.targetVolunteers)}%` }}
+                style={{
+                  width: `${percent(volunteer.currentVolunteers, volunteer.targetVolunteers)}%`,
+                }}
               />
             </div>
           </>
         )}
-
       </div>
     </div>
   );

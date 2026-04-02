@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 import "../css/adminHome.css";
 
 const adminCards = [
@@ -50,24 +51,21 @@ export default function AdminHomepage() {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
 
-  const handleLogout = () => {
-    localStorage.removeItem("userFirstName");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("token");
-    localStorage.removeItem("userCountry");
-    navigate("/login");
-  };
-
   const handleSearch = (event) => {
     event.preventDefault();
     const query = searchText.trim();
     if (!query) return;
 
     const normalized = query.toLowerCase();
-    const isPendingAccountsQuery = ["pending", "account", "accounts", "ngo", "user", "users", "registration"].some(
-      (keyword) => normalized.includes(keyword),
-    );
+    const isPendingAccountsQuery = [
+      "pending",
+      "account",
+      "accounts",
+      "ngo",
+      "user",
+      "users",
+      "registration",
+    ].some((keyword) => normalized.includes(keyword));
 
     if (isPendingAccountsQuery) {
       navigate(`/admin/pending-accounts?search=${encodeURIComponent(query)}`);
@@ -79,6 +77,7 @@ export default function AdminHomepage() {
 
   return (
     <div className="dashboard-page">
+      <Navbar />
       <main className="dashboard-main">
         <div className="admin-top-actions">
           <button className="back-link" onClick={() => navigate(-1)}>
@@ -94,9 +93,6 @@ export default function AdminHomepage() {
             </svg>
             Back
           </button>
-          <button className="admin-logout-btn" onClick={handleLogout}>
-            LOGOUT
-          </button>
         </div>
 
         <h1 className="dashboard-title">Admin Dashboard</h1>
@@ -109,10 +105,14 @@ export default function AdminHomepage() {
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
           />
-          <button type="submit" className="admin-search-btn">Search</button>
+          <button type="submit" className="admin-search-btn">
+            Search
+          </button>
         </form>
 
-        <p className="admin-search-empty">Search jumps to projects or pending accounts.</p>
+        <p className="admin-search-empty">
+          Search jumps to projects or pending accounts.
+        </p>
 
         <div className="dashboard-cards">
           {adminCards.map((card) => (

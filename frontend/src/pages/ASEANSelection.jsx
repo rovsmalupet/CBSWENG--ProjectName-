@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 import "../css/ASEANSelection.css";
 
 const ASEAN_COUNTRIES = [
@@ -27,8 +28,11 @@ export default function ASEANSelection() {
 
   return (
     <div className="asean-selection-page">
+      <Navbar />
       <div className="asean-header">
-        <button className="back-btn" onClick={handleBack}>← Back</button>
+        <button className="back-btn" onClick={handleBack}>
+          ← Back
+        </button>
         <h1 className="asean-title">ASEAN Countries</h1>
         <div className="header-spacer"></div>
       </div>
@@ -56,8 +60,6 @@ export default function ASEANSelection() {
           ))}
         </div>
       </div>
-
-
     </div>
   );
 }

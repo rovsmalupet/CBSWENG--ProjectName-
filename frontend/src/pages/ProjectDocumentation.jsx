@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 import UploadDocuments from "../components/UploadDocuments.jsx";
 import DocumentsList from "../components/DocumentsList.jsx";
 import { getApiUrl, apiFetch } from "../config/api.js";
@@ -71,9 +72,13 @@ export default function ProjectDocumentation() {
 
   return (
     <div className="project-documentation-page">
+      <Navbar />
       <div className="page-container">
         <div className="page-header">
-          <button className="back-btn" onClick={() => navigate(`/project/${postId}`)}>
+          <button
+            className="back-btn"
+            onClick={() => navigate(`/project/${postId}`)}
+          >
             Back to Project
           </button>
           <h1>{project.projectName}</h1>
@@ -84,8 +89,9 @@ export default function ProjectDocumentation() {
           <div className="documentation-section">
             <h2>Project Documentation</h2>
             <p className="section-description">
-              Upload and manage project documentation including photos, receipts, reports, and updates
-              to maintain transparency and build trust with donors.
+              Upload and manage project documentation including photos,
+              receipts, reports, and updates to maintain transparency and build
+              trust with donors.
             </p>
           </div>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/PendingAccounts.css";
 
@@ -75,7 +76,11 @@ export default function PendingAccounts() {
     if (!query) return pendingAccounts;
 
     return pendingAccounts.filter((account) => {
-      const orgName = (account.orgName || account.affiliation || "").toLowerCase();
+      const orgName = (
+        account.orgName ||
+        account.affiliation ||
+        ""
+      ).toLowerCase();
       const firstName = account.firstName?.toLowerCase() || "";
       const surname = account.surname?.toLowerCase() || "";
       const email = account.email?.toLowerCase() || "";
@@ -107,6 +112,7 @@ export default function PendingAccounts() {
 
   return (
     <div className="pending-accounts-page">
+      <Navbar />
       <button className="back-link" onClick={() => navigate(-1)}>
         <svg
           width="16"

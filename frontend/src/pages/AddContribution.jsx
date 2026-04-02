@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { StripePaymentModal } from "../components/StripePayment";
+import Navbar from "../components/Navbar.jsx";
 import "../css/AddContribution.css";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -35,26 +36,30 @@ const calculateFees = (monetaryRows, volRows, inKindRows, inKindItems) => {
   // 3% of total monetary donation
   const totalMonetary = monetaryRows.reduce(
     (sum, r) => sum + (parseFloat(r.amount) || 0),
-    0
+    0,
   );
   const monetaryFee = totalMonetary * 0.03;
 
   // 50 PHP per volunteer (capped at 500 PHP)
   const totalVolunteers = volRows.reduce(
     (sum, r) => sum + (parseInt(r.count) || 0),
-    0
+    0,
   );
   const volunteerFee = Math.min(totalVolunteers * 50, 500);
 
   // 3% of total in-kind donations
-  const totalInKind = Object.entries(inKindRows).reduce((sum, [itemId, rows]) => {
-    const item = inKindItems.find((i) => i.id === itemId);
-    const itemTotal = rows.reduce(
-      (itemSum, r) => itemSum + (parseFloat(r.quantity) || 0) * (item?.pricePerUnit || 0),
-      0
-    );
-    return sum + itemTotal;
-  }, 0);
+  const totalInKind = Object.entries(inKindRows).reduce(
+    (sum, [itemId, rows]) => {
+      const item = inKindItems.find((i) => i.id === itemId);
+      const itemTotal = rows.reduce(
+        (itemSum, r) =>
+          itemSum + (parseFloat(r.quantity) || 0) * (item?.pricePerUnit || 0),
+        0,
+      );
+      return sum + itemTotal;
+    },
+    0,
+  );
   const inKindFee = totalInKind * 0.03;
 
   return {
@@ -99,7 +104,15 @@ function RemoveBtn({ onClick }) {
 // ── Invoice ─────────────────────────────────────────────────────────────────
 function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
   const fees = calculateFees(monetaryRows, volRows, inKindRows, inKindItems);
-  const { monetaryFee, volunteerFee, inKindFee, total, totalMonetary, totalVolunteers, totalInKind } = fees;
+  const {
+    monetaryFee,
+    volunteerFee,
+    inKindFee,
+    total,
+    totalMonetary,
+    totalVolunteers,
+    totalInKind,
+  } = fees;
 
   // Don't show invoice if nothing is entered
   if (totalMonetary === 0 && totalVolunteers === 0 && totalInKind === 0) {
@@ -109,25 +122,31 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
   return (
     <div className="ac-invoice">
       <h3 className="ac-invoice-title">💳 Payment Summary</h3>
-      
+
       <div className="ac-invoice-section">
         <div className="ac-invoice-section-title">Your Donation</div>
         {totalMonetary > 0 && (
           <div className="ac-invoice-value-row">
             <span className="ac-invoice-value-label">Monetary donation</span>
-            <span className="ac-invoice-value-amount">{fmtPHP(totalMonetary)}</span>
+            <span className="ac-invoice-value-amount">
+              {fmtPHP(totalMonetary)}
+            </span>
           </div>
         )}
         {totalInKind > 0 && (
           <div className="ac-invoice-value-row">
-            <span className="ac-invoice-value-label">In-kind donation (estimated value)</span>
-            <span className="ac-invoice-value-amount">{fmtPHP(totalInKind)}</span>
+            <span className="ac-invoice-value-label">
+              In-kind donation (estimated value)
+            </span>
+            <span className="ac-invoice-value-amount">
+              {fmtPHP(totalInKind)}
+            </span>
           </div>
         )}
       </div>
 
       <div className="ac-invoice-divider"></div>
-      
+
       <div className="ac-invoice-table">
         <div className="ac-invoice-section-title">Transaction Fees</div>
         {totalMonetary > 0 && (
@@ -162,11 +181,14 @@ function Invoice({ monetaryRows, volRows, inKindRows, inKindItems }) {
 
       <div className="ac-invoice-total">
         <span className="ac-invoice-total-label">Total Amount to Pay</span>
-        <span className="ac-invoice-total-amount">{fmtPHP(totalMonetary + total)}</span>
+        <span className="ac-invoice-total-amount">
+          {fmtPHP(totalMonetary + total)}
+        </span>
       </div>
 
       <p className="ac-invoice-note">
-        <strong>Note:</strong> You will be charged for your monetary donation + transaction fees.
+        <strong>Note:</strong> You will be charged for your monetary donation +
+        transaction fees.
       </p>
     </div>
   );
@@ -202,12 +224,12 @@ export default function AddContribution() {
   const navigate = useNavigate();
 
   // ── auth context ──
-  const userRole        = localStorage.getItem("userRole");
-  const userFirstName   = localStorage.getItem("userFirstName") || "";
-  const userLastName    = localStorage.getItem("userLastName")  || "";
+  const userRole = localStorage.getItem("userRole");
+  const userFirstName = localStorage.getItem("userFirstName") || "";
+  const userLastName = localStorage.getItem("userLastName") || "";
   const userAffiliation = localStorage.getItem("userAffiliation") || "";
-  const userId          = localStorage.getItem("userId") || "";
-  const isDonor         = userRole === "donor";
+  const userId = localStorage.getItem("userId") || "";
+  const isDonor = userRole === "donor";
 
   const donorDisplayName =
     [userFirstName, userLastName].filter(Boolean).join(" ") || "Donor";
@@ -363,11 +385,15 @@ export default function AddContribution() {
       setProofFile(null);
       setShowPaymentModal(false);
 
-      setSuccessMsg("Payment processed and contribution saved successfully! Thank you for your generous support!");
+      setSuccessMsg(
+        "Payment processed and contribution saved successfully! Thank you for your generous support!",
+      );
       setTimeout(() => setSuccessMsg(""), 5000);
     } catch (err) {
       console.error(err);
-      alert("Failed to save after payment: " + (err.message ?? "Unknown error"));
+      alert(
+        "Failed to save after payment: " + (err.message ?? "Unknown error"),
+      );
     } finally {
       setSaving(false);
     }
@@ -376,24 +402,30 @@ export default function AddContribution() {
   const handleInitiatePayment = async () => {
     try {
       // Validate that at least one contribution is entered
-      const monetary = monetaryRows
-        .filter((r) => parseFloat(r.amount) > 0);
+      const monetary = monetaryRows.filter((r) => parseFloat(r.amount) > 0);
 
       const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
-        rows
-          .filter((r) => parseFloat(r.quantity) > 0),
+        rows.filter((r) => parseFloat(r.quantity) > 0),
       );
 
-      const volunteer = volRows
-        .filter((r) => parseInt(r.count) > 0);
+      const volunteer = volRows.filter((r) => parseInt(r.count) > 0);
 
-      if (monetary.length === 0 && inKind.length === 0 && volunteer.length === 0) {
+      if (
+        monetary.length === 0 &&
+        inKind.length === 0 &&
+        volunteer.length === 0
+      ) {
         alert("Please enter at least one contribution before paying.");
         return;
       }
 
       // Calculate fees
-      const fees = calculateFees(monetaryRows, volRows, inKindRows, project.supportTypes?.inKind || []);
+      const fees = calculateFees(
+        monetaryRows,
+        volRows,
+        inKindRows,
+        project.supportTypes?.inKind || [],
+      );
       const totalMonetary = fees.totalMonetary;
 
       setPaymentBreakdown({
@@ -447,7 +479,11 @@ export default function AddContribution() {
           endTime: r.endTime,
         }));
 
-      if (monetary.length === 0 && inKind.length === 0 && volunteer.length === 0) {
+      if (
+        monetary.length === 0 &&
+        inKind.length === 0 &&
+        volunteer.length === 0
+      ) {
         alert("Please enter at least one contribution before saving.");
         setSaving(false);
         return;
@@ -508,7 +544,9 @@ export default function AddContribution() {
     return (
       <div className="ac-page">
         <main className="ac-main">
-          <div className="ac-empty"><p>Loading project…</p></div>
+          <div className="ac-empty">
+            <p>Loading project…</p>
+          </div>
         </main>
       </div>
     );
@@ -518,12 +556,18 @@ export default function AddContribution() {
     return (
       <div className="ac-page">
         <main className="ac-main">
-          <button className="ac-back-btn" onClick={() => navigate(-1)} type="button">
+          <button
+            className="ac-back-btn"
+            onClick={() => navigate(-1)}
+            type="button"
+          >
             ← Back
           </button>
           <div className="ac-empty" style={{ color: "red" }}>
             <p>{error}</p>
-            <button className="ac-save-btn" onClick={() => navigate(-1)}>Go Back</button>
+            <button className="ac-save-btn" onClick={() => navigate(-1)}>
+              Go Back
+            </button>
           </div>
         </main>
       </div>
@@ -534,22 +578,29 @@ export default function AddContribution() {
     return (
       <div className="ac-page">
         <main className="ac-main">
-          <div className="ac-empty"><p>Project not found.</p></div>
+          <div className="ac-empty">
+            <p>Project not found.</p>
+          </div>
         </main>
       </div>
     );
   }
 
   const { supportTypes } = project;
-  const monetary  = supportTypes?.monetary  ?? {};
-  const inKind    = supportTypes?.inKind    ?? [];
+  const monetary = supportTypes?.monetary ?? {};
+  const inKind = supportTypes?.inKind ?? [];
   const volunteer = supportTypes?.volunteer ?? {};
   const anySection = monetary.enabled || inKind.length > 0 || volunteer.enabled;
 
   return (
     <div className="ac-page">
+      <Navbar />
       <main className="ac-main">
-        <button className="ac-back-btn" onClick={() => navigate(-1)} type="button">
+        <button
+          className="ac-back-btn"
+          onClick={() => navigate(-1)}
+          type="button"
+        >
           ← Back
         </button>
 
@@ -564,7 +615,9 @@ export default function AddContribution() {
             <div className="ac-donor-badge-info">
               <span className="ac-donor-badge-name">{donorDisplayName}</span>
               {userAffiliation && (
-                <span className="ac-donor-badge-affiliation">{userAffiliation}</span>
+                <span className="ac-donor-badge-affiliation">
+                  {userAffiliation}
+                </span>
               )}
               <span className="ac-donor-badge-note">
                 Your name will be recorded on all contributions below
@@ -592,7 +645,9 @@ export default function AddContribution() {
                 <div className="ac-row" key={row.id}>
                   <AddBtn
                     title="Add another monetary donation"
-                    onClick={() => setMonetaryRows((p) => [...p, newMonetaryRow()])}
+                    onClick={() =>
+                      setMonetaryRows((p) => [...p, newMonetaryRow()])
+                    }
                   />
                   <input
                     className="ac-input ac-input-amount"
@@ -600,7 +655,9 @@ export default function AddContribution() {
                     min="0"
                     placeholder="Enter amount"
                     value={row.amount}
-                    onChange={(e) => updateMonetary(row.id, "amount", e.target.value)}
+                    onChange={(e) =>
+                      updateMonetary(row.id, "amount", e.target.value)
+                    }
                   />
                   <span className="ac-unit">PHP</span>
 
@@ -612,14 +669,18 @@ export default function AddContribution() {
                         type="text"
                         placeholder="Donor name"
                         value={row.donorName}
-                        onChange={(e) => updateMonetary(row.id, "donorName", e.target.value)}
+                        onChange={(e) =>
+                          updateMonetary(row.id, "donorName", e.target.value)
+                        }
                       />
                     </>
                   )}
 
                   {monetaryRows.length > 1 && (
                     <RemoveBtn
-                      onClick={() => setMonetaryRows((p) => p.filter((r) => r.id !== row.id))}
+                      onClick={() =>
+                        setMonetaryRows((p) => p.filter((r) => r.id !== row.id))
+                      }
                     />
                   )}
                 </div>
@@ -664,7 +725,10 @@ export default function AddContribution() {
                           onClick={() =>
                             setInKindRows((p) => ({
                               ...p,
-                              [item.id]: [...(p[item.id] ?? []), newInKindRow()],
+                              [item.id]: [
+                                ...(p[item.id] ?? []),
+                                newInKindRow(),
+                              ],
                             }))
                           }
                         />
@@ -675,10 +739,17 @@ export default function AddContribution() {
                           placeholder={`Enter ${unitLabel} donated`}
                           value={row.quantity}
                           onChange={(e) =>
-                            updateInKind(item.id, row.id, "quantity", e.target.value)
+                            updateInKind(
+                              item.id,
+                              row.id,
+                              "quantity",
+                              e.target.value,
+                            )
                           }
                         />
-                        <span className="ac-unit">{unitLabel.toUpperCase()}</span>
+                        <span className="ac-unit">
+                          {unitLabel.toUpperCase()}
+                        </span>
 
                         {!isDonor && (
                           <>
@@ -689,7 +760,12 @@ export default function AddContribution() {
                               placeholder="Donor name"
                               value={row.donorName}
                               onChange={(e) =>
-                                updateInKind(item.id, row.id, "donorName", e.target.value)
+                                updateInKind(
+                                  item.id,
+                                  row.id,
+                                  "donorName",
+                                  e.target.value,
+                                )
                               }
                             />
                           </>
@@ -700,7 +776,9 @@ export default function AddContribution() {
                             onClick={() =>
                               setInKindRows((p) => ({
                                 ...p,
-                                [item.id]: p[item.id].filter((r) => r.id !== row.id),
+                                [item.id]: p[item.id].filter(
+                                  (r) => r.id !== row.id,
+                                ),
                               }))
                             }
                           />
@@ -752,7 +830,9 @@ export default function AddContribution() {
                         type="text"
                         placeholder="Donor / org name"
                         value={row.donorName}
-                        onChange={(e) => updateVol(row.id, "donorName", e.target.value)}
+                        onChange={(e) =>
+                          updateVol(row.id, "donorName", e.target.value)
+                        }
                       />
                     </>
                   )}
@@ -762,32 +842,42 @@ export default function AddContribution() {
                     className="ac-input ac-input-date"
                     type="date"
                     value={row.startDate}
-                    onChange={(e) => updateVol(row.id, "startDate", e.target.value)}
+                    onChange={(e) =>
+                      updateVol(row.id, "startDate", e.target.value)
+                    }
                   />
                   <span className="ac-lbl">to</span>
                   <input
                     className="ac-input ac-input-date"
                     type="date"
                     value={row.endDate}
-                    onChange={(e) => updateVol(row.id, "endDate", e.target.value)}
+                    onChange={(e) =>
+                      updateVol(row.id, "endDate", e.target.value)
+                    }
                   />
                   <span className="ac-lbl">At</span>
                   <input
                     className="ac-input ac-input-time"
                     type="time"
                     value={row.startTime}
-                    onChange={(e) => updateVol(row.id, "startTime", e.target.value)}
+                    onChange={(e) =>
+                      updateVol(row.id, "startTime", e.target.value)
+                    }
                   />
                   <span className="ac-lbl">to</span>
                   <input
                     className="ac-input ac-input-time"
                     type="time"
                     value={row.endTime}
-                    onChange={(e) => updateVol(row.id, "endTime", e.target.value)}
+                    onChange={(e) =>
+                      updateVol(row.id, "endTime", e.target.value)
+                    }
                   />
                   {volRows.length > 1 && (
                     <RemoveBtn
-                      onClick={() => setVolRows((p) => p.filter((r) => r.id !== row.id))}
+                      onClick={() =>
+                        setVolRows((p) => p.filter((r) => r.id !== row.id))
+                      }
                     />
                   )}
                 </div>
@@ -808,19 +898,30 @@ export default function AddContribution() {
               accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx"
               onChange={(e) => setProofFile(e.target.files?.[0] || null)}
             />
-            {proofFile && <p className="ac-proof-file">Selected: {proofFile.name}</p>}
+            {proofFile && (
+              <p className="ac-proof-file">Selected: {proofFile.name}</p>
+            )}
           </div>
         )}
 
         {/* ── INVOICE ────────────────────────────────────────────────── */}
         {anySection && (
-          <Invoice monetaryRows={monetaryRows} volRows={volRows} inKindRows={inKindRows} inKindItems={inKind} />
+          <Invoice
+            monetaryRows={monetaryRows}
+            volRows={volRows}
+            inKindRows={inKindRows}
+            inKindItems={inKind}
+          />
         )}
 
         {anySection && (
           <>
             <div className="ac-save-row">
-              <button className="ac-save-btn" onClick={handleInitiatePayment} disabled={saving}>
+              <button
+                className="ac-save-btn"
+                onClick={handleInitiatePayment}
+                disabled={saving}
+              >
                 {saving ? "PROCESSING…" : "PAY & SAVE"}
               </button>
             </div>

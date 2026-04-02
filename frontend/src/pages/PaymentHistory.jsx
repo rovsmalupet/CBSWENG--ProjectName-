@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 import { getApiUrl, apiFetch } from "../config/api";
 import "../css/PaymentHistory.css";
 
@@ -33,14 +34,18 @@ const StatusBadge = ({ status }) => {
   };
 
   const config = statusMap[status] || statusMap.pending;
-  return <span className={`ph-badge ph-badge-${config.color}`}>{config.label}</span>;
+  return (
+    <span className={`ph-badge ph-badge-${config.color}`}>{config.label}</span>
+  );
 };
 
 const calculateAmount = (payment) => {
-  return (payment.monetaryContribution || 0) + 
-         (payment.monetaryTransactionFee || 0) + 
-         (payment.volunteerTransactionFee || 0) + 
-         (payment.inKindTransactionFee || 0);
+  return (
+    (payment.monetaryContribution || 0) +
+    (payment.monetaryTransactionFee || 0) +
+    (payment.volunteerTransactionFee || 0) +
+    (payment.inKindTransactionFee || 0)
+  );
 };
 
 export default function PaymentHistory() {
@@ -108,6 +113,7 @@ export default function PaymentHistory() {
 
   return (
     <div className="ph-page">
+      <Navbar />
       <main className="ph-main">
         <button className="ph-back-btn" onClick={() => navigate(-1)}>
           ← Back
@@ -143,7 +149,9 @@ export default function PaymentHistory() {
         {payments.length === 0 ? (
           <div className="ph-empty">
             <p>No payments yet</p>
-            <small>Your contributions and their payment status will appear here</small>
+            <small>
+              Your contributions and their payment status will appear here
+            </small>
           </div>
         ) : (
           <div className="ph-table-wrapper">
@@ -162,17 +170,25 @@ export default function PaymentHistory() {
                   <tr key={payment.id} className="ph-table-row">
                     <td>
                       <div className="ph-date-cell">
-                        <div className="ph-date">{fmtDate(payment.createdAt)}</div>
-                        <div className="ph-time">{fmtTime(payment.createdAt)}</div>
+                        <div className="ph-date">
+                          {fmtDate(payment.createdAt)}
+                        </div>
+                        <div className="ph-time">
+                          {fmtTime(payment.createdAt)}
+                        </div>
                       </div>
                     </td>
                     <td>
                       <div className="ph-project-cell">
-                        <div className="ph-project-name">{payment.post?.projectName || "Unknown"}</div>
+                        <div className="ph-project-name">
+                          {payment.post?.projectName || "Unknown"}
+                        </div>
                       </div>
                     </td>
                     <td>
-                      <div className="ph-amount">{fmtPHP(calculateAmount(payment))}</div>
+                      <div className="ph-amount">
+                        {fmtPHP(calculateAmount(payment))}
+                      </div>
                     </td>
                     <td>
                       <StatusBadge status={payment.status} />
@@ -196,7 +212,10 @@ export default function PaymentHistory() {
       {/* Detail Modal */}
       {showModal && selectedPayment && (
         <div className="ph-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="ph-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="ph-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="ph-modal-header">
               <h2 className="ph-modal-title">💳 Payment Details</h2>
               <button
@@ -212,23 +231,30 @@ export default function PaymentHistory() {
               <div className="ph-detail-grid">
                 <div className="ph-detail-group">
                   <label className="ph-detail-label">Project</label>
-                  <div className="ph-detail-value">{selectedPayment.post?.projectName}</div>
+                  <div className="ph-detail-value">
+                    {selectedPayment.post?.projectName}
+                  </div>
                 </div>
 
                 <div className="ph-detail-group">
                   <label className="ph-detail-label">Payment ID</label>
-                  <div className="ph-detail-value ph-monospace">{selectedPayment.paymentIntentId}</div>
+                  <div className="ph-detail-value ph-monospace">
+                    {selectedPayment.paymentIntentId}
+                  </div>
                 </div>
 
                 <div className="ph-detail-group">
                   <label className="ph-detail-label">Amount Paid</label>
-                  <div className="ph-detail-value ph-detail-amount">{fmtPHP(calculateAmount(selectedPayment))}</div>
+                  <div className="ph-detail-value ph-detail-amount">
+                    {fmtPHP(calculateAmount(selectedPayment))}
+                  </div>
                 </div>
 
                 <div className="ph-detail-group">
                   <label className="ph-detail-label">Date</label>
                   <div className="ph-detail-value">
-                    {fmtDate(selectedPayment.createdAt)} at {fmtTime(selectedPayment.createdAt)}
+                    {fmtDate(selectedPayment.createdAt)} at{" "}
+                    {fmtTime(selectedPayment.createdAt)}
                   </div>
                 </div>
 
@@ -241,7 +267,9 @@ export default function PaymentHistory() {
 
                 <div className="ph-detail-group">
                   <label className="ph-detail-label">Currency</label>
-                  <div className="ph-detail-value">{selectedPayment.currency}</div>
+                  <div className="ph-detail-value">
+                    {selectedPayment.currency}
+                  </div>
                 </div>
               </div>
 
@@ -249,16 +277,20 @@ export default function PaymentHistory() {
                 <label className="ph-detail-label">Breakdown</label>
                 <ul className="ph-breakdown-list">
                   <li>
-                    <strong>Monetary contribution:</strong> {fmtPHP(selectedPayment.monetaryContribution || 0)}
+                    <strong>Monetary contribution:</strong>{" "}
+                    {fmtPHP(selectedPayment.monetaryContribution || 0)}
                   </li>
                   <li>
-                    <strong>Monetary transaction fee:</strong> {fmtPHP(selectedPayment.monetaryTransactionFee || 0)}
+                    <strong>Monetary transaction fee:</strong>{" "}
+                    {fmtPHP(selectedPayment.monetaryTransactionFee || 0)}
                   </li>
                   <li>
-                    <strong>In-Kind transaction fee:</strong> {fmtPHP(selectedPayment.inKindTransactionFee || 0)}
+                    <strong>In-Kind transaction fee:</strong>{" "}
+                    {fmtPHP(selectedPayment.inKindTransactionFee || 0)}
                   </li>
                   <li>
-                    <strong>Volunteer transaction fee:</strong> {fmtPHP(selectedPayment.volunteerTransactionFee || 0)}
+                    <strong>Volunteer transaction fee:</strong>{" "}
+                    {fmtPHP(selectedPayment.volunteerTransactionFee || 0)}
                   </li>
                 </ul>
               </div>

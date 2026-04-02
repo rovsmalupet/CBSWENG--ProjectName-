@@ -1,5 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
+import Navbar from "../components/Navbar.jsx";
 
 export default function ViewProjects() {
   const navigate = useNavigate();
@@ -68,6 +69,7 @@ export default function ViewProjects() {
         minHeight: "100vh",
       }}
     >
+      <Navbar />
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -183,7 +185,9 @@ export default function ViewProjects() {
                       {displayStatus(project.overallStatus)}
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}>
+                  <td
+                    style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}
+                  >
                     {project.lastAudit ? (
                       <>
                         <span style={{ fontWeight: "600", color: "#374151" }}>

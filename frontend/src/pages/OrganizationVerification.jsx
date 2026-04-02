@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/OrganizationVerification.css";
 
@@ -41,7 +42,9 @@ export default function OrganizationVerification() {
       try {
         setLoading(true);
         setError("");
-        const data = await apiFetch(getApiUrl(`/organizations/${id}/verification`));
+        const data = await apiFetch(
+          getApiUrl(`/organizations/${id}/verification`),
+        );
         setProfile(data);
       } catch (err) {
         console.error("Failed to load organization verification profile:", err);
@@ -56,20 +59,28 @@ export default function OrganizationVerification() {
 
   const displayedRegistrationDocs = useMemo(() => {
     if (!profile) return [];
-    if (Array.isArray(profile.registrationDocuments) && profile.registrationDocuments.length > 0) {
+    if (
+      Array.isArray(profile.registrationDocuments) &&
+      profile.registrationDocuments.length > 0
+    ) {
       return profile.registrationDocuments;
     }
-    return Array.isArray(profile.allDocuments) ? profile.allDocuments.slice(0, 8) : [];
+    return Array.isArray(profile.allDocuments)
+      ? profile.allDocuments.slice(0, 8)
+      : [];
   }, [profile]);
 
   const downloadDocument = async (documentId, fallbackName) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(getApiUrl(`/documents/download/${documentId}`), {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      const response = await fetch(
+        getApiUrl(`/documents/download/${documentId}`),
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to download file (${response.status})`);
@@ -92,6 +103,7 @@ export default function OrganizationVerification() {
 
   return (
     <div className="orgv-page">
+      <Navbar />
       <main className="orgv-main">
         <button className="orgv-back" onClick={() => navigate(-1)}>
           Back
@@ -109,24 +121,57 @@ export default function OrganizationVerification() {
               <div>
                 <h1>{profile.organization?.orgName || "Organization"}</h1>
                 <p>
-                  {profile.organization?.representative || "Representative unavailable"}
-                  {profile.organization?.country ? ` • ${profile.organization.country}` : ""}
+                  {profile.organization?.representative ||
+                    "Representative unavailable"}
+                  {profile.organization?.country
+                    ? ` • ${profile.organization.country}`
+                    : ""}
                 </p>
               </div>
-              <span className={`orgv-badge ${profile.organization?.isVerified ? "verified" : "pending"}`}>
-                {profile.organization?.isVerified ? "Verified NGO" : "Not Verified"}
+              <span
+                className={`orgv-badge ${profile.organization?.isVerified ? "verified" : "pending"}`}
+              >
+                {profile.organization?.isVerified
+                  ? "Verified NGO"
+                  : "Not Verified"}
               </span>
             </header>
 
             <section className="orgv-card">
               <h2>Track Record</h2>
               <div className="orgv-stats-grid">
-                <div><strong>{profile.trackRecord?.totalProjects ?? 0}</strong><span>Total projects</span></div>
-                <div><strong>{profile.trackRecord?.approvedProjects ?? 0}</strong><span>Approved projects</span></div>
-                <div><strong>{profile.trackRecord?.activeProjects ?? 0}</strong><span>Active projects</span></div>
-                <div><strong>{profile.trackRecord?.confirmedContributions ?? 0}</strong><span>Confirmed contributions</span></div>
-                <div><strong>{profile.trackRecord?.completedFundingGoals ?? 0}</strong><span>Funding goals met</span></div>
-                <div><strong>{formatCurrency(profile.trackRecord?.totalMonetaryRaised ?? 0)}</strong><span>Total monetary raised</span></div>
+                <div>
+                  <strong>{profile.trackRecord?.totalProjects ?? 0}</strong>
+                  <span>Total projects</span>
+                </div>
+                <div>
+                  <strong>{profile.trackRecord?.approvedProjects ?? 0}</strong>
+                  <span>Approved projects</span>
+                </div>
+                <div>
+                  <strong>{profile.trackRecord?.activeProjects ?? 0}</strong>
+                  <span>Active projects</span>
+                </div>
+                <div>
+                  <strong>
+                    {profile.trackRecord?.confirmedContributions ?? 0}
+                  </strong>
+                  <span>Confirmed contributions</span>
+                </div>
+                <div>
+                  <strong>
+                    {profile.trackRecord?.completedFundingGoals ?? 0}
+                  </strong>
+                  <span>Funding goals met</span>
+                </div>
+                <div>
+                  <strong>
+                    {formatCurrency(
+                      profile.trackRecord?.totalMonetaryRaised ?? 0,
+                    )}
+                  </strong>
+                  <span>Total monetary raised</span>
+                </div>
               </div>
               <p className="orgv-footnote">
                 Member since {formatDate(profile.organization?.createdAt)}
@@ -136,7 +181,9 @@ export default function OrganizationVerification() {
             <section className="orgv-card">
               <h2>Registration And Compliance Documents</h2>
               {displayedRegistrationDocs.length === 0 ? (
-                <p className="orgv-muted">No uploaded documents available yet.</p>
+                <p className="orgv-muted">
+                  No uploaded documents available yet.
+                </p>
               ) : (
                 <ul className="orgv-doc-list">
                   {displayedRegistrationDocs.map((doc) => (
@@ -144,12 +191,17 @@ export default function OrganizationVerification() {
                       <div>
                         <p className="orgv-doc-name">{doc.fileName}</p>
                         <p className="orgv-doc-meta">
-                          {doc.fileType} • {formatFileSize(doc.fileSize)} • {formatDate(doc.createdAt)}
+                          {doc.fileType} • {formatFileSize(doc.fileSize)} •{" "}
+                          {formatDate(doc.createdAt)}
                         </p>
                         {doc.post?.projectName && (
-                          <p className="orgv-doc-project">Project: {doc.post.projectName}</p>
+                          <p className="orgv-doc-project">
+                            Project: {doc.post.projectName}
+                          </p>
                         )}
-                        {doc.description && <p className="orgv-doc-desc">{doc.description}</p>}
+                        {doc.description && (
+                          <p className="orgv-doc-desc">{doc.description}</p>
+                        )}
                       </div>
                       <button
                         className="orgv-download"

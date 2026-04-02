@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 import "../css/BookmarkedProjects.css";
 
 const CAUSE_STYLES = {
@@ -174,6 +175,7 @@ export default function BookmarkedProjects() {
 
   return (
     <div className="bookmarked-page">
+      <Navbar />
       <div className="bookmarked-header">
         <button onClick={() => navigate("/donor")} className="back-btn">
           ← back to campaigns

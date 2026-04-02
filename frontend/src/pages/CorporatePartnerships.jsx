@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/CorporatePartnerships.css";
 
@@ -74,6 +75,7 @@ export default function CorporatePartnerships() {
 
   return (
     <div className="partnerships-page">
+      <Navbar />
       <main className="partnerships-main">
         <button className="back-link" onClick={() => navigate(-1)}>
           <svg
@@ -91,15 +93,16 @@ export default function CorporatePartnerships() {
 
         <div className="partnerships-title-row">
           <h1 className="partnerships-title">My Current Partnerships</h1>
-          <button 
-            className="view-payments-btn" 
+          <button
+            className="view-payments-btn"
             onClick={() => navigate("/payment-history")}
           >
             View Payments
           </button>
         </div>
         <p className="partnerships-subtitle">
-          Projects where your donor account is already verified through active org partnerships.
+          Projects where your donor account is already verified through active
+          org partnerships.
         </p>
 
         {loading ? (
@@ -108,7 +111,8 @@ export default function CorporatePartnerships() {
           <div className="partnerships-error">{error}</div>
         ) : partnerships.length === 0 ? (
           <div className="partnerships-empty">
-            You do not have current partnerships yet. Contribute to a project to create one.
+            You do not have current partnerships yet. Contribute to a project to
+            create one.
           </div>
         ) : (
           <div className="partnerships-list">
@@ -116,36 +120,50 @@ export default function CorporatePartnerships() {
               <section key={partnership.id} className="partnership-card">
                 <div className="partnership-header">
                   <div className="partnership-header-left">
-                    <h2>{partnership.organization?.orgName || "Organization"}</h2>
-                    <span className={`partnership-status ${getStatusBadgeClass(partnership.status)}`}>
+                    <h2>
+                      {partnership.organization?.orgName || "Organization"}
+                    </h2>
+                    <span
+                      className={`partnership-status ${getStatusBadgeClass(partnership.status)}`}
+                    >
                       {getStatusLabel(partnership.status)}
                     </span>
                   </div>
                   <span className="partnership-meta">
-                    {partnership.totalContributions} contribution{partnership.totalContributions !== 1 ? "s" : ""}
+                    {partnership.totalContributions} contribution
+                    {partnership.totalContributions !== 1 ? "s" : ""}
                   </span>
                 </div>
 
                 <p className="partnership-org-details">
                   {partnership.organization?.email || "No email"}
-                  {partnership.organization?.country ? ` • ${partnership.organization.country}` : ""}
+                  {partnership.organization?.country
+                    ? ` • ${partnership.organization.country}`
+                    : ""}
                 </p>
 
                 <div className="partnership-projects">
                   {partnership.projects?.length ? (
                     partnership.projects.map((project) => (
-                      <article key={project.id} className="partnership-project-card">
+                      <article
+                        key={project.id}
+                        className="partnership-project-card"
+                      >
                         <button
                           className="partnership-project"
                           onClick={() => navigate(`/project/${project.id}`)}
                         >
-                          <span className="project-name">{project.projectName}</span>
+                          <span className="project-name">
+                            {project.projectName}
+                          </span>
                         </button>
 
                         {project.fundraisingUpdate && (
                           <div
                             className={`fundraising-update ${
-                              project.fundraisingUpdate.goalMet ? "goal-met" : "goal-progress"
+                              project.fundraisingUpdate.goalMet
+                                ? "goal-met"
+                                : "goal-progress"
                             }`}
                           >
                             <div className="fundraising-update-top">
@@ -155,14 +173,22 @@ export default function CorporatePartnerships() {
                                   : "Goal in progress"}
                               </strong>
                               <span className="fundraising-update-meta">
-                                {formatAmount(project.fundraisingUpdate.currentAmount)} /{" "}
-                                {formatAmount(project.fundraisingUpdate.targetAmount)}
+                                {formatAmount(
+                                  project.fundraisingUpdate.currentAmount,
+                                )}{" "}
+                                /{" "}
+                                {formatAmount(
+                                  project.fundraisingUpdate.targetAmount,
+                                )}
                               </span>
                             </div>
                             <p>{project.fundraisingUpdate.message}</p>
                             {project.fundraisingUpdate.goalMet && (
                               <small>
-                                Reached on {formatDateTime(project.fundraisingUpdate.reachedAt)}
+                                Reached on{" "}
+                                {formatDateTime(
+                                  project.fundraisingUpdate.reachedAt,
+                                )}
                               </small>
                             )}
                           </div>
@@ -170,7 +196,9 @@ export default function CorporatePartnerships() {
                       </article>
                     ))
                   ) : (
-                    <p className="no-projects">No project snapshots available yet.</p>
+                    <p className="no-projects">
+                      No project snapshots available yet.
+                    </p>
                   )}
                 </div>
               </section>
