@@ -158,10 +158,9 @@ export const confirmPayment = async (req, res) => {
       inKindTransactionFee: Math.max(0, parseFloat(metadata.inKindFee) || 0),
     };
 
-    // Only set postId if it's not "admin" to avoid foreign key constraint issues
-    if (postId !== "admin") {
-      paymentData.postId = postId;
-    }
+    // For admin donations, explicitly set postId to null
+    // For regular donations, set to the postId from the request
+    paymentData.postId = postId === "admin" ? null : postId;
 
     const payment = await prisma.payment.create({
       data: paymentData,
