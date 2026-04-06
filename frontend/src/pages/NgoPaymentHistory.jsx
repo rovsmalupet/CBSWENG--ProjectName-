@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 import { getApiUrl, apiFetch } from "../config/api";
 import "../css/PaymentHistory.css";
 
@@ -33,14 +34,18 @@ const StatusBadge = ({ status }) => {
   };
 
   const config = statusMap[status] || statusMap.pending;
-  return <span className={`ph-badge ph-badge-${config.color}`}>{config.label}</span>;
+  return (
+    <span className={`ph-badge ph-badge-${config.color}`}>{config.label}</span>
+  );
 };
 
 const calculateAmount = (payment) => {
-  return (payment.monetaryContribution || 0) + 
-         (payment.monetaryTransactionFee || 0) + 
-         (payment.volunteerTransactionFee || 0) + 
-         (payment.inKindTransactionFee || 0);
+  return (
+    (payment.monetaryContribution || 0) +
+    (payment.monetaryTransactionFee || 0) +
+    (payment.volunteerTransactionFee || 0) +
+    (payment.inKindTransactionFee || 0)
+  );
 };
 
 export default function NgoPaymentHistory() {
@@ -88,7 +93,7 @@ export default function NgoPaymentHistory() {
         for (const project of orgProjects) {
           const paymentData = await apiFetch(
             getApiUrl(`/payments/project/${project.id}`),
-            { headers: { "Content-Type": "application/json" } }
+            { headers: { "Content-Type": "application/json" } },
           );
           if (paymentData.payments) {
             allPayments = allPayments.concat(
@@ -96,15 +101,19 @@ export default function NgoPaymentHistory() {
                 ...p,
                 projectId: project.id,
                 projectName: project.projectName,
-              }))
+              })),
             );
             totalReceivedAmount += paymentData.totalAmount || 0;
-            successCount += (paymentData.payments || []).filter((p) => p.status === "succeeded").length;
+            successCount += (paymentData.payments || []).filter(
+              (p) => p.status === "succeeded",
+            ).length;
           }
         }
 
         // Sort by creation date descending
-        allPayments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        allPayments.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+        );
 
         setPayments(allPayments);
         setStats({
@@ -125,7 +134,8 @@ export default function NgoPaymentHistory() {
 
   const filteredPayments = payments.filter((payment) => {
     if (filterStatus !== "all" && payment.status !== filterStatus) return false;
-    if (filterProject !== "all" && payment.projectId !== filterProject) return false;
+    if (filterProject !== "all" && payment.projectId !== filterProject)
+      return false;
     return true;
   });
 
@@ -146,6 +156,7 @@ export default function NgoPaymentHistory() {
 
   return (
     <div className="ph-page">
+      <Navbar />
       <main className="ph-main">
         <div className="ph-header">
           <button className="ph-back-btn" onClick={() => navigate(-1)}>
@@ -270,7 +281,12 @@ export default function NgoPaymentHistory() {
             <div className="ph-modal" onClick={(e) => e.stopPropagation()}>
               <div className="ph-modal-header">
                 <h2>Donation Details</h2>
-                <button className="ph-modal-close" onClick={() => setShowModal(false)}>×</button>
+                <button
+                  className="ph-modal-close"
+                  onClick={() => setShowModal(false)}
+                >
+                  ×
+                </button>
               </div>
               <div className="ph-modal-body">
                 <div className="ph-modal-row">
@@ -279,19 +295,33 @@ export default function NgoPaymentHistory() {
                 </div>
                 <div className="ph-modal-row">
                   <span className="ph-modal-label">Donation Amount:</span>
-                  <span>{fmtPHP(selectedPayment.monetaryContribution || 0)}</span>
+                  <span>
+                    {fmtPHP(selectedPayment.monetaryContribution || 0)}
+                  </span>
                 </div>
                 <div className="ph-modal-row">
-                  <span className="ph-modal-label">Transaction Fee (Monetary):</span>
-                  <span>{fmtPHP(selectedPayment.monetaryTransactionFee || 0)}</span>
+                  <span className="ph-modal-label">
+                    Transaction Fee (Monetary):
+                  </span>
+                  <span>
+                    {fmtPHP(selectedPayment.monetaryTransactionFee || 0)}
+                  </span>
                 </div>
                 <div className="ph-modal-row">
-                  <span className="ph-modal-label">Transaction Fee (Volunteer):</span>
-                  <span>{fmtPHP(selectedPayment.volunteerTransactionFee || 0)}</span>
+                  <span className="ph-modal-label">
+                    Transaction Fee (Volunteer):
+                  </span>
+                  <span>
+                    {fmtPHP(selectedPayment.volunteerTransactionFee || 0)}
+                  </span>
                 </div>
                 <div className="ph-modal-row">
-                  <span className="ph-modal-label">Transaction Fee (In-Kind):</span>
-                  <span>{fmtPHP(selectedPayment.inKindTransactionFee || 0)}</span>
+                  <span className="ph-modal-label">
+                    Transaction Fee (In-Kind):
+                  </span>
+                  <span>
+                    {fmtPHP(selectedPayment.inKindTransactionFee || 0)}
+                  </span>
                 </div>
                 <div className="ph-modal-row ph-modal-total">
                   <span className="ph-modal-label">Total Amount Received:</span>
@@ -304,12 +334,15 @@ export default function NgoPaymentHistory() {
                 <div className="ph-modal-row">
                   <span className="ph-modal-label">Date & Time:</span>
                   <span>
-                    {fmtDate(selectedPayment.createdAt)} {fmtTime(selectedPayment.createdAt)}
+                    {fmtDate(selectedPayment.createdAt)}{" "}
+                    {fmtTime(selectedPayment.createdAt)}
                   </span>
                 </div>
                 <div className="ph-modal-row">
                   <span className="ph-modal-label">Payment ID:</span>
-                  <span className="ph-payment-id">{selectedPayment.paymentIntentId || selectedPayment.id}</span>
+                  <span className="ph-payment-id">
+                    {selectedPayment.paymentIntentId || selectedPayment.id}
+                  </span>
                 </div>
               </div>
             </div>

@@ -51,30 +51,198 @@ export default function App() {
         <Route path="/ngo/register" element={<NgoRegistration />} />
         <Route path="/donor/register" element={<DonorRegistration />} />
         <Route path="/auth/:role" element={<Navigate to="/login" replace />} />
-        <Route path="/dashboard" element={<RequireRole allowedRoles={["ngo"]}><Dashboard /></RequireRole>} />
-        <Route path="/ngo/partnership-offers" element={<RequireRole allowedRoles={["ngo"]}><OrganizationPartnershipOffers /></RequireRole>} />
-        <Route path="/ngo/donations" element={<RequireRole allowedRoles={["ngo"]}><NgoPaymentHistory /></RequireRole>} />
-        <Route path="/project-ledger" element={<RequireRole allowedRoles={["ngo"]}><ActiveProjects /></RequireRole>} />
-        <Route path="/unposted-projects" element={<RequireRole allowedRoles={["ngo"]}><UnapprovedProjects /></RequireRole>} />
-        <Route path="/post-project" element={<RequireRole allowedRoles={["ngo"]}><PostNewProject /></RequireRole>} />
-        <Route path="/edit-project/:id" element={<RequireRole allowedRoles={["ngo"]}><EditProject /></RequireRole>} />
-        <Route path="/add-contribution/:id" element={<RequireRole allowedRoles={["donor", "ngo"]}><AddContribution /></RequireRole>} />
-        <Route path="/contribution-detail/:id" element={<RequireRole allowedRoles={["ngo"]}><ContributionDetailPage /></RequireRole>} />
-        <Route path="/donor" element={<RequireRole allowedRoles={["donor"]}><DonorHomepage /></RequireRole>} />
-        <Route path="/donor/asean" element={<RequireRole allowedRoles={["donor"]}><ASEANSelection /></RequireRole>} />
-        <Route path="/donor/country/:country" element={<RequireRole allowedRoles={["donor"]}><CountrySDGStats /></RequireRole>} />
-        <Route path="/donor/bookmarks" element={<RequireRole allowedRoles={["donor"]}><BookmarkedProjects /></RequireRole>} />
-        <Route path="/donor/partnerships" element={<RequireRole allowedRoles={["donor"]}><CorporatePartnerships /></RequireRole>} />
-        <Route path="/payment-history" element={<RequireRole allowedRoles={["donor"]}><PaymentHistory /></RequireRole>} />
-        <Route path="/donate-to-developers" element={<RequireRole allowedRoles={["donor"]}><DeveloperDonation /></RequireRole>} />
-        <Route path="/project/:id" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><ProjectDetailPage /></RequireRole>} />
-          <Route path="/project/:id/documentation" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><ProjectDocumentation /></RequireRole>} />
-        <Route path="/organization/:id/verification" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><OrganizationVerification /></RequireRole>} />
-        <Route path="/admin" element={<RequireRole allowedRoles={["admin"]}><AdminHomepage /></RequireRole>} />
-        <Route path="/viewProjects" element={<RequireRole allowedRoles={["admin"]}><ViewProjects /></RequireRole>} />
-        <Route path="/admin/project/:id" element={<RequireRole allowedRoles={["admin"]}><AdminProjectDetail /></RequireRole>} />
-        <Route path="/admin/pending-accounts" element={<RequireRole allowedRoles={["admin"]}><PendingAccounts /></RequireRole>} />
-        <Route path="/admin/payments-donations" element={<RequireRole allowedRoles={["admin"]}><AdminPaymentsDonations /></RequireRole>} />
+        <Route
+          path="/dashboard"
+          element={
+            <RequireRole allowedRoles={["ngo"]}>
+              <Dashboard />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/ngo/partnership-offers"
+          element={
+            <RequireRole allowedRoles={["ngo"]}>
+              <OrganizationPartnershipOffers />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/ngo/donations"
+          element={
+            <RequireRole allowedRoles={["ngo"]}>
+              <NgoPaymentHistory />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/project-ledger"
+          element={
+            <RequireRole allowedRoles={["ngo"]}>
+              <ActiveProjects />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/unposted-projects"
+          element={
+            <RequireRole allowedRoles={["ngo"]}>
+              <UnapprovedProjects />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/post-project"
+          element={
+            <RequireRole allowedRoles={["ngo"]}>
+              <PostNewProject />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/edit-project/:id"
+          element={
+            <RequireRole allowedRoles={["ngo"]}>
+              <EditProject />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/add-contribution/:id"
+          element={
+            <RequireRole allowedRoles={["donor", "ngo"]}>
+              <AddContribution />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/contribution-detail/:id"
+          element={
+            <RequireRole allowedRoles={["ngo"]}>
+              <ContributionDetailPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/donor"
+          element={
+            <RequireRole allowedRoles={["donor"]}>
+              <DonorHomepage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/donor/asean"
+          element={
+            <RequireRole allowedRoles={["donor"]}>
+              <ASEANSelection />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/donor/country/:country"
+          element={
+            <RequireRole allowedRoles={["donor"]}>
+              <CountrySDGStats />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/donor/bookmarks"
+          element={
+            <RequireRole allowedRoles={["donor"]}>
+              <BookmarkedProjects />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/donor/partnerships"
+          element={
+            <RequireRole allowedRoles={["donor"]}>
+              <CorporatePartnerships />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/payment-history"
+          element={
+            <RequireRole allowedRoles={["donor"]}>
+              <PaymentHistory />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/donate-to-developers"
+          element={
+            <RequireRole allowedRoles={["donor", "ngo"]}>
+              <DeveloperDonation />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/project/:id"
+          element={
+            <RequireRole allowedRoles={["donor", "ngo", "admin"]}>
+              <ProjectDetailPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/project/:id/documentation"
+          element={
+            <RequireRole allowedRoles={["donor", "ngo", "admin"]}>
+              <ProjectDocumentation />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/organization/:id/verification"
+          element={
+            <RequireRole allowedRoles={["donor", "ngo", "admin"]}>
+              <OrganizationVerification />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RequireRole allowedRoles={["admin"]}>
+              <AdminHomepage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/viewProjects"
+          element={
+            <RequireRole allowedRoles={["admin"]}>
+              <ViewProjects />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/project/:id"
+          element={
+            <RequireRole allowedRoles={["admin"]}>
+              <AdminProjectDetail />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/pending-accounts"
+          element={
+            <RequireRole allowedRoles={["admin"]}>
+              <PendingAccounts />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/payments-donations"
+          element={
+            <RequireRole allowedRoles={["admin"]}>
+              <AdminPaymentsDonations />
+            </RequireRole>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

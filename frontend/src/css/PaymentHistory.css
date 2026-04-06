@@ -11,7 +11,7 @@
 
 .ph-main {
   max-width: 1000px;
-  margin: 0 auto;
+  margin: 3rem auto 0 auto;
   background: white;
   border-radius: 12px;
   padding: 2rem;
@@ -19,20 +19,24 @@
 }
 
 .ph-back-btn {
-  background: none;
-  border: none;
-  color: #2F6C4F;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2563eb;
   font-size: 0.95rem;
+  background: none;
+  border: 1px solid #2563eb;
   cursor: pointer;
-  margin-bottom: 1.5rem;
-  padding: 0;
-  font-weight: 500;
-  transition: color 0.2s;
+  padding: 0.5rem 1rem;
+  margin-bottom: 2rem;
   font-family: inherit;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
 .ph-back-btn:hover {
-  color: #1f4c34;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 /* ── Title & Subtitle ─────────────────────────────────────────────────────── */
@@ -58,26 +62,26 @@
 }
 
 .ph-stat-card {
-  background: #2F6C4F;
+  background: #2563eb;
   color: white;
   padding: 1.5rem;
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(47, 108, 79, 0.2);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
   transition: all 0.2s ease;
 }
 
 .ph-stat-card:hover {
-  box-shadow: 0 4px 12px rgba(47, 108, 79, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .ph-stat-card.ph-stat-success {
-  background: #059669;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+  background: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }
 
 .ph-stat-card.ph-stat-success:hover {
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .ph-stat-value {
@@ -226,7 +230,7 @@
 
 /* ── Details Button ───────────────────────────────────────────────────────── */
 .ph-details-btn {
-  background: #2F6C4F;
+  background: #2f6c4f;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -405,7 +409,7 @@
 }
 
 .ph-btn-primary {
-  background: #2F6C4F;
+  background: #2f6c4f;
   color: white;
 }
 

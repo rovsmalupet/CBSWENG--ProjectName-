@@ -16,12 +16,21 @@ export default function Navbar({ hiddenItems = [] }) {
 
   const userRole = localStorage.getItem("userRole");
   const isDonor = userRole === "donor";
+  const isNgo = userRole === "ngo";
 
   const donorLinks = [
     { key: "asean", label: "ASEAN", path: "/donor/asean" },
     { key: "partnerships", label: "PARTNERSHIPS", path: "/donor/partnerships" },
     { key: "bookmarks", label: "BOOKMARKS", path: "/donor/bookmarks" },
   ].filter((link) => !hiddenItems.includes(link.key));
+
+  const ngoLinks = [
+    {
+      key: "donate-dev",
+      label: "DONATE TO DEVELOPERS",
+      path: "/donate-to-developers",
+    },
+  ];
 
   return (
     <nav className="navbar">
@@ -41,9 +50,19 @@ export default function Navbar({ hiddenItems = [] }) {
           ))}
         </div>
       )}
-      <button className="navbar-logout-btn" onClick={handleLogout}>
-        LOGOUT
-      </button>
+      <div className="navbar-right-actions">
+        {isNgo && ngoLinks.length > 0 && (
+          <button
+            className="navbar-donate-btn"
+            onClick={() => navigate("/donate-to-developers")}
+          >
+            DONATE TO DEVELOPERS
+          </button>
+        )}
+        <button className="navbar-logout-btn" onClick={handleLogout}>
+          LOGOUT
+        </button>
+      </div>
     </nav>
   );
 }

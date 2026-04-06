@@ -9,8 +9,12 @@ const fmtPHP = (n) =>
 
 export default function DeveloperDonation() {
   const navigate = useNavigate();
-  const donorName = localStorage.getItem("userFirstName") || "Generous Donor";
-  const donorId = localStorage.getItem("userId");
+  const userRole = localStorage.getItem("userRole");
+  const userName =
+    localStorage.getItem("userFirstName") ||
+    (userRole === "ngo" ? "Generous Organization" : "Generous Donor");
+  const userId = localStorage.getItem("userId");
+  const isNgo = userRole === "ngo";
 
   const [donationAmount, setDonationAmount] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -21,7 +25,9 @@ export default function DeveloperDonation() {
 
   const handleDonate = async () => {
     if (amount < 25) {
-      alert("Minimum donation is ₱25.00 (Stripe payment processor requirement)");
+      alert(
+        "Minimum donation is ₱25.00 (Stripe payment processor requirement)",
+      );
       return;
     }
 
@@ -36,7 +42,9 @@ export default function DeveloperDonation() {
   const handlePaymentSuccess = async (paymentIntentId) => {
     // Payment is already confirmed and saved by the modal
     // Just show success and navigate
-    alert("Thank you for your generous donation! Your contribution helps us improve BayaniHub for everyone.");
+    alert(
+      "Thank you for your generous donation! Your contribution helps us improve BayaniHub for everyone.",
+    );
     navigate("/payment-history");
   };
 
@@ -49,7 +57,9 @@ export default function DeveloperDonation() {
           </button>
           <h1 className="dd-title">Support BayaniHub Development</h1>
           <p className="dd-subtitle">
-            Your donation helps us build and maintain BayaniHub, connecting donors with impactful projects across ASEAN.
+            Your {isNgo ? "organization's" : ""} donation helps us build and
+            maintain BayaniHub, connecting {isNgo ? "organizations and" : ""}{" "}
+            donors with impactful projects across ASEAN.
           </p>
         </div>
 
@@ -60,7 +70,8 @@ export default function DeveloperDonation() {
               <div className="dd-card-header">
                 <h2>Make a Developer Donation</h2>
                 <p className="dd-card-desc">
-                  Help us continue improving the platform and supporting more communities.
+                  Help us continue improving the platform and supporting more
+                  communities.
                 </p>
               </div>
 
@@ -79,7 +90,9 @@ export default function DeveloperDonation() {
                     disabled={showPaymentModal}
                   />
                 </div>
-                <small className="dd-helper">Minimum donation: ₱25.00 (Payment processor requirement)</small>
+                <small className="dd-helper">
+                  Minimum donation: ₱25.00 (Payment processor requirement)
+                </small>
               </div>
 
               {/* Summary */}
@@ -98,7 +111,9 @@ export default function DeveloperDonation() {
                 disabled={amount <= 0 || showPaymentModal}
                 className="dd-submit-btn"
               >
-                {amount > 0 ? `Donate ${fmtPHP(amount)}` : "Enter Amount to Donate"}
+                {amount > 0
+                  ? `Donate ${fmtPHP(amount)}`
+                  : "Enter Amount to Donate"}
               </button>
 
               <p className="dd-security-note">

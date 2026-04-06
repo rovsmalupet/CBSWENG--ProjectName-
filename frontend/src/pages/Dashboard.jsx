@@ -100,12 +100,22 @@ export default function Dashboard() {
     if (!query) return;
 
     const normalizedQuery = query.toLowerCase();
-    const isOfferQuery = ["partner", "partnership", "offer", "offers", "company", "companies", "corporate"].some(
-      (keyword) => normalizedQuery.includes(keyword),
-    );
-    const isUnpostedQuery = ["unposted", "pending", "edited", "rejected", "unapproved"].some((keyword) =>
-      normalizedQuery.includes(keyword),
-    );
+    const isOfferQuery = [
+      "partner",
+      "partnership",
+      "offer",
+      "offers",
+      "company",
+      "companies",
+      "corporate",
+    ].some((keyword) => normalizedQuery.includes(keyword));
+    const isUnpostedQuery = [
+      "unposted",
+      "pending",
+      "edited",
+      "rejected",
+      "unapproved",
+    ].some((keyword) => normalizedQuery.includes(keyword));
 
     if (isOfferQuery) {
       navigate(`/ngo/partnership-offers?search=${encodeURIComponent(query)}`);
@@ -148,10 +158,14 @@ export default function Dashboard() {
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
           />
-          <button type="submit" className="portal-search-btn">Search</button>
+          <button type="submit" className="portal-search-btn">
+            Search
+          </button>
         </form>
 
-        <p className="portal-search-empty">Use search to jump to matching project lists.</p>
+        <p className="portal-search-empty">
+          Use search to jump to matching project lists.
+        </p>
 
         <div className="dashboard-cards">
           {cards.map((card) => (
