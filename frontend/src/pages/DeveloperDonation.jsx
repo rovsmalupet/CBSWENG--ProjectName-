@@ -13,7 +13,6 @@ export default function DeveloperDonation() {
   const donorId = localStorage.getItem("userId");
 
   const [donationAmount, setDonationAmount] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
 
@@ -26,70 +25,19 @@ export default function DeveloperDonation() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      // Create payment intent for developer donation
-      const response = await fetch(getApiUrl("/payments/intent"), {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          postId: "admin", // Special project ID for admin donations
-          donationAmount: amount,
-          monetaryFee: 0,
-          volunteerFee: 0,
-          inKindFee: 0,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMsg = errorData.message || errorData.error || "Failed to create payment intent";
-        throw new Error(errorMsg);
-      }
-
-      // Payment intent created successfully - now show the payment modal
-      setPaymentData({
-        amount,
-      });
-      setShowPaymentModal(true);
-    } catch (error) {
-      console.error("Payment intent error:", error.message);
-      alert(`Payment Error: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
+    // Open modal - it will handle payment intent creation
+    setPaymentData({
+      amount,
+      projectName: "Support BayaniHub - Admin Fund",
+    });
+    setShowPaymentModal(true);
   };
 
   const handlePaymentSuccess = async (paymentIntentId) => {
-    try {
-      const token = localStorage.getItem("token");
-      // Confirm payment in database
-      const response = await fetch(getApiUrl("/payments/confirm"), {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          paymentIntentId,
-          postId: "admin",
-        }),
-      });
-
-      if (response.ok) {
-        alert("Thank you for your generous donation! Your contribution helps us improve BayaniHub for everyone.");
-        navigate("/payment-history");
-      } else {
-        alert("Payment recorded but failed to confirm. Please contact support.");
-      }
-    } catch (error) {
-      console.error("Error confirming payment:", error);
-      alert("Payment completed but failed to record. Please contact support.");
-    }
+    // Payment is already confirmed and saved by the modal
+    // Just show success and navigate
+    alert("Thank you for your generous donation! Your contribution helps us improve BayaniHub for everyone.");
+    navigate("/payment-history");
   };
 
   return (
@@ -147,10 +95,10 @@ export default function DeveloperDonation() {
               {/* Action Button */}
               <button
                 onClick={handleDonate}
-                disabled={loading || amount <= 0 || showPaymentModal}
+                disabled={amount <= 0 || showPaymentModal}
                 className="dd-submit-btn"
               >
-                {loading ? "Processing..." : amount > 0 ? `Donate ${fmtPHP(amount)}` : "Enter Amount to Donate"}
+                {amount > 0 ? `Donate ${fmtPHP(amount)}` : "Enter Amount to Donate"}
               </button>
 
               <p className="dd-security-note">
