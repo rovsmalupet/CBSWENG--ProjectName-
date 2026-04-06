@@ -25,6 +25,8 @@ import OrganizationVerification from "./pages/OrganizationVerification.jsx";
 import ASEANSelection from "./pages/ASEANSelection.jsx";
 import CountrySDGStats from "./pages/CountrySDGStats.jsx";
 import PaymentHistory from "./pages/PaymentHistory.jsx";
+import NgoPaymentHistory from "./pages/NgoPaymentHistory.jsx";
+import AdminPaymentsDonations from "./pages/AdminPaymentsDonations.jsx";
 
 function RequireRole({ allowedRoles, children }) {
   const token = localStorage.getItem("token");
@@ -50,6 +52,7 @@ export default function App() {
         <Route path="/auth/:role" element={<Navigate to="/login" replace />} />
         <Route path="/dashboard" element={<RequireRole allowedRoles={["ngo"]}><Dashboard /></RequireRole>} />
         <Route path="/ngo/partnership-offers" element={<RequireRole allowedRoles={["ngo"]}><OrganizationPartnershipOffers /></RequireRole>} />
+        <Route path="/ngo/donations" element={<RequireRole allowedRoles={["ngo"]}><NgoPaymentHistory /></RequireRole>} />
         <Route path="/project-ledger" element={<RequireRole allowedRoles={["ngo"]}><ActiveProjects /></RequireRole>} />
         <Route path="/unposted-projects" element={<RequireRole allowedRoles={["ngo"]}><UnapprovedProjects /></RequireRole>} />
         <Route path="/post-project" element={<RequireRole allowedRoles={["ngo"]}><PostNewProject /></RequireRole>} />
@@ -69,6 +72,7 @@ export default function App() {
         <Route path="/viewProjects" element={<RequireRole allowedRoles={["admin"]}><ViewProjects /></RequireRole>} />
         <Route path="/admin/project/:id" element={<RequireRole allowedRoles={["admin"]}><AdminProjectDetail /></RequireRole>} />
         <Route path="/admin/pending-accounts" element={<RequireRole allowedRoles={["admin"]}><PendingAccounts /></RequireRole>} />
+        <Route path="/admin/payments-donations" element={<RequireRole allowedRoles={["admin"]}><AdminPaymentsDonations /></RequireRole>} />
       </Routes>
     </BrowserRouter>
   );

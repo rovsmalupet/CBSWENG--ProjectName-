@@ -44,6 +44,25 @@ const adminCards = [
       </svg>
     ),
   },
+  {
+    key: "payments-donations",
+    label: "Payments and Donations",
+    route: "/admin/payments-donations",
+    icon: (
+      <svg
+        width="52"
+        height="52"
+        fill="none"
+        stroke="#4b5563"
+        strokeWidth="1.4"
+        viewBox="0 0 24 24"
+      >
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+        <path d="M16 4H8a2 2 0 0 0-2 2" />
+        <circle cx="12" cy="14" r="2.5" fill="none" stroke="#4b5563" strokeWidth="1.4" />
+      </svg>
+    ),
+  },
 ];
 
 export default function AdminHomepage() {

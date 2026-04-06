@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
 import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/OrganizationPartnershipOffers.css";
 
@@ -21,9 +20,7 @@ export default function OrganizationPartnershipOffers() {
         setLoading(true);
         setError("");
 
-        const response = await apiFetch(
-          getApiUrl("/posts/partnerships/incoming"),
-        );
+        const response = await apiFetch(getApiUrl("/posts/partnerships/incoming"));
         const allOffers = Array.isArray(response) ? response : [];
 
         setOffers(allOffers);
@@ -63,17 +60,9 @@ export default function OrganizationPartnershipOffers() {
 
   return (
     <div className="offers-page">
-      <Navbar />
       <main className="offers-main">
         <button className="back-link" onClick={() => navigate(-1)}>
-          <svg
-            width="16"
-            height="16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M19 12H5M12 5l-7 7 7 7" />
           </svg>
           Back
@@ -81,8 +70,7 @@ export default function OrganizationPartnershipOffers() {
 
         <h1 className="offers-title">Partnership Offers</h1>
         <p className="offers-subtitle">
-          Review donor partnership proposals and accept the most suitable offers
-          for your projects.
+          Review donor partnership proposals and accept the most suitable offers for your projects.
         </p>
 
         <div className="offers-controls">
@@ -111,9 +99,7 @@ export default function OrganizationPartnershipOffers() {
         ) : error ? (
           <div className="offers-error">{error}</div>
         ) : filteredOffers.length === 0 ? (
-          <div className="offers-empty">
-            No partnership offers match your filters.
-          </div>
+          <div className="offers-empty">No partnership offers match your filters.</div>
         ) : (
           <div className="offers-grid">
             {filteredOffers.map((offer) => (
@@ -139,9 +125,7 @@ export default function OrganizationPartnershipOffers() {
                 {offer.certifications && offer.certifications.length > 0 && (
                   <div className="offer-tags">
                     {offer.certifications.map((cert) => (
-                      <span key={cert} className="offer-tag">
-                        {cert}
-                      </span>
+                      <span key={cert} className="offer-tag">{cert}</span>
                     ))}
                   </div>
                 )}
@@ -181,18 +165,9 @@ export default function OrganizationPartnershipOffers() {
       </main>
 
       {profileModal && (
-        <div
-          className="profile-modal-overlay"
-          onClick={() => setProfileModal(null)}
-        >
-          <div
-            className="profile-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="profile-modal-close"
-              onClick={() => setProfileModal(null)}
-            >
+        <div className="profile-modal-overlay" onClick={() => setProfileModal(null)}>
+          <div className="profile-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="profile-modal-close" onClick={() => setProfileModal(null)}>
               ✕
             </button>
 
@@ -207,9 +182,7 @@ export default function OrganizationPartnershipOffers() {
                 <div className="profile-info">
                   <div className="info-row">
                     <span className="info-label">Affiliation:</span>
-                    <span className="info-value">
-                      {profileModal.donorAffiliation || "Not specified"}
-                    </span>
+                    <span className="info-value">{profileModal.donorAffiliation || "Not specified"}</span>
                   </div>
                   <div className="info-row">
                     <span className="info-label">Country:</span>
@@ -217,38 +190,31 @@ export default function OrganizationPartnershipOffers() {
                   </div>
                   <div className="info-row">
                     <span className="info-label">Bio:</span>
-                    <span className="info-value">
-                      {profileModal.donorBio || "No bio provided"}
-                    </span>
+                    <span className="info-value">{profileModal.donorBio || "No bio provided"}</span>
                   </div>
                 </div>
               </div>
 
-              {profileModal.donorProjects &&
-                profileModal.donorProjects.length > 0 && (
-                  <div className="profile-section">
-                    <h3>Projects Supported</h3>
-                    <div className="profile-projects">
-                      {profileModal.donorProjects.map((project) => (
-                        <div key={project.id} className="profile-project-item">
-                          <h4>{project.projectName}</h4>
-                          <p className="project-priority">
-                            Priority: {project.priority}
-                          </p>
-                          {project.causes && project.causes.length > 0 && (
-                            <div className="project-causes">
-                              {project.causes.map((cause) => (
-                                <span key={cause} className="cause-tag">
-                                  {cause}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+              {profileModal.donorProjects && profileModal.donorProjects.length > 0 && (
+                <div className="profile-section">
+                  <h3>Projects Supported</h3>
+                  <div className="profile-projects">
+                    {profileModal.donorProjects.map((project) => (
+                      <div key={project.id} className="profile-project-item">
+                        <h4>{project.projectName}</h4>
+                        <p className="project-priority">Priority: {project.priority}</p>
+                        {project.causes && project.causes.length > 0 && (
+                          <div className="project-causes">
+                            {project.causes.map((cause) => (
+                              <span key={cause} className="cause-tag">{cause}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
             </div>
           </div>
         </div>

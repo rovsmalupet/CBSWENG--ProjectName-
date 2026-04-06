@@ -67,6 +67,27 @@ const cards = [
     ),
     style: "card active",
   },
+  {
+    key: "donations",
+    label: "Donations Received",
+    route: "/ngo/donations",
+    icon: (
+      <svg
+        width="52"
+        height="52"
+        fill="none"
+        stroke="#4b5563"
+        strokeWidth="1.4"
+        viewBox="0 0 24 24"
+      >
+        <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z" />
+        <path d="M12 6v12" strokeLinecap="round" />
+        <path d="M9 9h6" strokeLinecap="round" />
+        <path d="M9 15h6" strokeLinecap="round" />
+      </svg>
+    ),
+    style: "card active",
+  },
 ];
 
 export default function Dashboard() {

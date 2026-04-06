@@ -1,47 +1,26 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import Navbar from "../components/Navbar";
 import "../css/ActiveProjects.css";
 
 const CAUSE_STYLES = {
-  noPoverty: { label: "Poverty", bg: "#E5243B", color: "#fff" },
-  zeroHunger: { label: "Hunger", bg: "#DDA63A", color: "#fff" },
-  goodHealth: { label: "Healthcare", bg: "#4C9F38", color: "#fff" },
-  qualityEducation: {
-    label: "Quality Education",
-    bg: "#C5192D",
-    color: "#fff",
-  },
-  genderEquality: { label: "Gender Equality", bg: "#FF3A21", color: "#fff" },
-  cleanWater: { label: "Clean Water", bg: "#26BDE2", color: "#fff" },
-  affordableEnergy: {
-    label: "Affordable Energy",
-    bg: "#FCC30B",
-    color: "#1a1a1a",
-  },
-  decentWork: {
-    label: "Livelihood And Skills Training",
-    bg: "#A21942",
-    color: "#fff",
-  },
-  industry: { label: "Industry & Innovation", bg: "#FD6925", color: "#fff" },
-  reducedInequalities: {
-    label: "Reduced Inequalities",
-    bg: "#DD1367",
-    color: "#fff",
-  },
-  sustainableCities: { label: "Cities & Relief", bg: "#FD9D24", color: "#fff" },
-  responsibleConsumption: {
-    label: "Responsible Consumption",
-    bg: "#BF8B2E",
-    color: "#fff",
-  },
-  climateAction: { label: "Environment", bg: "#3F7E44", color: "#fff" },
-  lifeBelowWater: { label: "Life Below Water", bg: "#0A97D9", color: "#fff" },
-  lifeOnLand: { label: "Life on Land", bg: "#56C02B", color: "#fff" },
-  peaceAndJustice: { label: "Peace & Justice", bg: "#00689D", color: "#fff" },
-  partnerships: { label: "Partnerships", bg: "#19486A", color: "#fff" },
-  others: { label: "Others", bg: "#6b7280", color: "#fff" },
+  noPoverty:              { label: "Poverty",             bg: "#E5243B", color: "#fff" },
+  zeroHunger:             { label: "Hunger",            bg: "#DDA63A", color: "#fff" },
+  goodHealth:             { label: "Healthcare",            bg: "#4C9F38", color: "#fff" },
+  qualityEducation:       { label: "Quality Education",      bg: "#C5192D", color: "#fff" },
+  genderEquality:         { label: "Gender Equality",        bg: "#FF3A21", color: "#fff" },
+  cleanWater:             { label: "Clean Water",            bg: "#26BDE2", color: "#fff" },
+  affordableEnergy:       { label: "Affordable Energy",      bg: "#FCC30B", color: "#1a1a1a" },
+  decentWork:             { label: "Livelihood And Skills Training",            bg: "#A21942", color: "#fff" },
+  industry:               { label: "Industry & Innovation",  bg: "#FD6925", color: "#fff" },
+  reducedInequalities:    { label: "Reduced Inequalities",   bg: "#DD1367", color: "#fff" },
+  sustainableCities:      { label: "Cities & Relief",     bg: "#FD9D24", color: "#fff" },
+  responsibleConsumption: { label: "Responsible Consumption",bg: "#BF8B2E", color: "#fff" },
+  climateAction:          { label: "Environment",         bg: "#3F7E44", color: "#fff" },
+  lifeBelowWater:         { label: "Life Below Water",       bg: "#0A97D9", color: "#fff" },
+  lifeOnLand:             { label: "Life on Land",           bg: "#56C02B", color: "#fff" },
+  peaceAndJustice:        { label: "Peace & Justice",        bg: "#00689D", color: "#fff" },
+  partnerships:           { label: "Partnerships",           bg: "#19486A", color: "#fff" },
+  others:                 { label: "Others",                 bg: "#6b7280", color: "#fff" },
 };
 
 // Map from enum values to category keys
@@ -161,7 +140,6 @@ export default function ActiveProjects() {
 
   return (
     <div className="ledger-page">
-      <Navbar />
       <main className="ledger-main">
         <button className="back-link" onClick={() => navigate(-1)}>
           <svg
@@ -195,9 +173,7 @@ export default function ActiveProjects() {
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
           />
-          <button type="submit" className="project-search-btn">
-            Search
-          </button>
+          <button type="submit" className="project-search-btn">Search</button>
         </form>
 
         {loading ? (
@@ -219,11 +195,7 @@ export default function ActiveProjects() {
               <circle cx="4" cy="12" r="1" fill="#9ca3af" stroke="none" />
               <line x1="8" y1="17" x2="20" y2="17" />
             </svg>
-            <p>
-              {projects.length === 0
-                ? "No projects yet. Click Add New Project to get started."
-                : "No active projects match your search."}
-            </p>
+            <p>{projects.length === 0 ? "No projects yet. Click Add New Project to get started." : "No active projects match your search."}</p>
           </div>
         ) : (
           <div className="ledger-grid">
@@ -314,9 +286,7 @@ export default function ActiveProjects() {
                     </button>
                     <button
                       className="documentation-btn"
-                      onClick={() =>
-                        navigate(`/project/${project.id}/documentation`)
-                      }
+                      onClick={() => navigate(`/project/${project.id}/documentation`)}
                       title="Upload or view project documentation"
                     >
                       Documentation
