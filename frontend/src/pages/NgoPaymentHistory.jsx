@@ -78,8 +78,8 @@ export default function NgoPaymentHistory() {
         setLoading(true);
         setError("");
 
-        // Fetch all projects for this organization
-        const projectsData = await apiFetch(getApiUrl("/posts/org-posts"), {
+        // Fetch all projects for this organization (GET /posts for NGO)
+        const projectsData = await apiFetch(getApiUrl("/posts"), {
           headers: { "Content-Type": "application/json" },
         });
         const orgProjects = Array.isArray(projectsData) ? projectsData : [];
@@ -103,7 +103,7 @@ export default function NgoPaymentHistory() {
                 projectName: project.projectName,
               })),
             );
-            totalReceivedAmount += paymentData.totalAmount || 0;
+            totalReceivedAmount += paymentData.totalReceived || 0;
             successCount += (paymentData.payments || []).filter(
               (p) => p.status === "succeeded",
             ).length;
@@ -278,9 +278,17 @@ export default function NgoPaymentHistory() {
 
         {showModal && selectedPayment && (
           <div className="ph-modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="ph-modal" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="ph-modal-content"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="ngo-donation-modal-title"
+            >
               <div className="ph-modal-header">
-                <h2>Donation Details</h2>
+                <h2 id="ngo-donation-modal-title" className="ph-modal-title">
+                  Donation Details
+                </h2>
                 <button
                   className="ph-modal-close"
                   onClick={() => setShowModal(false)}

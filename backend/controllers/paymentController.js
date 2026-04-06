@@ -196,6 +196,8 @@ export const getPaymentHistory = async (req, res) => {
       where: { postId },
       select: {
         id: true,
+        userId: true,
+        userRole: true,
         monetaryContribution: true,
         monetaryTransactionFee: true,
         volunteerTransactionFee: true,
@@ -203,12 +205,6 @@ export const getPaymentHistory = async (req, res) => {
         currency: true,
         status: true,
         createdAt: true,
-        user: {
-          select: {
-            id: true,
-            role: true,
-          },
-        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -247,9 +243,6 @@ export const getPaymentById = async (req, res) => {
       include: {
         post: {
           select: { id: true, projectName: true },
-        },
-        user: {
-          select: { id: true, role: true },
         },
       },
     });
@@ -329,27 +322,19 @@ export const getPaymentsByProject = async (req, res) => {
     // Verify user is the org that owns this project or is an admin
     const post = await prisma.post.findUnique({
       where: { id: projectId },
-      select: { organizationId: true },
+      select: { orgId: true },
     });
 
     if (!post) {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    if (req.user.id !== post.organizationId && req.user.role !== "admin") {
+    if (req.user.id !== post.orgId && req.user.role !== "admin") {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
     const payments = await prisma.payment.findMany({
       where: { postId: projectId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            role: true,
-          },
-        },
-      },
       orderBy: { createdAt: "desc" },
     });
 
