@@ -77,7 +77,7 @@ export default function AdminPaymentsDonations() {
         setError("");
 
         // Fetch all posts
-        const postsData = await apiFetch(getApiUrl("/posts"), {
+        const postsData = await apiFetch(getApiUrl("/posts/admin/all"), {
           headers: { "Content-Type": "application/json" },
         });
         const allPosts = Array.isArray(postsData) ? postsData : [];
@@ -87,34 +87,40 @@ export default function AdminPaymentsDonations() {
         let totalSuccessfulAmount = 0;
         const statusCount = { succeeded: 0, processing: 0, failed: 0 };
 
-        for (const post of allPosts) {
-          try {
-            const paymentData = await apiFetch(
-              getApiUrl(`/payments/project/${post.id}`),
-              { headers: { "Content-Type": "application/json" } }
-            );
-            if (paymentData.payments) {
-              const paymentsWithProjectInfo = paymentData.payments.map((p) => ({
-                ...p,
-                projectId: post.id,
-                projectName: post.projectName,
-                orgId: post.organizationId,
-                orgName: post.orgName,
-              }));
-              allPayments = allPayments.concat(paymentsWithProjectInfo);
+        // Fetch all payments in parallel for better performance
+        const paymentPromises = allPosts.map((post) =>
+          apiFetch(getApiUrl(`/payments/project/${post.id}`), {
+            headers: { "Content-Type": "application/json" },
+          })
+            .then((paymentData) => ({ post, paymentData }))
+            .catch((err) => {
+              console.error(`Failed to fetch payments for project ${post.id}:`, err);
+              return { post, paymentData: null };
+            })
+        );
 
-              paymentsWithProjectInfo.forEach((p) => {
-                const amount = calculateAmount(p);
-                if (p.status === "succeeded") {
-                  totalSuccessfulAmount += amount;
-                }
-                statusCount[p.status] = (statusCount[p.status] || 0) + 1;
-              });
-            }
-          } catch (err) {
-            console.error(`Failed to fetch payments for project ${post.id}`, err);
+        const paymentResults = await Promise.all(paymentPromises);
+
+        paymentResults.forEach(({ post, paymentData }) => {
+          if (paymentData && paymentData.payments) {
+            const paymentsWithProjectInfo = paymentData.payments.map((p) => ({
+              ...p,
+              projectId: post.id,
+              projectName: post.projectName,
+              orgId: post.organizationId,
+              orgName: post.orgName,
+            }));
+            allPayments = allPayments.concat(paymentsWithProjectInfo);
+
+            paymentsWithProjectInfo.forEach((p) => {
+              const amount = calculateAmount(p);
+              if (p.status === "succeeded") {
+                totalSuccessfulAmount += amount;
+              }
+              statusCount[p.status] = (statusCount[p.status] || 0) + 1;
+            });
           }
-        }
+        });
 
         // Sort by creation date descending
         allPayments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

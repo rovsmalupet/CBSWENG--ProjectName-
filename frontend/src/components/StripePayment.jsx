@@ -8,9 +8,24 @@ import {
 } from "@stripe/react-stripe-js";
 import "../css/StripePayment.css";
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-);
+// Lazy-load Stripe only when needed to avoid errors if publishable key is missing
+let stripePromise = null;
+
+function getStripePromise() {
+  if (!stripePromise) {
+    const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+    if (!key || key.includes("YOUR_PUBLISHABLE_KEY")) {
+      console.warn(
+        "⚠️ VITE_STRIPE_PUBLISHABLE_KEY is not set or is a placeholder. " +
+        "Please add a valid Stripe publishable key to your .env file. " +
+        "Get it from https://dashboard.stripe.com/apikeys"
+      );
+      return null;
+    }
+    stripePromise = loadStripe(key);
+  }
+  return stripePromise;
+}
 
 // ── Main Stripe Payment Modal ──────────────────────────────────────────────
 export function StripePaymentModal({
@@ -25,8 +40,37 @@ export function StripePaymentModal({
   onPaymentSuccess,
 }) {
   const totalAmount = donationAmount + monetaryFee + volunteerFee + inKindFee;
+  const stripePromise = getStripePromise();
 
   if (!isOpen) return null;
+
+  if (!stripePromise) {
+    return (
+      <div className="sp-modal-overlay" onClick={onClose}>
+        <div className="sp-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="sp-modal-header">
+            <h2 className="sp-modal-title">Error</h2>
+            <button
+              className="sp-modal-close"
+              onClick={onClose}
+              type="button"
+              title="Close"
+            >
+              ×
+            </button>
+          </div>
+          <div className="sp-modal-body">
+            <p style={{ color: "red", marginBottom: "1rem" }}>
+              ⚠️ Stripe is not configured. Please contact support.
+            </p>
+            <button onClick={onClose} className="sp-close-btn">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="sp-modal-overlay" onClick={onClose}>

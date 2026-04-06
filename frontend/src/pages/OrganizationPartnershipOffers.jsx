@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar.jsx";
+import Navbar from "../components/Navbar";
 import { apiFetch, getApiUrl } from "../config/api.js";
 import "../css/OrganizationPartnershipOffers.css";
 
