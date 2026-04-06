@@ -128,6 +128,10 @@ export const confirmPayment = async (req, res) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
+    if (!req.user.id || !req.user.role) {
+      return res.status(401).json({ error: "Invalid user credentials in token" });
+    }
+
     // Retrieve payment intent from Stripe to verify it succeeded
     const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
 
@@ -140,17 +144,18 @@ export const confirmPayment = async (req, res) => {
 
     // Record payment in database with the actual Stripe status
     // For "admin" donations, use a special marker without foreign key constraint
+    const metadata = paymentIntent.metadata || {};
     const paymentData = {
       paymentIntentId: paymentIntentId,
-      currency: paymentIntent.currency.toUpperCase(),
+      currency: (paymentIntent.currency || "php").toUpperCase(),
       status: paymentIntent.status,
       userId: req.user.id,
       userRole: req.user.role,
-      description: paymentIntent.description,
-      monetaryContribution: parseFloat(paymentIntent.metadata?.donationAmount || 0),
-      monetaryTransactionFee: parseFloat(paymentIntent.metadata?.monetaryFee || 0),
-      volunteerTransactionFee: parseFloat(paymentIntent.metadata?.volunteerFee || 0),
-      inKindTransactionFee: parseFloat(paymentIntent.metadata?.inKindFee || 0),
+      description: paymentIntent.description || "",
+      monetaryContribution: Math.max(0, parseFloat(metadata.donationAmount) || 0),
+      monetaryTransactionFee: Math.max(0, parseFloat(metadata.monetaryFee) || 0),
+      volunteerTransactionFee: Math.max(0, parseFloat(metadata.volunteerFee) || 0),
+      inKindTransactionFee: Math.max(0, parseFloat(metadata.inKindFee) || 0),
     };
 
     // Only set postId if it's not "admin" to avoid foreign key constraint issues
@@ -168,8 +173,12 @@ export const confirmPayment = async (req, res) => {
       payment,
     });
   } catch (err) {
-    console.error("Confirm payment error:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Confirm payment error:", err.message);
+    console.error("Error details:", err);
+    res.status(500).json({ 
+      error: err.message,
+      details: process.env.NODE_ENV === 'development' ? err.toString() : "Database error"
+    });
   }
 };
 
