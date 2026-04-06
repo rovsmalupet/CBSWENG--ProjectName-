@@ -27,6 +27,7 @@ import CountrySDGStats from "./pages/CountrySDGStats.jsx";
 import PaymentHistory from "./pages/PaymentHistory.jsx";
 import NgoPaymentHistory from "./pages/NgoPaymentHistory.jsx";
 import AdminPaymentsDonations from "./pages/AdminPaymentsDonations.jsx";
+import DeveloperDonation from "./pages/DeveloperDonation.jsx";
 
 function RequireRole({ allowedRoles, children }) {
   const token = localStorage.getItem("token");
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="/donor/bookmarks" element={<RequireRole allowedRoles={["donor"]}><BookmarkedProjects /></RequireRole>} />
         <Route path="/donor/partnerships" element={<RequireRole allowedRoles={["donor"]}><CorporatePartnerships /></RequireRole>} />
         <Route path="/payment-history" element={<RequireRole allowedRoles={["donor"]}><PaymentHistory /></RequireRole>} />
+        <Route path="/donate-to-developers" element={<RequireRole allowedRoles={["donor"]}><DeveloperDonation /></RequireRole>} />
         <Route path="/project/:id" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><ProjectDetailPage /></RequireRole>} />
           <Route path="/project/:id/documentation" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><ProjectDocumentation /></RequireRole>} />
         <Route path="/organization/:id/verification" element={<RequireRole allowedRoles={["donor", "ngo", "admin"]}><OrganizationVerification /></RequireRole>} />

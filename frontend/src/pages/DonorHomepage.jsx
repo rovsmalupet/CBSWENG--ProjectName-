@@ -217,6 +217,7 @@ export default function DonorHomepage() {
           <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/partnerships")}>PARTNERSHIPS</button>
           <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/bookmarks")}>BOOKMARKS</button>
           <button className="bookmarks-nav-btn" onClick={() => navigate("/payment-history")}>MY DONATIONS</button>
+          <button className="bookmarks-nav-btn donate-dev-btn" onClick={() => navigate("/donate-to-developers")}>DONATE TO DEVELOPERS</button>
           <button className="switch-account-btn" onClick={handleLogout}>LOGOUT</button>
         </div>
       </div>
