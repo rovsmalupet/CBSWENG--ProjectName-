@@ -16,10 +16,26 @@
   align-items: center;
 }
 
+.donor-greeting-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.donor-greeting-logo {
+  height: 56px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .greeting {
   font-size: 1.5rem;
   font-weight: 600;
   color: #2563eb !important;
+  margin: 0;
+  white-space: nowrap;
 }
 
 .donor-header-actions {
