@@ -1,0 +1,343 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   Developer Donation Page - Consistent with App Design System
+   ────────────────────────────────────────────────────────────────────────────── */
+
+.dd-page {
+  font-family: "DM Sans", sans-serif;
+  background: #f5f6f8;
+  min-height: 100vh;
+  color: #1a1a1a;
+}
+
+.dd-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* ── Header Section ────────────────────────────────────────────────────────── */
+.dd-header {
+  margin-bottom: 2rem;
+}
+
+.dd-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2563eb;
+  font-size: 0.95rem;
+  background: none;
+  border: 1px solid #2563eb;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1.5rem;
+  font-family: inherit;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.dd-back-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.dd-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+}
+
+.dd-subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* ── Container ─────────────────────────────────────────────────────────────── */
+.dd-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+.dd-container > div:first-child {
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 768px) {
+  .dd-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Donation Card ─────────────────────────────────────────────────────────── */
+.dd-card {
+  background: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dd-card-header {
+  margin-bottom: 1.5rem;
+}
+
+.dd-card-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+}
+
+.dd-card-desc {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* ── Form Elements ─────────────────────────────────────────────────────────── */
+.dd-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.dd-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.dd-input-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.dd-currency-symbol {
+  position: absolute;
+  left: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.dd-amount-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #1a1a1a;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.dd-amount-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.dd-amount-input::placeholder {
+  color: #9ca3af;
+}
+
+.dd-amount-input:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.dd-helper {
+  display: block;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-top: 0.35rem;
+}
+
+/* ── Summary Section ──────────────────────────────────────────────────────── */
+.dd-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.dd-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.dd-summary-row:last-child {
+  margin-bottom: 0;
+}
+
+.dd-summary-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dd-summary-value {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.dd-summary-row.dd-summary-total {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.dd-summary-row.dd-summary-total .dd-summary-label {
+  color: #1a1a1a;
+  font-weight: 700;
+}
+
+.dd-summary-row.dd-summary-total .dd-summary-value {
+  font-size: 1.1rem;
+  color: #2563eb;
+}
+
+/* ── Message Section ───────────────────────────────────────────────────────── */
+.dd-message-section {
+  margin-bottom: 1.5rem;
+}
+
+.dd-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #1a1a1a;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.dd-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.dd-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.dd-textarea:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* ── Submit Button ────────────────────────────────────────────────────────── */
+.dd-submit-btn {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 0.75rem;
+}
+
+.dd-submit-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.dd-submit-btn:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* ── Security Note ────────────────────────────────────────────────────────── */
+.dd-security-note {
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Info Boxes ────────────────────────────────────────────────────────────– */
+.dd-info-boxes {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dd-info-box {
+  background: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dd-info-box h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin: 0 0 1rem 0;
+}
+
+.dd-info-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dd-info-box li {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 0.65rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.dd-info-box li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.dd-info-box li:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Responsive Design ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dd-main {
+    padding: 1rem;
+  }
+
+  .dd-title {
+    font-size: 1.5rem;
+  }
+
+  .dd-card {
+    padding: 1.5rem;
+  }
+
+  .dd-info-boxes {
+    flex-direction: column;
+  }
+}

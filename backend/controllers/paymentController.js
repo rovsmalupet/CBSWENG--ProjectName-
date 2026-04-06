@@ -47,14 +47,19 @@ export const createPaymentIntent = async (req, res) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    // Verify post exists
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-      select: { id: true, projectName: true },
-    });
+    // Handle special "admin" donation - skip post verification
+    let projectName = "Support BayaniHub - Admin Fund";
+    if (postId !== "admin") {
+      // Verify post exists for regular donations
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { id: true, projectName: true },
+      });
 
-    if (!post) {
-      return res.status(404).json({ error: "Post not found" });
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      projectName = post.projectName;
     }
 
     // Build description showing breakdown
@@ -69,7 +74,7 @@ export const createPaymentIntent = async (req, res) => {
     const paymentIntent = await getStripe().paymentIntents.create({
       amount: Math.round(totalAmount * 100), // Convert PHP to cents
       currency: "php",
-      description: `${descriptionParts.join(" + ")} for contribution to ${post.projectName}`,
+      description: `${descriptionParts.join(" + ")} for contribution to ${projectName}`,
       metadata: {
         postId,
         userId: req.user.id,
@@ -127,21 +132,27 @@ export const confirmPayment = async (req, res) => {
     }
 
     // Record payment in database with the actual Stripe status
+    // For "admin" donations, use a special marker without foreign key constraint
+    const paymentData = {
+      paymentIntentId: paymentIntentId,
+      currency: paymentIntent.currency.toUpperCase(),
+      status: paymentIntent.status,
+      userId: req.user.id,
+      userRole: req.user.role,
+      description: paymentIntent.description,
+      monetaryContribution: parseFloat(paymentIntent.metadata?.donationAmount || 0),
+      monetaryTransactionFee: parseFloat(paymentIntent.metadata?.monetaryFee || 0),
+      volunteerTransactionFee: parseFloat(paymentIntent.metadata?.volunteerFee || 0),
+      inKindTransactionFee: parseFloat(paymentIntent.metadata?.inKindFee || 0),
+    };
+
+    // Only set postId if it's not "admin" to avoid foreign key constraint issues
+    if (postId !== "admin") {
+      paymentData.postId = postId;
+    }
+
     const payment = await prisma.payment.create({
-      data: {
-        paymentIntentId: paymentIntentId,
-        currency: paymentIntent.currency.toUpperCase(),
-        status: paymentIntent.status, // Use actual status from Stripe
-        postId,
-        userId: req.user.id,
-        userRole: req.user.role,
-        description: paymentIntent.description,
-        // Extract fee breakdown from Stripe metadata
-        monetaryContribution: parseFloat(paymentIntent.metadata?.donationAmount || 0),
-        monetaryTransactionFee: parseFloat(paymentIntent.metadata?.monetaryFee || 0),
-        volunteerTransactionFee: parseFloat(paymentIntent.metadata?.volunteerFee || 0),
-        inKindTransactionFee: parseFloat(paymentIntent.metadata?.inKindFee || 0),
-      },
+      data: paymentData,
     });
 
     res.json({

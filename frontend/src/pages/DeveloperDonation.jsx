@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { StripePaymentModal } from "../components/StripePayment";
 import { getApiUrl } from "../config/api";
-import "../css/AddContribution.css";
+import "../css/DeveloperDonation.css";
 
 const fmtPHP = (n) =>
   "₱" + Number(n ?? 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
@@ -35,7 +35,7 @@ export default function DeveloperDonation() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          postId: "developers", // Special project ID for developer donations
+          postId: "admin", // Special project ID for admin donations
           donationAmount: amount,
           monetaryFee: platformFee,
           volunteerFee: 0,
@@ -54,8 +54,8 @@ export default function DeveloperDonation() {
         totalAmount: data.totalAmount,
         amount,
         platformFee,
-        projectName: "Support BayaniHub Developers",
-        projectId: "developers",
+        projectName: "Support BayaniHub - Admin Fund",
+        projectId: "admin",
       });
       setShowPaymentModal(true);
     } catch (error) {
@@ -74,7 +74,7 @@ export default function DeveloperDonation() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           paymentIntentId,
-          postId: "developers",
+          postId: "admin",
         }),
       });
 
@@ -91,33 +91,33 @@ export default function DeveloperDonation() {
   };
 
   return (
-    <div className="add-contribution-page">
-      <main className="ac-main">
-        <div className="ac-header">
-          <button className="ac-back-btn" onClick={() => navigate(-1)}>
+    <div className="dd-page">
+      <main className="dd-main">
+        <div className="dd-header">
+          <button className="dd-back-btn" onClick={() => navigate(-1)}>
             ← Back
           </button>
-          <h1 className="ac-title">Support BayaniHub Development</h1>
-          <p className="ac-subtitle">
+          <h1 className="dd-title">Support BayaniHub Development</h1>
+          <p className="dd-subtitle">
             Your donation helps us build and maintain BayaniHub, connecting donors with impactful projects across ASEAN.
           </p>
         </div>
 
-        <div className="ac-container">
+        <div className="dd-container">
           {/* Donation Card */}
-          <div className="ac-form-section">
-            <div className="ac-card">
-              <div className="ac-card-header">
+          <div>
+            <div className="dd-card">
+              <div className="dd-card-header">
                 <h2>Make a Developer Donation</h2>
-                <p className="ac-card-desc">
+                <p className="dd-card-desc">
                   Help us continue improving the platform and supporting more communities.
                 </p>
               </div>
 
-              <div className="ac-form-group">
-                <label className="ac-label">Donation Amount (PHP)</label>
-                <div className="amount-input-group">
-                  <span className="currency-symbol">₱</span>
+              <div className="dd-form-group">
+                <label className="dd-label">Donation Amount (PHP)</label>
+                <div className="dd-input-group">
+                  <span className="dd-currency-symbol">₱</span>
                   <input
                     type="number"
                     value={donationAmount}
@@ -125,76 +125,65 @@ export default function DeveloperDonation() {
                     placeholder="0.00"
                     min="1"
                     step="0.01"
-                    className="ac-input amount-input"
+                    className="dd-amount-input"
                     disabled={showPaymentModal}
                   />
                 </div>
-                <small className="ac-helper">Minimum donation: ₱1.00</small>
+                <small className="dd-helper">Minimum donation: ₱1.00</small>
               </div>
 
               {/* Summary */}
               {amount > 0 && (
-                <div className="ac-summary">
-                  <div className="summary-row">
-                    <span className="summary-label">Donation Amount:</span>
-                    <span className="summary-value">{fmtPHP(amount)}</span>
+                <div className="dd-summary">
+                  <div className="dd-summary-row">
+                    <span className="dd-summary-label">Donation Amount:</span>
+                    <span className="dd-summary-value">{fmtPHP(amount)}</span>
                   </div>
-                  <div className="summary-row">
-                    <span className="summary-label">Platform Fee (3%):</span>
-                    <span className="summary-value">{fmtPHP(platformFee)}</span>
+                  <div className="dd-summary-row">
+                    <span className="dd-summary-label">Platform Fee (3%):</span>
+                    <span className="dd-summary-value">{fmtPHP(platformFee)}</span>
                   </div>
-                  <div className="summary-row summary-total">
-                    <span className="summary-label">Total to Pay:</span>
-                    <span className="summary-value">{fmtPHP(totalAmount)}</span>
+                  <div className="dd-summary-row dd-summary-total">
+                    <span className="dd-summary-label">Total to Pay:</span>
+                    <span className="dd-summary-value">{fmtPHP(totalAmount)}</span>
                   </div>
                 </div>
               )}
-
-              {/* Message */}
-              <div className="ac-message-section">
-                <label className="ac-label">Message (Optional)</label>
-                <textarea
-                  placeholder="Leave a message to encourage the team..."
-                  className="ac-textarea"
-                  disabled={showPaymentModal}
-                  rows="3"
-                />
-              </div>
 
               {/* Action Button */}
               <button
                 onClick={handleDonate}
                 disabled={loading || amount <= 0 || showPaymentModal}
-                className="ac-submit-btn"
+                className="dd-submit-btn"
               >
                 {loading ? "Processing..." : amount > 0 ? `Donate ${fmtPHP(totalAmount)}` : "Enter Amount to Donate"}
               </button>
 
-              <p className="ac-security-note">
+              <p className="dd-security-note">
                 🔒 Powered by Stripe. Your payment information is secure.
               </p>
             </div>
+          </div>
 
-            {/* Info Boxes */}
-            <div className="ac-info-boxes">
-              <div className="ac-info-box">
-                <h3>Why Donate?</h3>
-                <ul>
-                  <li>Support platform maintenance and improvements</li>
-                  <li>Enable new features and integrations</li>
-                  <li>Help us reach more communities in ASEAN</li>
-                  <li>Direct impact on development roadmap</li>
-                </ul>
-              </div>
-              <div className="ac-info-box">
-                <h3>How It Works</h3>
-                <ul>
-                  <li>Your donation is processed securely via Stripe</li>
-                  <li>Platform fee of 3% supports operations</li>
-                  <li>You'll receive a donation receipt</li>
-                  <li>Tax documentation available upon request</li>
-                </ul>
-              </div>
+          {/* Info Boxes */}
+          <div className="dd-info-boxes">
+            <div className="dd-info-box">
+              <h3>Why Donate?</h3>
+              <ul>
+                <li>Support platform maintenance and improvements</li>
+                <li>Enable new features and integrations</li>
+                <li>Help us reach more communities in ASEAN</li>
+                <li>Direct impact on development roadmap</li>
+              </ul>
+            </div>
+            <div className="dd-info-box">
+              <h3>How It Works</h3>
+              <ul>
+                <li>Your donation is processed securely via Stripe</li>
+                <li>Platform fee of 3% supports operations</li>
+                <li>You'll receive a donation receipt</li>
+                <li>Tax documentation available upon request</li>
+              </ul>
             </div>
           </div>
         </div>
