@@ -21,8 +21,8 @@ export default function DeveloperDonation() {
   const amount = parseFloat(donationAmount) || 0;
 
   const handleDonate = async () => {
-    if (amount <= 0) {
-      alert("Please enter a valid donation amount");
+    if (amount < 25) {
+      alert("Minimum donation is ₱25.00 (Stripe payment processor requirement)");
       return;
     }
 
@@ -46,22 +46,19 @@ export default function DeveloperDonation() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create payment intent");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.message || errorData.error || "Failed to create payment intent";
+        throw new Error(errorMsg);
       }
 
-      const data = await response.json();
+      // Payment intent created successfully - now show the payment modal
       setPaymentData({
-        clientSecret: data.clientSecret,
-        paymentIntentId: data.paymentIntentId,
-        totalAmount: data.totalAmount,
         amount,
-        projectName: "Support BayaniHub - Admin Fund",
-        projectId: "admin",
       });
       setShowPaymentModal(true);
     } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to initialize payment. Please try again.");
+      console.error("Payment intent error:", error.message);
+      alert(`Payment Error: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -128,13 +125,13 @@ export default function DeveloperDonation() {
                     value={donationAmount}
                     onChange={(e) => setDonationAmount(e.target.value)}
                     placeholder="0.00"
-                    min="1"
+                    min="25"
                     step="0.01"
                     className="dd-amount-input"
                     disabled={showPaymentModal}
                   />
                 </div>
-                <small className="dd-helper">Minimum donation: ₱1.00</small>
+                <small className="dd-helper">Minimum donation: ₱25.00 (Payment processor requirement)</small>
               </div>
 
               {/* Summary */}
@@ -188,18 +185,19 @@ export default function DeveloperDonation() {
         {/* Payment Modal */}
         {showPaymentModal && paymentData && (
           <StripePaymentModal
-            clientSecret={paymentData.clientSecret}
-            paymentIntentId={paymentData.paymentIntentId}
-            totalAmount={paymentData.totalAmount}
-            projectName={paymentData.projectName}
-            projectId={paymentData.projectId}
-            isDeveloperDonation={true}
-            onSuccess={handlePaymentSuccess}
+            isOpen={showPaymentModal}
             onClose={() => {
               setShowPaymentModal(false);
               setDonationAmount("");
               setPaymentData(null);
             }}
+            postId="admin"
+            donationAmount={paymentData.amount}
+            monetaryFee={0}
+            volunteerFee={0}
+            inKindFee={0}
+            projectName={paymentData.projectName}
+            onPaymentSuccess={handlePaymentSuccess}
           />
         )}
       </main>
