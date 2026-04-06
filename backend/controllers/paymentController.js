@@ -111,10 +111,17 @@ export const confirmPayment = async (req, res) => {
   try {
     const { paymentIntentId, postId } = req.body;
 
-    if (!paymentIntentId || !postId) {
+    if (!paymentIntentId) {
       return res
         .status(400)
-        .json({ error: "paymentIntentId and postId required" });
+        .json({ error: "paymentIntentId required" });
+    }
+
+    // postId can be null for admin donations, but must be provided in request
+    if (postId === undefined || postId === null || postId === "") {
+      return res
+        .status(400)
+        .json({ error: "postId required" });
     }
 
     if (!req.user) {
