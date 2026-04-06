@@ -17,10 +17,8 @@ export default function DeveloperDonation() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
 
-  // Calculate 3% fee (platform fee for developer donations)
+  // Donation amount
   const amount = parseFloat(donationAmount) || 0;
-  const platformFee = Math.round(amount * 0.03 * 100) / 100;
-  const totalAmount = amount + platformFee;
 
   const handleDonate = async () => {
     if (amount <= 0) {
@@ -30,14 +28,18 @@ export default function DeveloperDonation() {
 
     setLoading(true);
     try {
+      const token = localStorage.getItem("token");
       // Create payment intent for developer donation
       const response = await fetch(getApiUrl("/payments/intent"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({
           postId: "admin", // Special project ID for admin donations
           donationAmount: amount,
-          monetaryFee: platformFee,
+          monetaryFee: 0,
           volunteerFee: 0,
           inKindFee: 0,
         }),
@@ -53,7 +55,6 @@ export default function DeveloperDonation() {
         paymentIntentId: data.paymentIntentId,
         totalAmount: data.totalAmount,
         amount,
-        platformFee,
         projectName: "Support BayaniHub - Admin Fund",
         projectId: "admin",
       });
@@ -68,10 +69,14 @@ export default function DeveloperDonation() {
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
+      const token = localStorage.getItem("token");
       // Confirm payment in database
       const response = await fetch(getApiUrl("/payments/confirm"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({
           paymentIntentId,
           postId: "admin",
@@ -135,17 +140,9 @@ export default function DeveloperDonation() {
               {/* Summary */}
               {amount > 0 && (
                 <div className="dd-summary">
-                  <div className="dd-summary-row">
-                    <span className="dd-summary-label">Donation Amount:</span>
-                    <span className="dd-summary-value">{fmtPHP(amount)}</span>
-                  </div>
-                  <div className="dd-summary-row">
-                    <span className="dd-summary-label">Platform Fee (3%):</span>
-                    <span className="dd-summary-value">{fmtPHP(platformFee)}</span>
-                  </div>
                   <div className="dd-summary-row dd-summary-total">
-                    <span className="dd-summary-label">Total to Pay:</span>
-                    <span className="dd-summary-value">{fmtPHP(totalAmount)}</span>
+                    <span className="dd-summary-label">Total to Donate:</span>
+                    <span className="dd-summary-value">{fmtPHP(amount)}</span>
                   </div>
                 </div>
               )}
@@ -156,7 +153,7 @@ export default function DeveloperDonation() {
                 disabled={loading || amount <= 0 || showPaymentModal}
                 className="dd-submit-btn"
               >
-                {loading ? "Processing..." : amount > 0 ? `Donate ${fmtPHP(totalAmount)}` : "Enter Amount to Donate"}
+                {loading ? "Processing..." : amount > 0 ? `Donate ${fmtPHP(amount)}` : "Enter Amount to Donate"}
               </button>
 
               <p className="dd-security-note">
@@ -180,7 +177,7 @@ export default function DeveloperDonation() {
               <h3>How It Works</h3>
               <ul>
                 <li>Your donation is processed securely via Stripe</li>
-                <li>Platform fee of 3% supports operations</li>
+                <li>100% of your donation goes to platform development</li>
                 <li>You'll receive a donation receipt</li>
                 <li>Tax documentation available upon request</li>
               </ul>
