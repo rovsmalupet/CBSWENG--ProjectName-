@@ -225,8 +225,8 @@ model Payment {
   status          String // "succeeded", "processing", "requires_action", etc.
   description     String?
 
-  postId String // which project/post this payment is for
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String? // which project/post this payment is for (null for admin donations)
+  post   Post?   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   userId   String // who made the payment (donor or org ID)
   userRole String // "donor" or "ngo"
