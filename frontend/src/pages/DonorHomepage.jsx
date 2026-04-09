@@ -211,7 +211,14 @@ export default function DonorHomepage() {
   return (
     <div className="donor-homepage">
       <div className="donor-header">
-        <h2 className="greeting">Hello, {firstName}!</h2>
+        <div className="donor-greeting-wrap">
+          <img
+            src="/pictures/bayanihub-logo.png"
+            alt="BayanHub Logo"
+            className="donor-greeting-logo"
+          />
+          <h2 className="greeting">Hello, {firstName}!</h2>
+        </div>
         <div className="donor-header-actions">
           <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/asean")}>ASEAN</button>
           <button className="bookmarks-nav-btn" onClick={() => navigate("/donor/partnerships")}>PARTNERSHIPS</button>

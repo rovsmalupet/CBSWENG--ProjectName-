@@ -35,7 +35,11 @@ export default function Navbar({ hiddenItems = [] }) {
   return (
     <nav className="navbar">
       <div className="navbar-logo" onClick={() => navigate("/")}>
-        {isDonor ? "Donor Portal" : "NGO Portal"}
+        <img 
+          src="/pictures/bayanihub-logo.png" 
+          alt="BayanHub Logo" 
+          className="navbar-logo-img"
+        />
       </div>
       {isDonor && donorLinks.length > 0 && (
         <div className="navbar-links">

@@ -12,13 +12,21 @@
 }
 
 .navbar-logo {
-  font-family: "DM Sans", sans-serif;
-  font-weight: 600;
-  font-size: 1.2rem;
-  color: #2daa6e;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
   cursor: pointer;
   user-select: none;
+  transition: transform 0.2s ease;
+}
+
+.navbar-logo:hover {
+  transform: scale(1.05);
+}
+
+.navbar-logo-img {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
 }
 
 .navbar-search {
