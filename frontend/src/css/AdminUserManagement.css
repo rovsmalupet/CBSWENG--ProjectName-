@@ -1,0 +1,286 @@
+/* Administrator account management. */
+
+.admin-users-page {
+  padding: 1.5rem 2rem 3rem;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.admin-users-header .back-link {
+  background: none;
+  border: none;
+  color: #2f6f4f;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.admin-users-header h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.6rem;
+  color: #0f172a;
+}
+
+.admin-users-subtitle {
+  margin: 0 0 1.5rem;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+/* ── Notices ─────────────────────────────────────────────────────────────── */
+
+.admin-users-notice {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+  color: #166534;
+}
+
+.admin-users-notice p {
+  margin: 0 0 0.5rem;
+}
+
+.temp-password-label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Shown once, then never again — it is not stored in readable form anywhere. */
+.temp-password {
+  display: block;
+  background: #0f172a;
+  color: #4ade80;
+  padding: 0.7rem 0.9rem;
+  border-radius: 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  margin: 0.35rem 0 0.6rem;
+  word-break: break-all;
+  user-select: all;
+}
+
+.temp-password-detail {
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.admin-users-notice button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #86efac;
+  background: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #166534;
+}
+
+.admin-users-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+
+.admin-users-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.admin-users-toolbar select,
+.admin-users-toolbar input {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.admin-users-toolbar input {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.admin-users-toolbar .primary,
+.admin-users-create .primary {
+  padding: 0.5rem 1.1rem;
+  border: none;
+  background: #2f6f4f;
+  color: #fff;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* ── Create form ─────────────────────────────────────────────────────────── */
+
+.admin-users-create {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-users-create h2 {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.create-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.create-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.create-grid label.span-2 {
+  grid-column: span 2;
+}
+
+.create-grid input,
+.create-grid select {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  font-weight: 400;
+}
+
+.create-note {
+  font-size: 0.83rem;
+  color: #64748b;
+  font-style: italic;
+  margin: 0 0 0.9rem;
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+
+.admin-users-table-wrapper {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.admin-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.admin-users-table th {
+  text-align: left;
+  padding: 0.7rem 0.85rem;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.admin-users-table td {
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  color: #334155;
+}
+
+.admin-users-table tr.disabled {
+  opacity: 0.6;
+  background: #f8fafc;
+}
+
+.account-name { font-weight: 600; color: #0f172a; }
+.account-email { font-size: 0.8rem; color: #64748b; }
+.cell-quiet { font-size: 0.82rem; color: #64748b; white-space: nowrap; }
+
+.role-badge,
+.status-badge,
+.locked-badge,
+.must-change-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.role-admin { background: #ede9fe; color: #5b21b6; }
+.role-ngo   { background: #dbeafe; color: #1e40af; }
+.role-donor { background: #dcfce7; color: #166534; }
+
+.status-active   { background: #dcfce7; color: #166534; }
+.status-pending  { background: #fef3c7; color: #92400e; }
+.status-disabled { background: #e2e8f0; color: #475569; }
+.status-rejected { background: #fee2e2; color: #991b1b; }
+
+.locked-badge      { background: #fee2e2; color: #991b1b; margin-left: 0.3rem; }
+.must-change-badge { background: #fef3c7; color: #92400e; margin-left: 0.3rem; }
+
+.cell-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cell-actions button {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.cell-actions button:hover { background: #f1f5f9; }
+
+.cell-actions button.danger {
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.cell-actions button.danger:hover { background: #fef2f2; }
+
+.self-note {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.admin-users-table .empty {
+  text-align: center;
+  padding: 2.5rem;
+  color: #94a3b8;
+}

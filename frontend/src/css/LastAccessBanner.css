@@ -1,0 +1,85 @@
+/* Last-use reporting. [CSSECDV 2.1.12]
+   The warning variant is deliberately loud: a user only benefits from this
+   control if they actually notice it. */
+
+.last-access-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin: 1rem auto;
+  max-width: 70rem;
+  padding: 0.9rem 1.1rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-left: 4px solid #0284c7;
+  border-radius: 6px;
+}
+
+.last-access-banner.has-warning {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  border-left-color: #d97706;
+}
+
+.last-access-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.last-access-title {
+  margin: 0 0 0.4rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0c4a6e;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.has-warning .last-access-title {
+  color: #92400e;
+}
+
+.last-access-row {
+  margin: 0.15rem 0;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.last-access-label {
+  font-weight: 600;
+}
+
+.last-access-ip {
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+}
+
+.last-access-warning {
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0.75rem;
+  background: #fef3c7;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #78350f;
+  line-height: 1.5;
+}
+
+.last-access-warning a {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.last-access-dismiss {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
+.last-access-dismiss:hover {
+  color: #0f172a;
+}

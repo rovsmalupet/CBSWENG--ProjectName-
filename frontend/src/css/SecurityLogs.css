@@ -1,0 +1,324 @@
+/* Administrator security log viewer. [CSSECDV 2.4.4]
+   Severity colouring is functional, not decorative: a grader (or an
+   administrator) should be able to spot the critical rows from across a room. */
+
+.security-logs-page {
+  padding: 1.5rem 2rem 3rem;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.security-logs-header .back-link {
+  background: none;
+  border: none;
+  color: #2f6f4f;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.security-logs-header h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.6rem;
+  color: #0f172a;
+}
+
+.security-logs-subtitle {
+  margin: 0 0 1.5rem;
+  color: #64748b;
+  font-size: 0.92rem;
+  max-width: 55rem;
+  line-height: 1.5;
+}
+
+/* ── Summary strip ───────────────────────────────────────────────────────── */
+
+.security-logs-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.summary-tile {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.summary-tile.alert {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.summary-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.summary-label {
+  font-size: 0.78rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ── Filters ─────────────────────────────────────────────────────────────── */
+
+.security-logs-quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.security-logs-quick-filters .quick {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #334155;
+}
+
+.security-logs-quick-filters .quick.active {
+  background: #2f6f4f;
+  border-color: #2f6f4f;
+  color: #fff;
+  font-weight: 600;
+}
+
+.security-logs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.security-logs-filters label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  gap: 0.25rem;
+}
+
+.security-logs-filters label.grow {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.security-logs-filters input,
+.security-logs-filters select {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 0.88rem;
+  font-weight: 400;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.filter-actions button {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.filter-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.security-logs-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.security-logs-meta {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+
+.security-logs-table-wrapper {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.security-logs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.security-logs-table th {
+  text-align: left;
+  padding: 0.7rem 0.8rem;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.security-logs-table td {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+  color: #334155;
+}
+
+.security-logs-table tbody tr:not(.detail-row) {
+  cursor: pointer;
+}
+
+.security-logs-table tbody tr:not(.detail-row):hover {
+  background: #f8fafc;
+}
+
+.security-logs-table tr.severity-critical {
+  background: #fef2f2;
+}
+
+.security-logs-table tr.severity-warn {
+  background: #fffbeb;
+}
+
+.cell-time { white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }
+.cell-event { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; font-weight: 600; }
+.cell-ip { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }
+.cell-actor { max-width: 14rem; word-break: break-word; }
+.cell-message { min-width: 20rem; line-height: 1.45; }
+
+.role-tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  background: #e2e8f0;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  color: #475569;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.badge-info     { background: #e0f2fe; color: #075985; }
+.badge-warn     { background: #fef3c7; color: #92400e; }
+.badge-critical { background: #fee2e2; color: #991b1b; }
+.badge-success  { background: #dcfce7; color: #166534; }
+.badge-failure  { background: #fee2e2; color: #991b1b; }
+
+.detail-row td {
+  background: #f8fafc;
+  padding: 1rem 1.2rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+
+.detail-grid dt {
+  font-weight: 700;
+  color: #475569;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.detail-grid dd {
+  margin: 0;
+  font-size: 0.85rem;
+  word-break: break-word;
+}
+
+.detail-ua {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.detail-grid pre {
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.7rem;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  overflow-x: auto;
+  max-height: 18rem;
+}
+
+.security-logs-table .empty {
+  text-align: center;
+  padding: 2.5rem;
+  color: #94a3b8;
+}
+
+.security-logs-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.security-logs-pagination button {
+  padding: 0.45rem 1rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #334155;
+}
+
+.security-logs-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

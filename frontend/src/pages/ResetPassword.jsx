@@ -1,175 +1,232 @@
+/**
+ * ResetPassword — the two-factor reset flow. [CSSECDV 2.1.9]
+ *
+ *   Step 1  the emailed link proves control of the mailbox
+ *   Step 2  the security questions prove knowledge only the owner should have
+ *   Step 3  only then may a new password be set
+ *
+ * Neither factor alone is enough, which is why the answer step exists as its
+ * own screen rather than as extra fields alongside the password.
+ *
+ * Every failure — expired link, already used, wrong answers, too many attempts
+ * — produces the same message from the server. The screen does not try to be
+ * more helpful than that.
+ */
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getApiUrl } from "../config/api.js";
+
+import { apiGet, apiPost } from "../config/api.js";
+import PasswordField from "../components/PasswordField.jsx";
 import "../css/ResetPassword.css";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [token, setToken] = useState("");
+  const token = searchParams.get("token") ?? "";
+
+  const [stage, setStage] = useState("verifying"); // verifying | questions | password | done | dead
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
+  const [attemptsRemaining, setAttemptsRemaining] = useState(null);
+
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(true);
+
   const [error, setError] = useState("");
-  const [tokenError, setTokenError] = useState("");
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [policyFailures, setPolicyFailures] = useState([]);
+  const [busy, setBusy] = useState(false);
 
+  /* Step 1 — exchange the token for the account's questions. */
   useEffect(() => {
-    const resetToken = searchParams.get("token");
-
-    if (!resetToken) {
-      setTokenError("Invalid or missing reset token. Please request a new password reset.");
-      setIsVerifying(false);
+    if (!token) {
+      setError("This password reset link is not valid. Please request a new one.");
+      setStage("dead");
       return;
     }
 
-    // Verify the token before allowing user to enter new password
-    const verifyToken = async () => {
-      try {
-        const response = await fetch(getApiUrl(`/verify-reset-token?token=${resetToken}`), {
-          method: "GET",
-        });
+    apiGet(`/verify-reset-token?token=${encodeURIComponent(token)}`)
+      .then((data) => {
+        setQuestions(data.questions ?? []);
+        setAnswers((data.questions ?? []).map((question) => ({ questionKey: question.key, answer: "" })));
+        setAttemptsRemaining(data.attemptsRemaining ?? null);
+        setStage(data.answersVerified ? "password" : "questions");
+      })
+      .catch((verifyError) => {
+        setError(verifyError.message);
+        setStage("dead");
+      });
+  }, [token]);
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Invalid reset token.");
-        }
-
-        setToken(resetToken);
-        setTokenError("");
-      } catch (err) {
-        setTokenError(err.message);
-      } finally {
-        setIsVerifying(false);
-      }
-    };
-
-    verifyToken();
-  }, [searchParams]);
-
-  const handleSubmit = async (event) => {
+  /* Step 2 — the security questions. */
+  const submitAnswers = async (event) => {
     event.preventDefault();
     setError("");
-
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
+    setBusy(true);
     try {
-      const response = await fetch(getApiUrl("/reset-password"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          resetToken: token,
-          newPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to reset password.");
+      await apiPost("/reset-password/verify-answers", { resetToken: token, answers });
+      setStage("password");
+    } catch (answerError) {
+      setError(answerError.message);
+      const remaining = answerError.details?.attemptsRemaining;
+      if (typeof remaining === "number") {
+        setAttemptsRemaining(remaining);
+        if (remaining <= 0) setStage("dead");
       }
-
-      setIsSuccess(true);
-      setNewPassword("");
-      setConfirmPassword("");
-
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
-    } catch (submitError) {
-      setError(submitError.message);
+      // Clear the fields: a wrong answer left in the box invites the same
+      // wrong answer again.
+      setAnswers((current) => current.map((entry) => ({ ...entry, answer: "" })));
     } finally {
-      setIsSubmitting(false);
+      setBusy(false);
     }
   };
 
-  if (isVerifying) {
-    return (
-      <div className="reset-password-container">
-        <div className="reset-password-box">
-          <div className="loading-spinner"></div>
-          <p>Verifying reset token...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (tokenError) {
-    return (
-      <div className="reset-password-container">
-        <div className="reset-password-box">
-          <h1>Reset Link Invalid</h1>
-          <div className="error-message">{tokenError}</div>
-          <button
-            type="button"
-            className="back-link"
-            onClick={() => navigate("/forgot-password")}
-          >
-            Request New Reset Link
-          </button>
-        </div>
-      </div>
-    );
-  }
+  /* Step 3 — the new password. */
+  const submitPassword = async (event) => {
+    event.preventDefault();
+    setError("");
+    setPolicyFailures([]);
+    setBusy(true);
+    try {
+      await apiPost("/reset-password", { resetToken: token, newPassword, confirmPassword });
+      setStage("done");
+      setTimeout(() => navigate("/login"), 3000);
+    } catch (resetError) {
+      setError(resetError.message);
+      setPolicyFailures(resetError.details?.failures ?? []);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="reset-password-container">
       <div className="reset-password-box">
-        <h1>Create New Password</h1>
-        <p className="subtitle">Enter your new password below</p>
+        <h1>Reset your password</h1>
 
-        {!isSuccess ? (
-          <form className="reset-password-form" onSubmit={handleSubmit}>
-            <label htmlFor="newPassword">New Password</label>
-            <input
-              id="newPassword"
-              type="password"
+        {stage === "verifying" && <p className="reset-password-info">Checking your link…</p>}
+
+        {stage === "dead" && (
+          <>
+            <div className="reset-password-error" role="alert">
+              {error}
+            </div>
+            <button
+              type="button"
+              className="reset-password-btn"
+              onClick={() => navigate("/forgot-password")}
+            >
+              Request a new link
+            </button>
+          </>
+        )}
+
+        {stage === "questions" && (
+          <form className="reset-password-form" onSubmit={submitAnswers}>
+            <p className="reset-password-info">
+              Please answer your security questions. Answers are not case-sensitive.
+            </p>
+
+            {questions.map((question, index) => (
+              <div key={question.key} className="reset-question">
+                <label htmlFor={`answer-${index}`}>{question.text}</label>
+                <input
+                  id={`answer-${index}`}
+                  type="text"
+                  value={answers[index]?.answer ?? ""}
+                  onChange={(event) =>
+                    setAnswers((current) =>
+                      current.map((entry, position) =>
+                        position === index ? { ...entry, answer: event.target.value } : entry,
+                      ),
+                    )
+                  }
+                  required
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+            ))}
+
+            {error && (
+              <div className="reset-password-error" role="alert">
+                {error}
+              </div>
+            )}
+
+            {attemptsRemaining !== null && attemptsRemaining < 3 && (
+              <p className="reset-password-attempts">
+                {attemptsRemaining} attempt{attemptsRemaining === 1 ? "" : "s"} remaining before
+                this link stops working.
+              </p>
+            )}
+
+            <button type="submit" className="reset-password-btn" disabled={busy}>
+              {busy ? "Checking…" : "Continue"}
+            </button>
+          </form>
+        )}
+
+        {stage === "password" && (
+          <form className="reset-password-form" onSubmit={submitPassword}>
+            <p className="reset-password-info">
+              Your answers were correct. Choose a new password.
+            </p>
+
+            <PasswordField
+              label="New password"
               value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              placeholder="At least 6 characters"
-              required
+              onChange={setNewPassword}
+              showPolicy
+            />
+            <PasswordField
+              label="Confirm new password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              error={
+                confirmPassword && confirmPassword !== newPassword
+                  ? "The two passwords do not match."
+                  : null
+              }
             />
 
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Re-enter your password"
-              required
-            />
+            {error && (
+              <div className="reset-password-error" role="alert">
+                <p>{error}</p>
+                {policyFailures.length > 0 && (
+                  <ul>
+                    {policyFailures.map((failure) => (
+                      <li key={failure}>{failure}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            <p className="reset-password-note">
+              You cannot reuse a recent password.
+            </p>
 
             <button
               type="submit"
-              className="submit-btn"
-              disabled={isSubmitting}
+              className="reset-password-btn"
+              disabled={busy || !newPassword || newPassword !== confirmPassword}
             >
-              {isSubmitting ? "Resetting..." : "Reset Password"}
+              {busy ? "Saving…" : "Set new password"}
             </button>
           </form>
-        ) : (
-          <div className="success-message">
-            <div className="success-icon">✓</div>
-            <p>Password reset successful!</p>
-            <p className="info-text">Redirecting to login...</p>
+        )}
+
+        {stage === "done" && (
+          <div className="reset-password-success" role="status">
+            <p>Your password has been reset.</p>
+            <p>All devices signed in to this account have been signed out. Taking you to sign in…</p>
           </div>
         )}
 
-        {error && <div className="error-message">{error}</div>}
+        <button type="button" className="reset-password-link" onClick={() => navigate("/login")}>
+          Back to sign in
+        </button>
       </div>
     </div>
   );

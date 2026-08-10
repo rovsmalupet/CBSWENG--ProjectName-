@@ -1,181 +1,167 @@
-import { PrismaClient } from "@prisma/client";
+/**
+ * refundController.js
+ *
+ * `POST /refunds/issue` was the highest-impact hole in the application: it was
+ * restricted to the `ngo` and `admin` roles and then never checked WHICH
+ * organization the payment belonged to, so any organization could refund any
+ * payment on any other organization's project. Ownership is now enforced by
+ * owners.refundablePayment before this file runs, and the operation additionally
+ * requires re-authentication because it moves money. [CSSECDV 2.2.2, 2.1.13]
+ *
+ * Two outright bugs are also fixed here:
+ *   · `require("stripe")` inside an ES module — `require` is not defined, so
+ *     every refund threw a ReferenceError;
+ *   · `select: { amount: true }` on Payment, a column dropped by migration
+ *     20260402_remove_payment_amount, which made Prisma reject the query.
+ */
 
-const prisma = new PrismaClient();
+import Stripe from "stripe";
 
-// Initialize Stripe lazily when first needed
-let stripe = null;
-function getStripe() {
-  if (!stripe) {
+import prisma from "../prisma/client.js";
+import { AppError, notFound } from "../errors/AppError.js";
+import { assertRefundable, paymentTotal } from "../security/businessRules.js";
+import { logSecurityEvent, EVENTS, OUTCOME, SEVERITY } from "../security/securityLog.js";
+
+let stripeClient = null;
+const getStripe = () => {
+  if (!stripeClient) {
     const apiKey = process.env.STRIPE_SECRET_KEY;
     if (!apiKey) {
-      throw new Error(
-        "STRIPE_SECRET_KEY not found in environment variables."
-      );
+      throw new AppError("Refunds are unavailable right now.", 503, "PAYMENTS_UNAVAILABLE");
     }
-    const Stripe = require("stripe");
-    stripe = new Stripe(apiKey);
+    stripeClient = new Stripe(apiKey);
   }
-  return stripe;
-}
+  return stripeClient;
+};
 
-/**
- * Issue a refund for a payment (called when contribution is declined)
- */
+/** POST /refunds/issue */
 export const issueRefund = async (req, res) => {
+  // Loaded and ownership-checked by owners.refundablePayment.
+  const payment = req.resource;
+  const { reason = "contribution_declined", contributionId } = req.body;
+
   try {
-    const { paymentId, reason = "contribution_declined" } = req.body;
-
-    if (!paymentId) {
-      return res.status(400).json({ error: "paymentId required" });
-    }
-
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    // Get payment details
-    const payment = await prisma.payment.findUnique({
-      where: { id: paymentId },
-      include: { post: true },
+    assertRefundable(payment);
+  } catch (error) {
+    await logSecurityEvent(req, {
+      eventType: EVENTS.REFUND_REJECTED,
+      outcome: OUTCOME.FAILURE,
+      severity: SEVERITY.WARN,
+      message: `Refund refused: ${error.message}`,
+      targetType: "Payment",
+      targetId: payment.id,
     });
+    throw error;
+  }
 
-    if (!payment) {
-      return res.status(404).json({ error: "Payment not found" });
-    }
+  const amount = paymentTotal(payment);
 
-    // Check if already refunded
-    if (payment.refundIntentId) {
-      return res.status(400).json({ error: "Payment already refunded" });
-    }
+  const stripeRefund = await getStripe().refunds.create({
+    payment_intent: payment.paymentIntentId,
+    amount: Math.round(amount * 100),
+    metadata: { reason, postId: payment.postId ?? "", issuedBy: req.user.id },
+  });
 
-    // Issue refund via Stripe
-    // Calculate amount as sum of all fees and donation
-    const paymentAmount = payment.monetaryContribution + payment.monetaryTransactionFee + payment.volunteerTransactionFee + payment.inKindTransactionFee;
-    const stripeRefund = await getStripe().refunds.create({
-      payment_intent: payment.paymentIntentId,
-      amount: Math.round(paymentAmount * 100), // Convert to cents
-      metadata: {
-        reason,
-        postId: payment.postId,
-      },
-    });
-
-    // Create refund record
-    const refund = await prisma.refund.create({
+  // One transaction: a Refund row without the matching flags on Payment would
+  // leave the payment eligible to be refunded a second time.
+  const refund = await prisma.$transaction(async (tx) => {
+    const created = await tx.refund.create({
       data: {
-        paymentId,
+        paymentId: payment.id,
         refundIntentId: stripeRefund.id,
-        amount: paymentAmount,
+        amount,
         currency: payment.currency,
         status: stripeRefund.status,
         reason,
+        contributionId: contributionId ?? null,
         processedBy: req.user.id,
         processedByRole: req.user.role,
+        postId: payment.postId ?? null,
       },
     });
 
-    // Update payment with refund details
-    await prisma.payment.update({
-      where: { id: paymentId },
+    await tx.payment.update({
+      where: { id: payment.id },
       data: {
         refundIntentId: stripeRefund.id,
         refundStatus: stripeRefund.status,
-        refundAmount: paymentAmount,
+        refundAmount: amount,
         refundReason: reason,
         refundedAt: new Date(),
       },
     });
 
-    res.json({
-      success: true,
-      message: "Refund issued successfully",
-      refund,
-    });
-  } catch (err) {
-    console.error("Refund error:", err);
-    res.status(500).json({ error: err.message });
-  }
+    return created;
+  });
+
+  await logSecurityEvent(req, {
+    eventType: EVENTS.REFUND_ISSUED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.CRITICAL,
+    message: `Refund of ₱${amount} issued.`,
+    targetType: "Payment",
+    targetId: payment.id,
+    metadata: { refundId: refund.id, reason, postId: payment.postId },
+  });
+
+  res.json({ success: true, message: "Refund issued.", refund });
 };
 
-/**
- * Get refund status
- */
+/** GET /refunds/:refundId */
 export const getRefundStatus = async (req, res) => {
-  try {
-    const { refundId } = req.params;
-
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    const refund = await prisma.refund.findUnique({
-      where: { id: refundId },
-      include: {
-        payment: {
-          select: {
-            id: true,
-            amount: true,
-            currency: true,
-            postId: true,
-          },
+  const refund = await prisma.refund.findUnique({
+    where: { id: req.params.refundId },
+    include: {
+      payment: {
+        select: {
+          id: true,
+          currency: true,
+          postId: true,
+          // NOT `amount` — that column no longer exists. The individual
+          // components are what remain.
+          monetaryContribution: true,
+          monetaryTransactionFee: true,
+          volunteerTransactionFee: true,
+          inKindTransactionFee: true,
         },
       },
-    });
+    },
+  });
+  if (!refund) throw notFound();
 
-    if (!refund) {
-      return res.status(404).json({ error: "Refund not found" });
-    }
-
-    res.json(refund);
-  } catch (err) {
-    console.error("Get refund error:", err);
-    res.status(500).json({ error: err.message });
-  }
+  res.json({
+    ...refund,
+    payment: refund.payment
+      ? { ...refund.payment, totalPaid: paymentTotal(refund.payment) }
+      : null,
+  });
 };
 
-/**
- * Get all refunds for a post
- */
+/** GET /refunds/history/:postId — owning organization or administrator. */
 export const getRefundHistory = async (req, res) => {
-  try {
-    const { postId } = req.params;
+  const { postId } = req.params;
 
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    const refunds = await prisma.refund.findMany({
-      where: {
-        payment: { postId },
-      },
-      include: {
-        payment: {
-          select: {
-            id: true,
-            amount: true,
-            userId: true,
-          },
+  const refunds = await prisma.refund.findMany({
+    where: { payment: { postId } },
+    include: {
+      payment: {
+        select: {
+          id: true,
+          userId: true,
+          monetaryContribution: true,
+          monetaryTransactionFee: true,
+          volunteerTransactionFee: true,
+          inKindTransactionFee: true,
         },
       },
-      orderBy: { createdAt: "desc" },
-    });
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-    const totalRefunded = refunds.reduce((sum, r) => sum + r.amount, 0);
-
-    res.json({
-      postId,
-      totalRefunded,
-      refundCount: refunds.length,
-      refunds,
-    });
-  } catch (err) {
-    console.error("Get refund history error:", err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-export default {
-  issueRefund,
-  getRefundStatus,
-  getRefundHistory,
+  res.json({
+    postId,
+    totalRefunded: refunds.reduce((sum, refund) => sum + refund.amount, 0),
+    refundCount: refunds.length,
+    refunds,
+  });
 };

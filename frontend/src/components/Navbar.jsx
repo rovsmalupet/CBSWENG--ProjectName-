@@ -1,22 +1,25 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/authContext.js";
 import "../css/Navbar.css";
 
 export default function Navbar({ hiddenItems = [] }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { role, logout } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem("userFirstName");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("token");
-    localStorage.removeItem("userCountry");
-    navigate("/login");
+  /**
+   * Signing out now tells the SERVER, which invalidates every token issued to
+   * this account. Previously this only cleared localStorage, so a token that
+   * had been copied elsewhere stayed usable for its full seven-day lifetime —
+   * "logging out" changed nothing an attacker cared about.
+   */
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
   };
 
-  const userRole = localStorage.getItem("userRole");
-  const isDonor = userRole === "donor";
-  const isNgo = userRole === "ngo";
+  const isDonor = role === "donor";
+  const isNgo = role === "ngo";
 
   const donorLinks = [
     { key: "asean", label: "ASEAN", path: "/donor/asean" },
@@ -24,23 +27,12 @@ export default function Navbar({ hiddenItems = [] }) {
     { key: "bookmarks", label: "BOOKMARKS", path: "/donor/bookmarks" },
   ].filter((link) => !hiddenItems.includes(link.key));
 
-  const ngoLinks = [
-    {
-      key: "donate-dev",
-      label: "DONATE TO DEVELOPERS",
-      path: "/donate-to-developers",
-    },
-  ];
-
   return (
     <nav className="navbar">
       <div className="navbar-logo" onClick={() => navigate("/")}>
-        <img 
-          src="/pictures/bayanihub-logo.png" 
-          alt="BayanHub Logo" 
-          className="navbar-logo-img"
-        />
+        <img src="/pictures/bayanihub-logo.png" alt="BayaniHub" className="navbar-logo-img" />
       </div>
+
       {isDonor && donorLinks.length > 0 && (
         <div className="navbar-links">
           {donorLinks.map((link) => (
@@ -54,8 +46,9 @@ export default function Navbar({ hiddenItems = [] }) {
           ))}
         </div>
       )}
+
       <div className="navbar-right-actions">
-        {isNgo && ngoLinks.length > 0 && (
+        {isNgo && (
           <button
             className="navbar-donate-btn"
             onClick={() => navigate("/donate-to-developers")}
@@ -63,6 +56,13 @@ export default function Navbar({ hiddenItems = [] }) {
             DONATE TO DEVELOPERS
           </button>
         )}
+
+        {/* Available to every role — the specification lists "Change password"
+            under all three. [CSSECDV 2.1.13] */}
+        <button className="navbar-account-btn" onClick={() => navigate("/change-password")}>
+          CHANGE PASSWORD
+        </button>
+
         <button className="navbar-logout-btn" onClick={handleLogout}>
           LOGOUT
         </button>

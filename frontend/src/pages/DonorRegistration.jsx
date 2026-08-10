@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getApiUrl } from "../config/api.js";
+import { apiPost } from "../config/api.js";
+import PasswordField from "../components/PasswordField.jsx";
+import { POLICY_RULES } from "../config/passwordPolicy.js";
+import SecurityQuestionsFields from "../components/SecurityQuestionsFields.jsx";
 import "../css/DonorRegistration.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,6 +36,9 @@ export default function DonorRegistration() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [serverMessage, setServerMessage] = useState("");
+  const [policyFailures, setPolicyFailures] = useState([]);
+  /** Password-reset questions, chosen at registration. [CSSECDV 2.1.9] */
+  const [securityAnswers, setSecurityAnswers] = useState([]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -41,6 +47,11 @@ export default function DonorRegistration() {
     setServerMessage("");
   };
 
+  /**
+   * Client-side checks are for the user's benefit only. The server re-validates
+   * everything and is the sole authority — see backend/schemas/auth.schema.js
+   * and backend/security/passwordPolicy.js. [2.3.1]
+   */
   const validate = () => {
     const next = {};
 
@@ -53,13 +64,21 @@ export default function DonorRegistration() {
       next.email = "Enter a valid email address.";
     }
 
-    if (!formData.password || formData.password.length < 6) {
-      next.password = "Password must be at least 6 characters.";
+    // Length and complexity, mirroring the server policy. [2.1.5, 2.1.6]
+    const failed = POLICY_RULES.filter((rule) => !rule.test(formData.password));
+    if (failed.length > 0) {
+      next.password = "Your password does not yet meet all the requirements below.";
     }
 
     if (!formData.country) next.country = "Please select your country.";
-
     if (!formData.affiliation.trim()) next.affiliation = "Affiliation is required.";
+
+    if (
+      securityAnswers.length < 2 ||
+      securityAnswers.some((entry) => !entry.questionKey || entry.answer.trim().length < 4)
+    ) {
+      next.securityAnswers = "Please choose two questions and answer both.";
+    }
 
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -67,36 +86,32 @@ export default function DonorRegistration() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setPolicyFailures([]);
     if (!validate()) return;
 
     setSubmitting(true);
 
     try {
-      const response = await fetch(getApiUrl("/register"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          role: "donor",
-          firstName: formData.firstName.trim(),
-          surname: formData.surname.trim(),
-          email: formData.email.trim(),
-          password: formData.password,
-          country: formData.country,
-          affiliation: formData.affiliation.trim(),
-          bio: formData.bio.trim() || null,
-        }),
+      // No `role` field: the endpoint hard-codes donor, so registration cannot
+      // be used to request a privileged account.
+      await apiPost("/register", {
+        firstName: formData.firstName.trim(),
+        surname: formData.surname.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        country: formData.country,
+        affiliation: formData.affiliation.trim(),
+        ...(formData.bio.trim() ? { bio: formData.bio.trim() } : {}),
+        securityAnswers,
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Donor registration failed.");
-      }
-
-      localStorage.setItem("userFirstName", formData.firstName.trim());
       setServerMessage("Account created. You can now sign in.");
-      setTimeout(() => navigate("/auth/donor"), 1500);
+      setTimeout(() => navigate("/login"), 1800);
     } catch (error) {
-      setServerMessage(error.message || "Unable to register donor.");
+      setServerMessage(error.message);
+      // The server returns which policy rules were not met. This is the
+      // published policy, so showing it is helpful rather than a disclosure.
+      setPolicyFailures(error.details?.failures ?? []);
     } finally {
       setSubmitting(false);
     }
@@ -153,18 +168,17 @@ export default function DonorRegistration() {
           />
           {errors.email && <span className="field-error">{errors.email}</span>}
 
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
+          {/* Obscured by default, with the live policy checklist. [2.1.7] */}
+          <PasswordField
+            label="Password"
             value={formData.password}
-            onChange={handleChange}
-            aria-invalid={Boolean(errors.password)}
+            onChange={(value) => {
+              setFormData((prev) => ({ ...prev, password: value }));
+              setErrors((prev) => ({ ...prev, password: "" }));
+            }}
+            showPolicy
+            error={errors.password}
           />
-          {errors.password && (
-            <span className="field-error">{errors.password}</span>
-          )}
 
           <label htmlFor="country">Country</label>
           <select
@@ -215,13 +229,31 @@ export default function DonorRegistration() {
             />
           </div>
 
+          <SecurityQuestionsFields
+            answers={securityAnswers}
+            onChange={setSecurityAnswers}
+            disabled={submitting}
+          />
+          {errors.securityAnswers && (
+            <span className="field-error">{errors.securityAnswers}</span>
+          )}
+
           <button type="submit" className="submit-btn" disabled={submitting}>
             {submitting ? "Creating account..." : "Register Donor"}
           </button>
         </form>
 
         {serverMessage && (
-          <div className="server-message">{serverMessage}</div>
+          <div className="server-message">
+            <p>{serverMessage}</p>
+            {policyFailures.length > 0 && (
+              <ul className="server-message-list">
+                {policyFailures.map((failure) => (
+                  <li key={failure}>{failure}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </div>
     </div>

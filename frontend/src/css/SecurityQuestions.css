@@ -1,0 +1,81 @@
+/* Password-reset question picker. [CSSECDV 2.1.9] */
+
+.security-questions {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem 1.1rem 1.1rem;
+  margin: 1.25rem 0;
+  background: #f8fafc;
+}
+
+.security-questions legend {
+  font-weight: 700;
+  color: #1f2937;
+  padding: 0 0.4rem;
+  font-size: 0.95rem;
+}
+
+.security-questions-intro {
+  font-size: 0.88rem;
+  color: #475569;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.security-question-row {
+  margin-bottom: 1rem;
+}
+
+.security-question-row label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #334155;
+  margin-bottom: 0.3rem;
+}
+
+.security-question-row select,
+.security-question-row input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.security-question-row select:focus,
+.security-question-row input:focus {
+  outline: 2px solid #2f6f4f;
+  outline-offset: 1px;
+}
+
+.security-answer-label {
+  margin-top: 0.5rem !important;
+}
+
+.security-questions-note {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0.5rem 0 0;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.security-questions-error {
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.security-questions-loading {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* Registration pages render server-side policy failures as a list. */
+.server-message-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}

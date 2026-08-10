@@ -101,19 +101,14 @@ export default function UnapprovedProjects() {
       return;
 
     try {
-      const { getApiUrl } = await import("../config/api");
-      const res = await fetch(getApiUrl(`/posts/${projectId}/status`), {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ overallStatus: "Deleted" }),
-      });
-      if (res.ok) {
-        setProjects((prev) => prev.filter((p) => p.id !== projectId));
-      } else {
-        alert("Failed to delete project");
-      }
+      // As in ActiveProjects: the organization's own delete route, with the
+      // session attached. The previous call had no Authorization header and
+      // targeted an administrator-only route, so it never succeeded.
+      const { getApiUrl, apiFetch } = await import("../config/api");
+      await apiFetch(getApiUrl(`/posts/${projectId}`), { method: "DELETE" });
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
     } catch (err) {
-      console.error("Error deleting project:", err);
+      alert(err.message || "Failed to delete project.");
     }
   };
 

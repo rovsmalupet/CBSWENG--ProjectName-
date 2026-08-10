@@ -1,0 +1,160 @@
+/* Organization review queue for contributions. [CSSECDV 2.2.3] */
+
+.pc-section {
+  margin: 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.pc-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.pc-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  background: #d97706;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pc-intro {
+  margin: 0 0 1rem;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.pc-loading,
+.pc-empty {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.pc-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.pc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.pc-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+  background: #f8fafc;
+}
+
+.pc-item-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+}
+
+.pc-donor {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.pc-what {
+  color: #2f6f4f;
+  font-weight: 600;
+}
+
+.pc-when {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.pc-proof {
+  margin: 0.4rem 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.pc-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.pc-actions button {
+  padding: 0.35rem 0.9rem;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.pc-confirm {
+  background: #2f6f4f;
+  color: #fff;
+}
+
+.pc-decline {
+  background: #fff;
+  color: #b91c1c;
+  border-color: #fca5a5 !important;
+}
+
+.pc-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pc-history {
+  margin-top: 1rem;
+}
+
+.pc-history summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: #475569;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.pc-list-quiet .pc-item {
+  background: #fff;
+  opacity: 0.85;
+}
+
+.pc-status {
+  margin-left: auto;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pc-status-confirmed { background: #dcfce7; color: #166534; }
+.pc-status-declined  { background: #fee2e2; color: #991b1b; }

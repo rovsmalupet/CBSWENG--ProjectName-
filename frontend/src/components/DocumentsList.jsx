@@ -23,7 +23,9 @@ export default function DocumentsList({ postId, canDelete }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch documents.");
+        // The API error envelope is { error: { message, code } } — `error` is an
+        // object, not a string, so it must be read through `.message`.
+        throw new Error(data?.error?.message || "Failed to fetch documents.");
       }
 
       setDocuments(data.documents);

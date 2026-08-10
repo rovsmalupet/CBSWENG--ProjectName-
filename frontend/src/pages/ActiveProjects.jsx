@@ -143,19 +143,21 @@ export default function ActiveProjects() {
       return;
 
     try {
-      const { getApiUrl } = await import("../config/api");
-      const res = await fetch(getApiUrl(`/posts/${projectId}/status`), {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ overallStatus: "Deleted" }),
-      });
-      if (res.ok) {
-        setProjects((prev) => prev.filter((p) => p.id !== projectId));
-      } else {
-        alert("Failed to delete project");
-      }
+      /**
+       * Uses the organization's own delete route.
+       *
+       * This previously sent a raw `fetch` to `PATCH /posts/:id/status` with no
+       * Authorization header at all — a route that is, and always was,
+       * administrator-only. The delete button therefore never worked. Going
+       * through `DELETE /posts/:id` (and apiFetch, which attaches the session)
+       * hits the route an organization is actually permitted to use, and the
+       * server confirms the project belongs to them before acting.
+       */
+      const { getApiUrl, apiFetch } = await import("../config/api");
+      await apiFetch(getApiUrl(`/posts/${projectId}`), { method: "DELETE" });
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
     } catch (err) {
-      console.error("Error deleting project:", err);
+      alert(err.message || "Failed to delete project.");
     }
   };
 

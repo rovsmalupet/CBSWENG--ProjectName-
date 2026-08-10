@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/authContext.js";
+import LastAccessBanner from "../components/LastAccessBanner.jsx";
 import "../css/adminHome.css";
 
 const adminCards = [
@@ -63,19 +65,56 @@ const adminCards = [
       </svg>
     ),
   },
+  {
+    // The administrator's read-only audit trail. [CSSECDV 2.4.4]
+    key: "security-logs",
+    label: "Security Logs",
+    route: "/admin/security-logs",
+    icon: (
+      <svg
+        width="52"
+        height="52"
+        fill="none"
+        stroke="#4b5563"
+        strokeWidth="1.4"
+        viewBox="0 0 24 24"
+      >
+        <path d="M12 2l8 4v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6l8-4z" />
+        <path d="M9 12l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
+    // Creating administrator and organization accounts, and changing roles.
+    key: "user-management",
+    label: "User Accounts",
+    route: "/admin/user-management",
+    icon: (
+      <svg
+        width="52"
+        height="52"
+        fill="none"
+        stroke="#4b5563"
+        strokeWidth="1.4"
+        viewBox="0 0 24 24"
+      >
+        <circle cx="9" cy="8" r="3.2" />
+        <path d="M2.5 20v-1.6A4.4 4.4 0 0 1 6.9 14h4.2a4.4 4.4 0 0 1 4.4 4.4V20" />
+        <path d="M17.5 7.5v5M15 10h5" />
+      </svg>
+    ),
+  },
 ];
 
 export default function AdminHomepage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [searchText, setSearchText] = useState("");
 
-  const handleLogout = () => {
-    localStorage.removeItem("userFirstName");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("token");
-    localStorage.removeItem("userCountry");
-    navigate("/login");
+  // Invalidates the session server-side, not just in this browser.
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
   };
 
   const handleSearch = (event) => {
@@ -119,10 +158,19 @@ export default function AdminHomepage() {
             </svg>
             Back
           </button>
-          <button className="admin-logout-btn" onClick={handleLogout}>
-            LOGOUT
-          </button>
+          <div className="admin-top-right">
+            <button className="admin-change-password-btn" onClick={() => navigate("/change-password")}>
+              CHANGE PASSWORD
+            </button>
+            <button className="admin-logout-btn" onClick={handleLogout}>
+              LOGOUT
+            </button>
+          </div>
         </div>
+
+        {/* "The last use (successful or unsuccessful) of a user account should
+            be reported to the user at their next successful login." [2.1.12] */}
+        <LastAccessBanner />
 
         <h1 className="dashboard-title">Admin Dashboard</h1>
 

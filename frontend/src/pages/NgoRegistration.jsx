@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getApiUrl } from "../config/api.js";
+import { apiPost } from "../config/api.js";
+import PasswordField from "../components/PasswordField.jsx";
+import { POLICY_RULES } from "../config/passwordPolicy.js";
+import SecurityQuestionsFields from "../components/SecurityQuestionsFields.jsx";
 import "../css/NgoRegistration.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,6 +35,9 @@ export default function NgoRegistration() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [serverMessage, setServerMessage] = useState("");
+  const [policyFailures, setPolicyFailures] = useState([]);
+  /** Password-reset questions, chosen at registration. [CSSECDV 2.1.9] */
+  const [securityAnswers, setSecurityAnswers] = useState([]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -40,13 +46,19 @@ export default function NgoRegistration() {
     setServerMessage("");
   };
 
+  /**
+   * For the user's benefit only. The server re-validates everything and is the
+   * sole authority — see backend/schemas/auth.schema.js. [2.3.1]
+   */
   const validateForm = () => {
     const nextErrors = {};
 
+    if (!formData.orgName.trim()) {
+      nextErrors.orgName = "Organization name is required.";
+    }
     if (!formData.firstName.trim()) {
       nextErrors.firstName = "First name is required.";
     }
-
     if (!formData.surname.trim()) {
       nextErrors.surname = "Surname is required.";
     }
@@ -57,12 +69,20 @@ export default function NgoRegistration() {
       nextErrors.email = "Enter a valid email address.";
     }
 
-    if (!formData.password || formData.password.length < 6) {
-      nextErrors.password = "Password must be at least 6 characters.";
+    // Length and complexity, mirroring the server policy. [2.1.5, 2.1.6]
+    if (POLICY_RULES.some((rule) => !rule.test(formData.password))) {
+      nextErrors.password = "Your password does not yet meet all the requirements below.";
     }
 
     if (!formData.country) {
       nextErrors.country = "Please select your country.";
+    }
+
+    if (
+      securityAnswers.length < 2 ||
+      securityAnswers.some((entry) => !entry.questionKey || entry.answer.trim().length < 4)
+    ) {
+      nextErrors.securityAnswers = "Please choose two questions and answer both.";
     }
 
     setErrors(nextErrors);
@@ -71,37 +91,33 @@ export default function NgoRegistration() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setPolicyFailures([]);
     if (!validateForm()) return;
 
     setSubmitting(true);
     setServerMessage("");
 
     try {
-      const response = await fetch(getApiUrl("/register"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          role: "ngo",
-          orgName: formData.orgName.trim(),
-          firstName: formData.firstName.trim(),
-          surname: formData.surname.trim(),
-          email: formData.email.trim(),
-          password: formData.password,
-          country: formData.country,
-          bio: formData.bio.trim() || null,
-        }),
+      // Posted to the dedicated organization endpoint, which hard-codes the
+      // role. No `role` field travels in the body.
+      await apiPost("/organizations/register", {
+        orgName: formData.orgName.trim(),
+        firstName: formData.firstName.trim(),
+        surname: formData.surname.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        country: formData.country,
+        ...(formData.bio.trim() ? { bio: formData.bio.trim() } : {}),
+        securityAnswers,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Registration failed.");
-      }
-
-      setServerMessage("Registration submitted. Waiting for admin approval.");
-      setTimeout(() => navigate("/auth/ngo"), 1500);
+      setServerMessage(
+        "Registration submitted. An administrator will review your organization before you can sign in.",
+      );
+      setTimeout(() => navigate("/login"), 2500);
     } catch (error) {
-      setServerMessage(error.message || "Unable to submit registration.");
+      setServerMessage(error.message);
+      setPolicyFailures(error.details?.failures ?? []);
     } finally {
       setSubmitting(false);
     }
@@ -164,17 +180,17 @@ export default function NgoRegistration() {
           />
           {errors.email && <span className="field-error">{errors.email}</span>}
 
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
+          {/* Obscured by default, with the live policy checklist. [2.1.7] */}
+          <PasswordField
+            label="Password"
             value={formData.password}
-            onChange={handleChange}
-            placeholder="At least 6 characters"
-            aria-invalid={Boolean(errors.password)}
+            onChange={(value) => {
+              setFormData((prev) => ({ ...prev, password: value }));
+              setErrors((prev) => ({ ...prev, password: "" }));
+            }}
+            showPolicy
+            error={errors.password}
           />
-          {errors.password && <span className="field-error">{errors.password}</span>}
 
           <label htmlFor="country">Country</label>
           <select
@@ -209,12 +225,32 @@ export default function NgoRegistration() {
             />
           </div>
 
+          <SecurityQuestionsFields
+            answers={securityAnswers}
+            onChange={setSecurityAnswers}
+            disabled={submitting}
+          />
+          {errors.securityAnswers && (
+            <span className="field-error">{errors.securityAnswers}</span>
+          )}
+
           <button type="submit" className="submit-btn" disabled={submitting}>
             {submitting ? "Submitting..." : "Register NGO"}
           </button>
         </form>
 
-        {serverMessage && <div className="server-message">{serverMessage}</div>}
+        {serverMessage && (
+          <div className="server-message">
+            <p>{serverMessage}</p>
+            {policyFailures.length > 0 && (
+              <ul className="server-message-list">
+                {policyFailures.map((failure) => (
+                  <li key={failure}>{failure}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

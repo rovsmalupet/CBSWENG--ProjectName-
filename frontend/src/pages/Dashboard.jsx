@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
+import LastAccessBanner from "../components/LastAccessBanner.jsx";
 import "../css/Dashboard.css";
 
 const cards = [
@@ -145,6 +146,8 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <Navbar />
       <main className="dashboard-main">
+        {/* Reports the last successful and failed sign-in. [CSSECDV 2.1.12] */}
+        <LastAccessBanner />
         <button className="back-link" onClick={() => navigate(-1)}>
           <svg
             width="16"

@@ -1,175 +1,147 @@
-import prisma from "../prisma/client.js";
+/**
+ * documentController.js
+ *
+ * Upload and delete already checked ownership inline; listing and downloading
+ * did not, so any authenticated user could enumerate and download every
+ * organization's uploaded documents. All four now go through the same declared
+ * ownership resolvers. [CSSECDV 2.2.2]
+ *
+ * That inconsistency — two functions careful, two not, in the same file — is
+ * the clearest argument in the codebase for deciding authorization in one
+ * place instead of at each call site.
+ */
+
 import fs from "fs";
 
+import prisma from "../prisma/client.js";
+import { notFound } from "../errors/AppError.js";
+import { logSecurityEvent, EVENTS, OUTCOME, SEVERITY } from "../security/securityLog.js";
+
+/** Remove an uploaded file after a failed request, ignoring cleanup errors. */
+const discard = async (file) => {
+  if (!file?.path) return;
+  await fs.promises.unlink(file.path).catch(() => {});
+};
+
+/** POST /documents/upload */
 export const uploadDocument = async (req, res) => {
-  try {
-    const { postId, fileType, description } = req.body;
+  const { postId, fileType, description } = req.body;
 
-    if (!postId || !fileType) {
-      return res.status(400).json({
-        error: "Post ID and file type are required.",
-      });
-    }
+  if (!req.file) throw notFound("No file was received.");
 
-    if (!req.file) {
-      return res.status(400).json({
-        error: "No file provided.",
-      });
-    }
+  // req.resource was loaded by owners.postFromBody, which ran after multer
+  // parsed the multipart body (the policy is flagged `deferred`).
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    include: { organization: { select: { orgName: true, firstName: true, surname: true } } },
+  });
 
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-      include: { organization: true },
-    });
-
-    if (!post) {
-      fs.unlinkSync(req.file.path);
-      return res.status(404).json({
-        error: "Post not found.",
-      });
-    }
-
-    if (req.user?.role === "ngo" && req.user.id !== post.orgId) {
-      fs.unlinkSync(req.file.path);
-      return res.status(403).json({
-        error: "You can only upload documents for your own projects.",
-      });
-    }
-
-    const uploadedBy =
-      post.organization?.orgName ||
-      `${post.organization?.firstName || ""} ${post.organization?.surname || ""}`.trim() ||
-      "Organization";
-
-    const document = await prisma.documentUpload.create({
-      data: {
-        postId,
-        fileName: req.file.originalname,
-        fileType,
-        filePath: req.file.path,
-        fileSize: req.file.size,
-        mimeType: req.file.mimetype,
-        uploadedBy,
-        description: description || null,
-      },
-    });
-
-    res.status(201).json({
-      message: "Document uploaded successfully.",
-      document: {
-        id: document.id,
-        fileName: document.fileName,
-        fileType: document.fileType,
-        fileSize: document.fileSize,
-        description: document.description,
-        createdAt: document.createdAt,
-      },
-    });
-  } catch (error) {
-    if (req.file) {
-      fs.unlinkSync(req.file.path);
-    }
-    console.error("Upload error:", error);
-    res.status(500).json({
-      error: "Failed to upload document.",
-    });
+  if (!post) {
+    await discard(req.file);
+    throw notFound();
   }
+
+  const uploadedBy =
+    post.organization?.orgName ||
+    `${post.organization?.firstName ?? ""} ${post.organization?.surname ?? ""}`.trim() ||
+    "Organization";
+
+  const document = await prisma.documentUpload.create({
+    data: {
+      postId,
+      // The name the user gave, kept for display only — the path on disk is a
+      // generated UUID (see uploadMiddleware.js).
+      fileName: req.file.originalname,
+      fileType,
+      filePath: req.file.path,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      uploadedBy,
+      description: description ?? null,
+    },
+  });
+
+  await logSecurityEvent(req, {
+    eventType: EVENTS.DOCUMENT_UPLOADED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `Document "${document.fileName}" uploaded to a project.`,
+    targetType: "Post",
+    targetId: postId,
+    metadata: { documentId: document.id, fileType, fileSize: document.fileSize },
+  });
+
+  res.status(201).json({
+    message: "Document uploaded.",
+    document: {
+      id: document.id,
+      fileName: document.fileName,
+      fileType: document.fileType,
+      fileSize: document.fileSize,
+      description: document.description,
+      createdAt: document.createdAt,
+    },
+  });
 };
 
+/**
+ * GET /documents/:postId
+ *
+ * `filePath` is deliberately absent from the response. Returning it would
+ * disclose the server's directory layout to every donor viewing a project.
+ */
 export const getPostDocuments = async (req, res) => {
-  try {
-    const { postId } = req.params;
+  const documents = await prisma.documentUpload.findMany({
+    where: { postId: req.params.postId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      fileName: true,
+      fileType: true,
+      fileSize: true,
+      mimeType: true,
+      description: true,
+      uploadedBy: true,
+      createdAt: true,
+    },
+  });
 
-    const documents = await prisma.documentUpload.findMany({
-      where: { postId },
-      orderBy: { createdAt: "desc" },
-    });
-
-    res.status(200).json({
-      documents: documents.map((doc) => ({
-        id: doc.id,
-        fileName: doc.fileName,
-        fileType: doc.fileType,
-        fileSize: doc.fileSize,
-        mimeType: doc.mimeType,
-        description: doc.description,
-        uploadedBy: doc.uploadedBy,
-        createdAt: doc.createdAt,
-      })),
-    });
-  } catch (error) {
-    console.error("Get documents error:", error);
-    res.status(500).json({
-      error: "Failed to retrieve documents.",
-    });
-  }
+  res.status(200).json({ documents });
 };
 
+/** GET /documents/download/:documentId */
 export const downloadDocument = async (req, res) => {
-  try {
-    const { documentId } = req.params;
+  const document = req.resource; // loaded by owners.document
 
-    const document = await prisma.documentUpload.findUnique({
-      where: { id: documentId },
-    });
-
-    if (!document) {
-      return res.status(404).json({
-        error: "Document not found.",
-      });
-    }
-
-    if (!fs.existsSync(document.filePath)) {
-      return res.status(404).json({
-        error: "File not found on server.",
-      });
-    }
-
-    res.download(document.filePath, document.fileName);
-  } catch (error) {
-    console.error("Download error:", error);
-    res.status(500).json({
-      error: "Failed to download document.",
-    });
+  if (!document?.filePath || !fs.existsSync(document.filePath)) {
+    throw notFound("That file is no longer available.");
   }
+
+  // nosniff plus an attachment disposition: a browser must not be talked into
+  // rendering an uploaded file inline, which is how an uploaded document
+  // becomes stored cross-site scripting.
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Type", "application/octet-stream");
+  res.download(document.filePath, document.fileName);
 };
 
+/** DELETE /documents/:documentId */
 export const deleteDocument = async (req, res) => {
-  try {
-    const { documentId } = req.params;
+  const document = req.resource; // loaded by owners.documentOwned
 
-    const document = await prisma.documentUpload.findUnique({
-      where: { id: documentId },
-      include: { post: true },
-    });
+  // The database row goes first. If the row is gone but the file lingers, the
+  // file is unreachable; the reverse would leave a broken download link.
+  await prisma.documentUpload.delete({ where: { id: document.id } });
+  await fs.promises.unlink(document.filePath).catch(() => {});
 
-    if (!document) {
-      return res.status(404).json({
-        error: "Document not found.",
-      });
-    }
+  await logSecurityEvent(req, {
+    eventType: EVENTS.DOCUMENT_DELETED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `Document "${document.fileName}" was deleted.`,
+    targetType: "Document",
+    targetId: document.id,
+  });
 
-    if (req.user?.role === "ngo" && req.user.id !== document.post.orgId) {
-      return res.status(403).json({
-        error: "You can only delete documents from your own projects.",
-      });
-    }
-
-    if (fs.existsSync(document.filePath)) {
-      fs.unlinkSync(document.filePath);
-    }
-
-    await prisma.documentUpload.delete({
-      where: { id: documentId },
-    });
-
-    res.status(200).json({
-      message: "Document deleted successfully.",
-    });
-  } catch (error) {
-    console.error("Delete error:", error);
-    res.status(500).json({
-      error: "Failed to delete document.",
-    });
-  }
+  res.status(200).json({ message: "Document deleted." });
 };

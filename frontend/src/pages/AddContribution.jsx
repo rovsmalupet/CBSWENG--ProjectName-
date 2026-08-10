@@ -370,7 +370,7 @@ export default function AddContribution() {
 
       const updated = await response.json();
       if (!response.ok) {
-        throw new Error(updated.error || "Failed to save contribution.");
+        throw new Error(updated?.error?.message || "Failed to save contribution.");
       }
 
       setProject(updated.post);
@@ -418,26 +418,39 @@ export default function AddContribution() {
         return;
       }
 
-      // Calculate fees
-      const fees = calculateFees(
-        monetaryRows,
-        volRows,
-        inKindRows,
-        project.supportTypes?.inKind || [],
+      /**
+       * Describe WHAT is being contributed. The server prices it.
+       *
+       * This used to compute the transaction fees here and send them to be
+       * charged, which made the price a client-side value. `calculateFees` is
+       * still used above to render the on-page invoice preview — that is
+       * display only, and the modal shows the server's authoritative figures
+       * before anything is charged. [CSSECDV 2.2.3]
+       */
+      const totalMonetary = monetaryRows.reduce(
+        (sum, row) => sum + (parseFloat(row.amount) || 0),
+        0,
       );
-      const totalMonetary = fees.totalMonetary;
+      const totalVolunteers = volRows.reduce(
+        (sum, row) => sum + (parseInt(row.count) || 0),
+        0,
+      );
+      const inKindEntries = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
+        rows
+          .filter((row) => parseFloat(row.quantity) > 0)
+          .map((row) => ({ itemId, quantity: parseFloat(row.quantity) })),
+      );
 
       setPaymentBreakdown({
-        donationAmount: totalMonetary,
-        monetaryFee: fees.monetaryFee,
-        volunteerFee: fees.volunteerFee,
-        inKindFee: fees.inKindFee,
+        ...(totalMonetary > 0 ? { monetaryAmount: totalMonetary } : {}),
+        ...(totalVolunteers > 0 ? { volunteerCount: totalVolunteers } : {}),
+        ...(inKindEntries.length > 0 ? { inKindEntries } : {}),
       });
 
       setShowPaymentModal(true);
     } catch (err) {
       console.error(err);
-      alert("Error calculating payment: " + (err.message ?? "Unknown error"));
+      alert("Could not prepare your payment. Please try again.");
     }
   };
 
@@ -514,7 +527,7 @@ export default function AddContribution() {
 
       const updated = await response.json();
       if (!response.ok) {
-        throw new Error(updated.error || "Failed to save contribution.");
+        throw new Error(updated?.error?.message || "Failed to save contribution.");
       }
 
       setProject(updated.post);
@@ -929,10 +942,7 @@ export default function AddContribution() {
                 isOpen={showPaymentModal}
                 onClose={() => setShowPaymentModal(false)}
                 postId={id}
-                donationAmount={paymentBreakdown.donationAmount}
-                monetaryFee={paymentBreakdown.monetaryFee}
-                volunteerFee={paymentBreakdown.volunteerFee}
-                inKindFee={paymentBreakdown.inKindFee}
+                contribution={paymentBreakdown}
                 projectName={project.projectName}
                 onPaymentSuccess={handlePaymentSuccess}
               />

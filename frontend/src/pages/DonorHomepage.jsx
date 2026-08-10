@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getApiUrl } from "../config/api.js";
+import LastAccessBanner from "../components/LastAccessBanner.jsx";
 import "../css/DonorHomepage.css";
 
 const ASEAN_COUNTRIES = [
@@ -210,6 +211,8 @@ export default function DonorHomepage() {
 
   return (
     <div className="donor-homepage">
+      {/* Reports the last successful and failed sign-in. [CSSECDV 2.1.12] */}
+      <LastAccessBanner />
       <div className="donor-header">
         <div className="donor-greeting-wrap">
           <img

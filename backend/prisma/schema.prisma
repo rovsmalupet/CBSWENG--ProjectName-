@@ -8,15 +8,173 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTHENTICATION
+//
+// UserAccount owns *authentication*; Admin / Donor / Organization remain the
+// *profile* tables and link to it 1:1.
+//
+// Why unify? Every control in CSSECDV section 2.1 — lockout counters, password
+// history, password age, last-use reporting, security questions — is a property
+// of "a login", not of "an NGO" or "a donor". With three password columns each
+// control had to be written three times and kept in sync forever. One table,
+// one implementation, one place to audit.
+//
+// Profile ids are deliberately NOT merged into this table: Post.orgId,
+// DonorOrganizationPartner.donorId and Payment.userId all reference profile ids,
+// and the JWT keeps carrying the profile id as `req.user.id` so none of that
+// downstream code had to change.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model UserAccount {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String // bcrypt, cost 12 — see security/passwordPolicy.js [2.1.3]
+  role         UserRole
+  status       AccountState @default(Active)
+
+  // ── Account lockout [2.1.8] ──────────────────────────────────────────────
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
+  // ── Password lifecycle [2.1.11] ──────────────────────────────────────────
+  passwordChangedAt DateTime @default(now())
+  // Lets an admin-provisioned account bypass the minimum-age rule exactly once,
+  // so a forced reset is not blocked by the control it just triggered.
+  mustChangePassword Boolean @default(false)
+
+  // ── Last-use reporting [2.1.12] ──────────────────────────────────────────
+  // Read and returned to the user at their next successful login, *before*
+  // being overwritten.
+  lastLoginAt              DateTime?
+  lastLoginIp              String?
+  lastFailedLoginAt        DateTime?
+  lastFailedLoginIp        String?
+  failedAttemptsSinceLogin Int       @default(0)
+
+  // ── Session revocation ───────────────────────────────────────────────────
+  // Embedded in every JWT and compared on every request. Incrementing it
+  // instantly invalidates all outstanding tokens for this account — used on
+  // logout, password change, role change, and account disable. Without this a
+  // stolen token stays valid until it expires no matter what the user does.
+  tokenVersion Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  admin        Admin?
+  donor        Donor?
+  organization Organization?
+
+  passwordHistory PasswordHistory[]
+  securityAnswers SecurityAnswer[]
+  resetTokens     PasswordResetToken[]
+  securityLogs    SecurityLog[]
+
+  @@index([role, status])
+}
+
+/// Previous password hashes, newest first. [2.1.10]
+/// Retention is capped at config.passwordHistoryDepth; older rows are pruned.
+model PasswordHistory {
+  id           String      @id @default(uuid())
+  accountId    String
+  account      UserAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  passwordHash String
+  createdAt    DateTime    @default(now())
+
+  @@index([accountId, createdAt])
+}
+
+/// Answers to password-reset questions. [2.1.9]
+/// The answer is normalized then bcrypt-hashed — it is a credential, so it is
+/// stored exactly the way a password is and is never returned by any endpoint.
+model SecurityAnswer {
+  id          String      @id @default(uuid())
+  accountId   String
+  account     UserAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  questionKey String // key into the catalogue in security/securityQuestions.js
+  answerHash  String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([accountId, questionKey])
+}
+
+enum UserRole {
+  admin
+  ngo
+  donor
+}
+
+enum AccountState {
+  Active // may sign in
+  Pending // registered, awaiting admin approval — may not sign in
+  Disabled // soft-deleted or suspended by an admin
+  Rejected // registration denied
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SECURITY LOG  [2.4.3 – 2.4.7]
+//
+// Append-only. There is no update or delete path in the service or the API,
+// and the only read surface is admin-restricted. [2.4.4]
+// ═══════════════════════════════════════════════════════════════════════════
+
+model SecurityLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  eventType String // see security/securityLog.js EVENTS
+  outcome   LogOutcome
+  severity  LogSeverity @default(INFO)
+
+  actorAccountId String?
+  actor          UserAccount? @relation(fields: [actorAccountId], references: [id], onDelete: SetNull)
+  // Recorded separately because a failed login often has no resolvable account,
+  // and because the account row may later be deleted.
+  actorEmail     String?
+  actorRole      String?
+
+  ipAddress  String?
+  userAgent  String?
+  httpMethod String?
+  route      String?
+
+  targetType String? // "Post", "Payment", "UserAccount", ...
+  targetId   String?
+
+  message  String
+  metadata Json? // redacted before write — never secrets
+
+  @@index([createdAt])
+  @@index([eventType, outcome])
+  @@index([actorAccountId])
+  @@index([ipAddress])
+  @@index([severity])
+}
+
+enum LogOutcome {
+  SUCCESS
+  FAILURE
+}
+
+enum LogSeverity {
+  INFO
+  WARN
+  CRITICAL
+}
+
 // ORGANIZATION
 
 model Organization {
   id         String        @id @default(uuid())
+  accountId  String        @unique
+  account    UserAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
   orgName    String
   firstName  String
   surname    String
   email      String        @unique
-  password   String // always store hashed, never plain text
   country    ASEANCountry  @default(Philippines)
   bio        String? // org mission statement / about section
   isVerified Boolean       @default(false)
@@ -31,10 +189,11 @@ model Organization {
 
 model Donor {
   id          String        @id @default(uuid())
+  accountId   String        @unique
+  account     UserAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
   firstName   String
   lastName    String
   email       String        @unique
-  password    String
   country     ASEANCountry  @default(Philippines)
   affiliation String // company or organization they represent
   bio         String? // personal bio / about me
@@ -48,12 +207,13 @@ model Donor {
 // ADMIN
 
 model Admin {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
+  accountId String      @unique
+  account   UserAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   firstName String
   lastName  String
-  email     String   @unique
-  password  String // always store hashed, never plain text
-  createdAt DateTime @default(now())
+  email     String      @unique
+  createdAt DateTime    @default(now())
 
   auditLogs PostAuditLog[]
 }
@@ -184,6 +344,16 @@ model Contribution {
 
   status    ContributionStatus @default(Pending)
   createdAt DateTime           @default(now())
+
+  // Progress totals on PostSupportOption / PostInKindItem are only moved when a
+  // contribution reaches Confirmed. Before this, totals were incremented the
+  // moment a row was created — so anyone could inflate a project's fundraising
+  // bar without the organization ever agreeing. [2.2.3]
+  statusChangedAt DateTime?
+  statusChangedBy String? // profile id of the org user who confirmed/declined
+
+  @@index([postId, status])
+  @@index([partnershipId])
 }
 
 // DONOR ORGANIZATION PARTNER
@@ -205,15 +375,35 @@ model DonorOrganizationPartner {
 }
 
 // PASSWORD RESET TOKEN
-// Stores temporary tokens for password reset requests.
-// Tokens expire after 24 hours and are deleted after use.
+//
+// The reset flow requires TWO independent factors before a password changes:
+//   1. possession of the emailed token (proves control of the mailbox), and
+//   2. correct answers to the account's security questions [2.1.9].
+// Holding one without the other is not enough.
+//
+// The token itself is 32 random bytes, stored only as a SHA-256 hash, single
+// use, and expiring in 24 hours — that design was already sound and is kept.
 model PasswordResetToken {
   id        String   @id @default(uuid())
   email     String // email of user requesting password reset
-  token     String   @unique // unique reset token
-  expiresAt DateTime // expiration timestamp (24 hours from creation)
-  isUsed    Boolean  @default(false) // marked true after password is successfully reset
+  token     String   @unique // SHA-256 of the token that was emailed
+  expiresAt DateTime // 24 hours from creation
+  isUsed    Boolean  @default(false) // true once a password has been set with it
   createdAt DateTime @default(now())
+
+  accountId String?
+  account   UserAccount? @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // ── Security-question gate [2.1.9] ───────────────────────────────────────
+  // The new-password step refuses to run until answersVerifiedAt is set.
+  answersVerifiedAt DateTime?
+  answerAttempts    Int       @default(0)
+  // Set once answerAttempts hits the limit; burns the token so an attacker
+  // cannot grind the questions.
+  lockedAt          DateTime?
+
+  @@index([email])
+  @@index([expiresAt])
 }
 
 // PAYMENT

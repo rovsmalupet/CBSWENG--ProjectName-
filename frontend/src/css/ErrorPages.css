@@ -1,0 +1,97 @@
+/* Custom error pages and the render error boundary. [CSSECDV 2.4.2] */
+
+.error-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #f8fafc;
+}
+
+.error-card {
+  max-width: 30rem;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.error-code {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  margin: 0 0 0.25rem;
+  line-height: 1;
+}
+
+.error-card h1 {
+  font-size: 1.4rem;
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+}
+
+.error-card p {
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.error-reference {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.error-reference code {
+  background: #f1f5f9;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.error-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.error-actions button,
+.error-actions a {
+  padding: 0.55rem 1.2rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  background: #2f6f4f;
+  color: #fff;
+  display: inline-block;
+}
+
+.error-actions button.secondary,
+.error-actions a.secondary {
+  background: #fff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.error-actions button:hover,
+.error-actions a:hover {
+  opacity: 0.9;
+}
+
+/* Shown by ProtectedRoute while the session is being confirmed. Fails closed:
+   nothing of the protected page renders until the check completes. */
+.route-loading {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}

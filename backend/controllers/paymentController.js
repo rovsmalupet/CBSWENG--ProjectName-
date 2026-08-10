@@ -1,368 +1,279 @@
+/**
+ * paymentController.js
+ *
+ * The two most serious defects in the original version were both here:
+ *
+ *   1. `POST /payments/intent` took `donationAmount`, `monetaryFee`,
+ *      `volunteerFee` and `inKindFee` from the request body and charged their
+ *      sum, so a caller could set their own transaction fees to ₱1 on a
+ *      ₱100,000 donation. Fees are now computed by businessRules.computeFees
+ *      from the project's own data; the schema does not accept a fee field at
+ *      all.
+ *
+ *   2. `POST /payments/confirm` trusted the `postId` in the request body and
+ *      never checked that the Stripe PaymentIntent belonged to the caller, so
+ *      one user could confirm and claim another user's payment. Both the owner
+ *      and the project now come from the intent's own metadata.
+ *
+ * Read routes had no object-level authorization; that is now declared in the
+ * policy table and has run before these functions execute. [2.2.2]
+ */
+
 import Stripe from "stripe";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import prisma from "../prisma/client.js";
+import { AppError, notFound, badRequest } from "../errors/AppError.js";
+import {
+  computeFees,
+  computeInKindValue,
+  assertPostAcceptsContributions,
+  assertPaymentIntentBelongsTo,
+  paymentTotal,
+} from "../security/businessRules.js";
+import { logSecurityEvent, EVENTS, OUTCOME, SEVERITY } from "../security/securityLog.js";
 
-// Initialize Stripe lazily when first needed
-let stripe = null;
-function getStripe() {
-  if (!stripe) {
+/** Lazily constructed so a missing key is an error at use, not at import. */
+let stripeClient = null;
+const getStripe = () => {
+  if (!stripeClient) {
     const apiKey = process.env.STRIPE_SECRET_KEY;
     if (!apiKey) {
-      throw new Error(
-        "STRIPE_SECRET_KEY not found in environment variables. Please add it to your .env file."
-      );
+      throw new AppError("Payments are unavailable right now.", 503, "PAYMENTS_UNAVAILABLE");
     }
-    stripe = new Stripe(apiKey);
+    stripeClient = new Stripe(apiKey);
   }
-  return stripe;
-}
+  return stripeClient;
+};
+
+/** Donations to the platform itself, from the "donate to developers" page. */
+const PLATFORM_DONATION = "admin";
 
 /**
- * Create a payment intent for BOTH donation + transaction fees
- * User pays donation amount + all applicable fees in one charge
+ * POST /payments/intent
+ *
+ * The caller says WHAT they wish to contribute. The server decides what it
+ * costs.
  */
 export const createPaymentIntent = async (req, res) => {
-  try {
-    const {
-      postId,
-      donationAmount = 0,
-      monetaryFee = 0,
-      volunteerFee = 0,
-      inKindFee = 0,
-    } = req.body;
+  const { postId, monetaryAmount = 0, volunteerCount = 0, inKindEntries = [] } = req.body;
 
-    // Calculate total
-    const totalAmount = donationAmount + monetaryFee + volunteerFee + inKindFee;
+  let projectName = "Support BayaniHub";
+  let breakdown;
 
-    if (!postId || totalAmount <= 0) {
-      return res.status(400).json({
-        error:
-          "postId required and total amount must be greater than 0",
-      });
+  if (postId === PLATFORM_DONATION) {
+    // A gift to the platform carries no transaction fee — there is no project
+    // taking a cut, so charging one would be inventing a charge.
+    if (volunteerCount > 0 || inKindEntries.length > 0) {
+      throw badRequest("Donations to the platform can only be monetary.");
     }
-
-    // Ensure user is authenticated
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    // Handle special "admin" donation - skip post verification
-    let projectName = "Support BayaniHub - Admin Fund";
-    if (postId !== "admin") {
-      // Verify post exists for regular donations
-      const post = await prisma.post.findUnique({
-        where: { id: postId },
-        select: { id: true, projectName: true },
-      });
-
-      if (!post) {
-        return res.status(404).json({ error: "Post not found" });
-      }
-      projectName = post.projectName;
-    }
-
-    // Build description showing breakdown
-    const descriptionParts = [];
-    if (donationAmount > 0) descriptionParts.push(`Donation: ₱${donationAmount}`);
-    if (monetaryFee > 0) descriptionParts.push(`Fee (monetary): ₱${monetaryFee}`);
-    if (volunteerFee > 0) descriptionParts.push(`Fee (volunteer): ₱${volunteerFee}`);
-    if (inKindFee > 0) descriptionParts.push(`Fee (in-kind): ₱${inKindFee}`);
-
-    // Create payment intent with Stripe
-    // Amount in cents (Stripe requires integer in smallest currency unit)
-    const paymentIntent = await getStripe().paymentIntents.create({
-      amount: Math.round(totalAmount * 100), // Convert PHP to cents
-      currency: "php",
-      description: `${descriptionParts.join(" + ")} for contribution to ${projectName}`,
-      metadata: {
-        postId,
-        userId: req.user.id,
-        userRole: req.user.role,
-        donationAmount: donationAmount.toString(),
-        monetaryFee: monetaryFee.toString(),
-        volunteerFee: volunteerFee.toString(),
-        inKindFee: inKindFee.toString(),
-      },
+    breakdown = computeFees({ monetaryAmount });
+    breakdown = { ...breakdown, monetaryFee: 0, total: breakdown.donationAmount };
+    if (breakdown.total <= 0) throw badRequest("Enter an amount to donate.");
+  } else {
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      include: { inKindItems: true, supportOptions: true },
     });
 
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      totalAmount,
-      breakdown: {
-        donationAmount,
-        monetaryFee,
-        volunteerFee,
-        inKindFee,
-      },
+    // Fees cannot be quoted for a project that is not accepting contributions.
+    assertPostAcceptsContributions(post);
+    projectName = post.projectName;
+
+    breakdown = computeFees({
+      monetaryAmount,
+      volunteerCount,
+      // Valued from the project's own price list, never from the request.
+      inKindValue: computeInKindValue(post, inKindEntries),
     });
-  } catch (err) {
-    console.error("Payment intent error:", err);
-    res.status(500).json({ error: err.message });
   }
-};
 
-/**
- * Confirm payment and record it in database
- * Called after Stripe payment succeeds on frontend
- */
-export const confirmPayment = async (req, res) => {
-  try {
-    const { paymentIntentId, postId } = req.body;
+  const parts = [];
+  if (breakdown.donationAmount > 0) parts.push(`Donation ₱${breakdown.donationAmount}`);
+  if (breakdown.monetaryFee > 0) parts.push(`Monetary fee ₱${breakdown.monetaryFee}`);
+  if (breakdown.volunteerFee > 0) parts.push(`Volunteer fee ₱${breakdown.volunteerFee}`);
+  if (breakdown.inKindFee > 0) parts.push(`In-kind fee ₱${breakdown.inKindFee}`);
 
-    if (!paymentIntentId) {
-      return res
-        .status(400)
-        .json({ error: "paymentIntentId required" });
-    }
-
-    // postId can be null for admin donations, but must be provided in request
-    if (postId === undefined || postId === null || postId === "") {
-      return res
-        .status(400)
-        .json({ error: "postId required" });
-    }
-
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    if (!req.user.id || !req.user.role) {
-      return res.status(401).json({ error: "Invalid user credentials in token" });
-    }
-
-    // Retrieve payment intent from Stripe to verify it succeeded
-    const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
-
-    // Allow both 'succeeded' and 'processing' statuses - processing will finalize later
-    if (paymentIntent.status !== "succeeded" && paymentIntent.status !== "processing") {
-      return res.status(400).json({
-        error: `Payment not successful. Status: ${paymentIntent.status}`,
-      });
-    }
-
-    // Record payment in database with the actual Stripe status
-    // For "admin" donations, use a special marker without foreign key constraint
-    const metadata = paymentIntent.metadata || {};
-    const paymentData = {
-      paymentIntentId: paymentIntentId,
-      currency: (paymentIntent.currency || "php").toUpperCase(),
-      status: paymentIntent.status,
+  const paymentIntent = await getStripe().paymentIntents.create({
+    amount: Math.round(breakdown.total * 100), // Stripe works in centavos
+    currency: "php",
+    description: `${parts.join(" + ")} — ${projectName}`,
+    metadata: {
+      postId,
+      // The authoritative record of who this payment is for. confirmPayment
+      // reads these back rather than trusting the request body.
       userId: req.user.id,
       userRole: req.user.role,
-      description: paymentIntent.description || "",
-      monetaryContribution: Math.max(0, parseFloat(metadata.donationAmount) || 0),
-      monetaryTransactionFee: Math.max(0, parseFloat(metadata.monetaryFee) || 0),
-      volunteerTransactionFee: Math.max(0, parseFloat(metadata.volunteerFee) || 0),
-      inKindTransactionFee: Math.max(0, parseFloat(metadata.inKindFee) || 0),
-    };
+      donationAmount: String(breakdown.donationAmount),
+      monetaryFee: String(breakdown.monetaryFee),
+      volunteerFee: String(breakdown.volunteerFee),
+      inKindFee: String(breakdown.inKindFee),
+    },
+  });
 
-    // For admin donations, explicitly set postId to null
-    // For regular donations, set to the postId from the request
-    paymentData.postId = postId === "admin" ? null : postId;
+  await logSecurityEvent(req, {
+    eventType: EVENTS.PAYMENT_INTENT_CREATED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `Payment intent created for ₱${breakdown.total}.`,
+    targetType: "Post",
+    targetId: postId,
+    metadata: { breakdown },
+  });
 
-    const payment = await prisma.payment.create({
-      data: paymentData,
-    });
-
-    res.json({
-      success: true,
-      message: "Payment recorded successfully",
-      payment,
-    });
-  } catch (err) {
-    console.error("Confirm payment error:", err.message);
-    console.error("Error details:", err);
-    res.status(500).json({ 
-      error: err.message,
-      details: process.env.NODE_ENV === 'development' ? err.toString() : "Database error"
-    });
-  }
+  res.json({
+    clientSecret: paymentIntent.client_secret,
+    paymentIntentId: paymentIntent.id,
+    totalAmount: breakdown.total,
+    breakdown,
+  });
 };
 
 /**
- * Retrieve payment history for a post
+ * POST /payments/confirm
+ *
+ * Everything recorded comes from the PaymentIntent that Stripe holds, not from
+ * the request. The only thing the caller supplies is which intent to look up,
+ * and it must be one created for them.
  */
+export const confirmPayment = async (req, res) => {
+  const { paymentIntentId } = req.body;
+
+  const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
+
+  try {
+    assertPaymentIntentBelongsTo(paymentIntent, req.user);
+  } catch (error) {
+    await logSecurityEvent(req, {
+      eventType: EVENTS.PAYMENT_CONFIRM_REJECTED,
+      outcome: OUTCOME.FAILURE,
+      severity: SEVERITY.CRITICAL,
+      message: `Attempt to confirm a payment intent that does not belong to the caller: ${error.message}`,
+      targetType: "Payment",
+      targetId: paymentIntentId,
+      metadata: { intentOwner: paymentIntent?.metadata?.userId },
+    });
+    throw error;
+  }
+
+  const metadata = paymentIntent.metadata ?? {};
+
+  // A repeated confirmation is idempotent rather than an error — the client may
+  // legitimately retry after a dropped response. The unique index on
+  // paymentIntentId is the backstop.
+  const existing = await prisma.payment.findUnique({ where: { paymentIntentId } });
+  if (existing) {
+    return res.json({ success: true, message: "Payment already recorded.", payment: existing });
+  }
+
+  const payment = await prisma.payment.create({
+    data: {
+      paymentIntentId,
+      currency: (paymentIntent.currency ?? "php").toUpperCase(),
+      status: paymentIntent.status,
+      description: paymentIntent.description ?? "",
+      // From the session, matched against the intent metadata above.
+      userId: req.user.id,
+      userRole: req.user.role,
+      // From the metadata recorded when the intent was created, NOT the body.
+      postId: metadata.postId === PLATFORM_DONATION ? null : (metadata.postId ?? null),
+      monetaryContribution: Number(metadata.donationAmount ?? 0),
+      monetaryTransactionFee: Number(metadata.monetaryFee ?? 0),
+      volunteerTransactionFee: Number(metadata.volunteerFee ?? 0),
+      inKindTransactionFee: Number(metadata.inKindFee ?? 0),
+    },
+  });
+
+  await logSecurityEvent(req, {
+    eventType: EVENTS.PAYMENT_CONFIRMED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `Payment of ₱${paymentTotal(payment)} recorded.`,
+    targetType: "Payment",
+    targetId: payment.id,
+    metadata: { postId: payment.postId, status: payment.status },
+  });
+
+  res.json({ success: true, message: "Payment recorded.", payment });
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * READS — object-level authorization already applied by accessControl
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+const summarise = (payments) => ({
+  totalAmount: payments.reduce((sum, payment) => sum + paymentTotal(payment), 0),
+  paymentCount: payments.length,
+  successfulPayments: payments.filter((payment) => payment.status === "succeeded").length,
+});
+
+/** GET /payments/history/:postId — owning organization or administrator. */
 export const getPaymentHistory = async (req, res) => {
-  try {
-    const { postId } = req.params;
+  const { postId } = req.params;
+  const payments = await prisma.payment.findMany({
+    where: { postId },
+    select: {
+      id: true,
+      userId: true,
+      userRole: true,
+      monetaryContribution: true,
+      monetaryTransactionFee: true,
+      volunteerTransactionFee: true,
+      inKindTransactionFee: true,
+      currency: true,
+      status: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    const payments = await prisma.payment.findMany({
-      where: { postId },
-      select: {
-        id: true,
-        userId: true,
-        userRole: true,
-        monetaryContribution: true,
-        monetaryTransactionFee: true,
-        volunteerTransactionFee: true,
-        inKindTransactionFee: true,
-        currency: true,
-        status: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    // Calculate total payments (amount = sum of all fees and donation)
-    const totalAmount = payments.reduce(
-      (sum, p) => sum + p.monetaryContribution + p.monetaryTransactionFee + p.volunteerTransactionFee + p.inKindTransactionFee,
-      0
-    );
-
-    res.json({
-      postId,
-      totalAmount,
-      paymentCount: payments.length,
-      payments,
-    });
-  } catch (err) {
-    console.error("Get payment history error:", err);
-    res.status(500).json({ error: err.message });
-  }
+  res.json({ postId, ...summarise(payments), payments });
 };
 
-/**
- * Get a single payment
- */
+/** GET /payments/:paymentId — the payer, the receiving organization, or an admin. */
 export const getPaymentById = async (req, res) => {
-  try {
-    const { paymentId } = req.params;
-
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    const payment = await prisma.payment.findUnique({
-      where: { id: paymentId },
-      include: {
-        post: {
-          select: { id: true, projectName: true },
-        },
-      },
-    });
-
-    if (!payment) {
-      return res.status(404).json({ error: "Payment not found" });
-    }
-
-    res.json(payment);
-  } catch (err) {
-    console.error("Get payment error:", err);
-    res.status(500).json({ error: err.message });
-  }
+  const payment = await prisma.payment.findUnique({
+    where: { id: req.params.paymentId },
+    include: { post: { select: { id: true, projectName: true } } },
+  });
+  if (!payment) throw notFound();
+  res.json(payment);
 };
 
-/**
- * Get all payments made by a specific donor (for their contribution history)
- */
+/** GET /payments/donor/:donorId — the donor themselves, or an admin. */
 export const getPaymentsByDonor = async (req, res) => {
-  try {
-    const { donorId } = req.params;
+  const { donorId } = req.params;
+  const payments = await prisma.payment.findMany({
+    where: { userId: donorId },
+    include: {
+      post: { select: { id: true, projectName: true, description: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    // Users can only view their own payments (unless admin)
-    if (req.user.id !== donorId && req.user.role !== "admin") {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
-    const payments = await prisma.payment.findMany({
-      where: { userId: donorId },
-      include: {
-        post: {
-          select: {
-            id: true,
-            projectName: true,
-            description: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    // Calculate totalSpent (amount = sum of all fees and donation)
-    const totalSpent = payments.reduce(
-      (sum, p) => sum + p.monetaryContribution + p.monetaryTransactionFee + p.volunteerTransactionFee + p.inKindTransactionFee,
-      0
-    );
-    const successfulPayments = payments.filter((p) => p.status === "succeeded");
-
-    res.json({
-      donorId,
-      totalPayments: payments.length,
-      successfulPayments: successfulPayments.length,
-      totalSpent,
-      payments,
-    });
-  } catch (err) {
-    console.error("Get donor payments error:", err);
-    res.status(500).json({ error: err.message });
-  }
+  const summary = summarise(payments);
+  res.json({
+    donorId,
+    totalPayments: summary.paymentCount,
+    successfulPayments: summary.successfulPayments,
+    totalSpent: summary.totalAmount,
+    payments,
+  });
 };
 
-/**
- * Get all payments received for a specific project (for org/admin dashboard)
- */
+/** GET /payments/project/:projectId — owning organization or administrator. */
 export const getPaymentsByProject = async (req, res) => {
-  try {
-    const { projectId } = req.params;
+  const { projectId } = req.params;
+  const payments = await prisma.payment.findMany({
+    where: { postId: projectId },
+    orderBy: { createdAt: "desc" },
+  });
 
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    // Verify user is the org that owns this project or is an admin
-    const post = await prisma.post.findUnique({
-      where: { id: projectId },
-      select: { orgId: true },
-    });
-
-    if (!post) {
-      return res.status(404).json({ error: "Project not found" });
-    }
-
-    if (req.user.id !== post.orgId && req.user.role !== "admin") {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
-    const payments = await prisma.payment.findMany({
-      where: { postId: projectId },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const successfulPayments = payments.filter((p) => p.status === "succeeded");
-    // Calculate totalReceived (amount = sum of all fees and donation)
-    const totalReceived = successfulPayments.reduce(
-      (sum, p) => sum + p.monetaryContribution + p.monetaryTransactionFee + p.volunteerTransactionFee + p.inKindTransactionFee,
-      0
-    );
-
-    res.json({
-      projectId,
-      totalPayments: payments.length,
-      successfulPayments: successfulPayments.length,
-      totalReceived,
-      payments,
-    });
-  } catch (err) {
-    console.error("Get project payments error:", err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-export default {
-  createPaymentIntent,
-  confirmPayment,
-  getPaymentHistory,
-  getPaymentById,
-  getPaymentsByDonor,
-  getPaymentsByProject,
+  const succeeded = payments.filter((payment) => payment.status === "succeeded");
+  res.json({
+    projectId,
+    totalPayments: payments.length,
+    successfulPayments: succeeded.length,
+    totalReceived: succeeded.reduce((sum, payment) => sum + paymentTotal(payment), 0),
+    payments,
+  });
 };

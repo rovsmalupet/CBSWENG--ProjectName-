@@ -1,30 +1,23 @@
+/**
+ * Refund routes. Authorization — including the re-authentication requirement on
+ * issuing a refund — is declared in security/accessControl.js.
+ */
+
 import express from "express";
-import { authenticate, authorizeRoles } from "../middleware/authMiddleware.js";
+
+import { validate } from "../middleware/validate.js";
 import {
   issueRefund,
   getRefundStatus,
   getRefundHistory,
 } from "../controllers/refundController.js";
+import { issueRefundSchema, refundIdSchema } from "../schemas/misc.schema.js";
+import { postIdSchema } from "../schemas/post.schema.js";
 
 const router = express.Router();
 
-// Issue refund (admin or org when declining contribution)
-router.post(
-  "/issue",
-  authenticate,
-  authorizeRoles("admin", "ngo"),
-  issueRefund
-);
-
-// Get refund details
-router.get("/:refundId", authenticate, getRefundStatus);
-
-// Get refund history for a post
-router.get(
-  "/history/:postId",
-  authenticate,
-  authorizeRoles("ngo", "admin"),
-  getRefundHistory
-);
+router.post("/issue", validate(issueRefundSchema), issueRefund);
+router.get("/history/:postId", validate(postIdSchema), getRefundHistory);
+router.get("/:refundId", validate(refundIdSchema), getRefundStatus);
 
 export default router;

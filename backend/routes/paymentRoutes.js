@@ -1,5 +1,10 @@
+/**
+ * Payment routes. Authorization is declared in security/accessControl.js.
+ */
+
 import express from "express";
-import { authenticate, authorizeRoles } from "../middleware/authMiddleware.js";
+
+import { validate } from "../middleware/validate.js";
 import {
   createPaymentIntent,
   confirmPayment,
@@ -8,48 +13,23 @@ import {
   getPaymentsByDonor,
   getPaymentsByProject,
 } from "../controllers/paymentController.js";
+import {
+  createPaymentIntentSchema,
+  confirmPaymentSchema,
+  paymentIdSchema,
+  donorIdSchema,
+  projectIdSchema,
+} from "../schemas/misc.schema.js";
+import { postIdSchema } from "../schemas/post.schema.js";
 
 const router = express.Router();
 
-// Create payment intent (before contribution is finalized)
-router.post(
-  "/intent",
-  authenticate,
-  authorizeRoles("donor", "ngo"),
-  createPaymentIntent
-);
+router.post("/intent", validate(createPaymentIntentSchema), createPaymentIntent);
+router.post("/confirm", validate(confirmPaymentSchema), confirmPayment);
 
-// Confirm payment after Stripe processes it
-router.post(
-  "/confirm",
-  authenticate,
-  authorizeRoles("donor", "ngo"),
-  confirmPayment
-);
-
-// Get payment history for a post
-router.get(
-  "/history/:postId",
-  authenticate,
-  authorizeRoles("ngo", "admin"),
-  getPaymentHistory
-);
-
-// Get all payments made by a donor (for donor's payment history page)
-router.get(
-  "/donor/:donorId",
-  authenticate,
-  getPaymentsByDonor
-);
-
-// Get all payments received for a project (for org/admin view)
-router.get(
-  "/project/:projectId",
-  authenticate,
-  getPaymentsByProject
-);
-
-// Get single payment details
-router.get("/:paymentId", authenticate, getPaymentById);
+router.get("/history/:postId", validate(postIdSchema), getPaymentHistory);
+router.get("/donor/:donorId", validate(donorIdSchema), getPaymentsByDonor);
+router.get("/project/:projectId", validate(projectIdSchema), getPaymentsByProject);
+router.get("/:paymentId", validate(paymentIdSchema), getPaymentById);
 
 export default router;

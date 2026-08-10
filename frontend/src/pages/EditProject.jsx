@@ -63,8 +63,12 @@ export default function EditProject() {
           monetarySupport: data.supportTypes?.monetary?.targetAmount || "",
           volunteerQuantity: data.supportTypes?.volunteer?.targetVolunteers || "",
           priority: data.priority || "",
-          startDate: data.startDate || "",
-          endDate: data.endDate || "",
+          // The API returns a full ISO timestamp ("2026-09-01T00:00:00.000Z").
+          // An <input type="date"> only understands "YYYY-MM-DD" and silently
+          // renders blank for anything else — so the date looked cleared, and
+          // saving sent an empty string back.
+          startDate: data.startDate ? String(data.startDate).slice(0, 10) : "",
+          endDate: data.endDate ? String(data.endDate).slice(0, 10) : "",
           startTime: data.startTime || "",
           endTime: data.endTime || "",
         });
@@ -125,10 +129,10 @@ export default function EditProject() {
       description: form.description,
       causes: selectedCauses,
       priority: form.priority,
-      startDate: dateEnabled ? form.startDate : null,
-      endDate: dateEnabled ? form.endDate : null,
-      startTime: timeEnabled ? form.startTime : null,
-      endTime: timeEnabled ? form.endTime : null,
+      startDate: dateEnabled && form.startDate ? form.startDate : null,
+      endDate: dateEnabled && form.endDate ? form.endDate : null,
+      startTime: timeEnabled && form.startTime ? form.startTime : null,
+      endTime: timeEnabled && form.endTime ? form.endTime : null,
       supportTypes: {
         monetary: { enabled: supportTypes.monetary && !!form.monetarySupport, targetAmount: supportTypes.monetary ? Number(form.monetarySupport) : 0 },
         inKind: supportTypes.inKind ? inKindItems.map((i) => ({ itemName: i.itemName, targetQuantity: Number(i.targetQuantity), unit: i.unit, pricePerUnit: i.pricePerUnit ? Number(i.pricePerUnit) : null })) : [],
@@ -146,9 +150,13 @@ export default function EditProject() {
     setStatus("loading");
     try {
       const { getApiUrl, apiFetch } = await import("../config/api");
+      // `overallStatus` is deliberately NOT sent. The server sets it to
+      // "Edited" itself and runs the transition through the state machine —
+      // letting a client name the resulting status is how a project could be
+      // edited straight back into "Approved".
       await apiFetch(getApiUrl(`/posts/${id}`), {
         method: "PUT",
-        body: JSON.stringify({ ...pendingUpdate, overallStatus: "Edited" }),
+        body: JSON.stringify(pendingUpdate),
       });
       setStatus("success");
       setTimeout(() => navigate("/project-ledger"), 1200);

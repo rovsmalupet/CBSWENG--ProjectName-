@@ -1,894 +1,733 @@
+/**
+ * postController.js
+ *
+ * Object-level authorization for every route here is declared in
+ * security/accessControl.js and has already run by the time these functions
+ * execute — `req.resource` holds the row it loaded. Business rules come from
+ * security/businessRules.js. What remains is data access.
+ *
+ * Three classes of defect were removed while rewriting:
+ *   · `res.status(500).json({ error: err.message })` in eleven places, one of
+ *     which also returned the Prisma error code and `meta` object [2.4.1];
+ *   · missing ownership checks on update and delete [2.2.2];
+ *   · progress totals incremented on contributions nobody had confirmed [2.2.3].
+ */
+
 import prisma from "../prisma/client.js";
+import { notFound, badRequest } from "../errors/AppError.js";
+import {
+  assertPostTransition,
+  assertPostAcceptsContributions,
+  assertContributionAllowed,
+  assertContributionTransition,
+} from "../security/businessRules.js";
+import { logSecurityEvent, EVENTS, OUTCOME, SEVERITY } from "../security/securityLog.js";
 
-// HELPERS
-
-const DEFAULT_BUDGET_BREAKDOWN = [
-  { label: "Food", percentage: 80 },
-  { label: "Logistics", percentage: 10 },
-  { label: "Operations", percentage: 10 },
-];
-
-const normalizeBudgetBreakdown = (rawBudgetBreakdown) => {
-  if (!rawBudgetBreakdown) {
-    return DEFAULT_BUDGET_BREAKDOWN;
-  }
-
-  let parsed = rawBudgetBreakdown;
-  if (typeof rawBudgetBreakdown === "string") {
-    try {
-      parsed = JSON.parse(rawBudgetBreakdown);
-    } catch {
-      return DEFAULT_BUDGET_BREAKDOWN;
-    }
-  }
-
-  if (!Array.isArray(parsed) || parsed.length === 0) {
-    return DEFAULT_BUDGET_BREAKDOWN;
-  }
-
-  const cleaned = parsed
-    .map((item) => ({
-      label: String(item?.label || "Category").trim(),
-      percentage: Number(item?.percentage ?? 0),
-    }))
-    .filter((item) => item.label && item.percentage > 0);
-
-  if (cleaned.length === 0) {
-    return DEFAULT_BUDGET_BREAKDOWN;
-  }
-
-  const total = cleaned.reduce((sum, item) => sum + item.percentage, 0);
-  if (total <= 0) {
-    return DEFAULT_BUDGET_BREAKDOWN;
-  }
-
-  let assigned = 0;
-  return cleaned.map((item, index) => {
-    if (index === cleaned.length - 1) {
-      return { ...item, percentage: Math.max(0, 100 - assigned) };
-    }
-    const value = Math.round((item.percentage / total) * 100);
-    assigned += value;
-    return { ...item, percentage: value };
-  });
-};
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SHAPING
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
 /**
- * formatPost: Transforms a raw Prisma post object into the shape the frontend expects.
- * Reads support types from PostSupportOption rows and inKindItems.
+ * Reshape a Prisma post into what the frontend expects.
+ *
+ * `budgetBreakdown` is now returned exactly as stored, including null. The old
+ * `normalizeBudgetBreakdown` helper substituted a hardcoded 80/10/10 split
+ * whenever the stored value was missing or unparseable, which meant the API
+ * could report a budget the organization never entered. Validation guarantees
+ * that anything written from now on is well-formed. [2.3.1]
  */
-const formatPost = (post) => {
-  const monetary = post.supportOptions?.find((o) => o.type === "Monetary");
-  const volunteer = post.supportOptions?.find((o) => o.type === "Volunteer");
-
-  return {
-    ...post,
-    orgName: post.organization?.orgName ?? null,
-    orgEmail: post.organization?.email ?? null,
-    orgCountry: post.organization?.country ?? null,
-    orgIsVerified: post.organization?.isVerified ?? false,
-    orgRepresentative:
-      post.organization?.firstName && post.organization?.surname
-        ? `${post.organization.firstName} ${post.organization.surname}`
-        : null,
-    budgetBreakdown: normalizeBudgetBreakdown(post.budgetBreakdown),
-    organization: undefined,
-    supportTypes: {
-      monetary: monetary
+const formatPost = (post) => ({
+  ...post,
+  orgName: post.organization?.orgName ?? null,
+  orgEmail: post.organization?.email ?? null,
+  orgCountry: post.organization?.country ?? null,
+  orgIsVerified: post.organization?.isVerified ?? false,
+  orgRepresentative:
+    post.organization?.firstName && post.organization?.surname
+      ? `${post.organization.firstName} ${post.organization.surname}`
+      : null,
+  budgetBreakdown: post.budgetBreakdown ?? null,
+  organization: undefined,
+  supportTypes: {
+    monetary: (() => {
+      const option = post.supportOptions?.find((entry) => entry.type === "Monetary");
+      return option
         ? {
             enabled: true,
-            targetAmount: monetary.targetAmount,
-            currentAmount: monetary.currentAmount,
-            status: monetary.status,
+            targetAmount: option.targetAmount,
+            currentAmount: option.currentAmount,
+            status: option.status,
           }
-        : { enabled: false },
-      volunteer: volunteer
+        : { enabled: false };
+    })(),
+    volunteer: (() => {
+      const option = post.supportOptions?.find((entry) => entry.type === "Volunteer");
+      return option
         ? {
             enabled: true,
-            targetVolunteers: volunteer.targetCount,
-            currentVolunteers: volunteer.currentCount,
-            status: volunteer.status,
+            targetVolunteers: option.targetCount,
+            currentVolunteers: option.currentCount,
+            status: option.status,
           }
-        : { enabled: false },
-      inKind: post.inKindItems ?? [],
-    },
-    supportOptions: undefined,
-    inKindItems: undefined,
-  };
-};
+        : { enabled: false };
+    })(),
+    inKind: post.inKindItems ?? [],
+  },
+  supportOptions: undefined,
+  inKindItems: undefined,
+});
+
+const POST_INCLUDE = { inKindItems: true, supportOptions: true, organization: true };
 
 /**
- * Builds a quick lookup for the first time each post reached its monetary target.
- * Returns: { [postId]: Date | null }
- */
-const getMonetaryGoalReachedAtMap = (postsById, monetaryContributions) => {
-  const reachedAtMap = {};
-  const runningTotals = {};
-
-  for (const contribution of monetaryContributions) {
-    const post = postsById[contribution.postId];
-    if (!post) continue;
-
-    const monetary = post.supportTypes?.monetary;
-    if (
-      !monetary?.enabled ||
-      !monetary.targetAmount ||
-      monetary.targetAmount <= 0
-    ) {
-      continue;
-    }
-
-    runningTotals[contribution.postId] =
-      (runningTotals[contribution.postId] ?? 0) + (contribution.amount ?? 0);
-
-    if (
-      !reachedAtMap[contribution.postId] &&
-      runningTotals[contribution.postId] >= monetary.targetAmount
-    ) {
-      reachedAtMap[contribution.postId] = contribution.createdAt;
-    }
-  }
-
-  return reachedAtMap;
-};
-
-/**
- * buildPostData: Parses the request body into structured data ready for Prisma.
+ * Translate the validated request body into Prisma input.
+ *
+ * Every value here has already passed the schema, so there is no defaulting,
+ * no filtering, and no numeric coercion — the three things the previous
+ * `buildPostData` did silently.
  */
 const buildPostData = (body) => {
-  const {
-    projectName,
-    description,
-    budgetBreakdown,
-    causes,
-    location,
-    priority,
-    supportTypes,
-    startDate,
-    endDate,
-    startTime,
-    endTime,
-  } = body;
-
-  const monetary = supportTypes?.monetary;
-  const volunteer = supportTypes?.volunteer;
-  const inKind = supportTypes?.inKind ?? [];
   const supportOptionsData = [];
 
-  // Validate and filter inKind items
-  const validInKindItems = Array.isArray(inKind) 
-    ? inKind.filter(i => i && i.itemName && typeof i.targetQuantity === 'number' && i.targetQuantity > 0)
-    : [];
-
-  if (monetary?.enabled) {
+  if (body.supportTypes.monetary?.enabled) {
     supportOptionsData.push({
       type: "Monetary",
-      targetAmount: monetary.targetAmount ?? 0,
+      targetAmount: body.supportTypes.monetary.targetAmount,
       currentAmount: 0,
     });
   }
-
-  if (volunteer?.enabled) {
+  if (body.supportTypes.volunteer?.enabled) {
     supportOptionsData.push({
       type: "Volunteer",
-      targetCount: volunteer.targetVolunteers ?? 0,
+      targetCount: body.supportTypes.volunteer.targetVolunteers,
       currentCount: 0,
     });
   }
 
   return {
-    projectName,
-    description,
-    budgetBreakdown: normalizeBudgetBreakdown(budgetBreakdown),
-    causes: causes ?? [],
-    location,
-    priority,
-    // AFTER
-    startDate: startDate ? new Date(startDate).toISOString() : null,
-    endDate: endDate ? new Date(endDate).toISOString() : null,
-    startTime: startTime || null,
-    endTime: endTime || null,
-    inKindItems: validInKindItems.map((i) => ({
-      itemName: String(i.itemName).trim(),
-      targetQuantity: Number(i.targetQuantity),
-      unit: i.unit ? String(i.unit).trim() : null,
+    postFields: {
+      projectName: body.projectName,
+      description: body.description ?? null,
+      location: body.location ?? null,
+      causes: body.causes,
+      priority: body.priority,
+      budgetBreakdown: body.budgetBreakdown ?? null,
+      startDate: body.startDate ? new Date(body.startDate) : null,
+      endDate: body.endDate ? new Date(body.endDate) : null,
+      startTime: body.startTime ?? null,
+      endTime: body.endTime ?? null,
+    },
+    inKindItems: (body.supportTypes.inKind ?? []).map((item) => ({
+      itemName: item.itemName,
+      targetQuantity: item.targetQuantity,
+      unit: item.unit ?? null,
+      pricePerUnit: item.pricePerUnit ?? null,
     })),
     supportOptionsData,
   };
 };
 
-// CONTROLLERS
+/* ═══════════════════════════════════════════════════════════════════════════
+ * READ
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
-/**
- * POST /posts
- * Creates a new post with nested inKindItems and supportOptions.
- */
-export const createPost = async (req, res) => {
-  try {
-    const { projectName, causes } = req.body;
-
-    if (!projectName || !causes?.length) {
-      return res
-        .status(400)
-        .json({ error: "projectName and at least one cause are required" });
-    }
-
-    // Validate orgId exists
-    if (!req.user?.id) {
-      console.error("Missing or invalid user ID in auth");
-      return res.status(401).json({ error: "Authentication failed: Missing user ID" });
-    }
-
-    const data = buildPostData(req.body);
-    const { inKindItems, supportOptionsData, ...postFields } = data;
-
-    // Validate at least one support option is selected
-    if (supportOptionsData.length === 0 && inKindItems.length === 0) {
-      return res.status(400).json({ error: "At least one support type must be selected" });
-    }
-
-    const post = await prisma.post.create({
-      data: {
-        ...postFields,
-        orgId: req.user.id,
-        overallStatus: "Pending",
-        inKindItems: { create: inKindItems },
-        supportOptions: { create: supportOptionsData },
-      },
-      include: { inKindItems: true, supportOptions: true, organization: true },
-    });
-
-    res.status(201).json({
-      message: "Project posted successfully",
-      post: formatPost(post),
-    });
-  } catch (err) {
-    console.error("Error creating post:", {
-      message: err.message,
-      code: err.code,
-      meta: err.meta,
-      stack: err.stack,
-      body: req.body,
-      userId: req.user?.id,
-    });
-    res.status(500).json({ 
-      error: err.message,
-      code: err.code,
-      details: process.env.NODE_ENV === 'development' ? err.meta : undefined
-    });
-  }
-};
-
-/**
- * GET /posts/admin/all
- * Returns all posts (for admin use), including the most recent audit log entry.
- */
-export const getAllPosts = async (req, res) => {
-  try {
-    const posts = await prisma.post.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        inKindItems: true,
-        supportOptions: true,
-        organization: true,
-        auditLogs: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-          include: { admin: { select: { firstName: true, lastName: true } } },
-        },
-      },
-    });
-    res.json(
-      posts.map((post) => ({
-        ...formatPost(post),
-        lastAudit: post.auditLogs[0] ?? null,
-      })),
-    );
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-/**
- * GET /posts/:postId/audit
- * Returns the full audit log for a single post.
- */
-export const getPostAuditLog = async (req, res) => {
-  try {
-    const logs = await prisma.postAuditLog.findMany({
-      where: { postId: req.params.postId },
-      orderBy: { createdAt: "desc" },
-      include: {
-        admin: { select: { firstName: true, lastName: true } },
-      },
-    });
-    res.json(logs);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-/**
- * GET /posts
- * Returns all non-deleted posts for the current organization.
- */
+/** GET /posts — the signed-in organization's own projects. */
 export const getOrgPosts = async (req, res) => {
-  try {
-    const posts = await prisma.post.findMany({
-      where: {
-        orgId: req.user.id,
-        NOT: { overallStatus: "Deleted" },
-      },
-      orderBy: { createdAt: "desc" },
-      include: { inKindItems: true, supportOptions: true, organization: true },
-    });
-    res.json(posts.map(formatPost));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+  const posts = await prisma.post.findMany({
+    where: { orgId: req.user.id, NOT: { overallStatus: "Deleted" } },
+    orderBy: { createdAt: "desc" },
+    include: POST_INCLUDE,
+  });
+  res.json(posts.map(formatPost));
 };
 
-/**
- * GET /posts/approved
- * Returns only approved posts (for donor homepage). Public route.
- */
+/** GET /posts/approved — public donor feed. Approved projects only. */
 export const getApprovedPosts = async (req, res) => {
-  try {
-    const posts = await prisma.post.findMany({
-      where: { overallStatus: "Approved" },
-      orderBy: { createdAt: "desc" },
-      include: { inKindItems: true, supportOptions: true, organization: true },
-    });
-    res.json(posts.map(formatPost));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+  const posts = await prisma.post.findMany({
+    where: { overallStatus: "Approved" },
+    orderBy: { createdAt: "desc" },
+    include: POST_INCLUDE,
+  });
+  res.json(posts.map(formatPost));
+};
+
+/** GET /posts/admin/all */
+export const getAllPosts = async (req, res) => {
+  const posts = await prisma.post.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      ...POST_INCLUDE,
+      auditLogs: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: { admin: { select: { firstName: true, lastName: true } } },
+      },
+    },
+  });
+  res.json(posts.map((post) => ({ ...formatPost(post), lastAudit: post.auditLogs[0] ?? null })));
 };
 
 /**
  * GET /posts/:postId
- * Returns a single post by its ID.
+ *
+ * Visibility was enforced upstream by owners.postVisible: an Approved project
+ * is readable by any signed-in user, anything else only by its organization or
+ * an administrator. Previously any authenticated user could read any project in
+ * any state, including drafts and deleted rows, by guessing an id.
  */
 export const getPostById = async (req, res) => {
-  try {
-    const post = await prisma.post.findUnique({
-      where: { id: req.params.postId },
-      include: { inKindItems: true, supportOptions: true, organization: true },
-    });
+  const post = await prisma.post.findUnique({
+    where: { id: req.params.postId },
+    include: POST_INCLUDE,
+  });
+  if (!post) throw notFound();
+  res.json(formatPost(post));
+};
 
-    if (!post) return res.status(404).json({ error: "Post not found" });
+/** GET /posts/:postId/audit — administrators only. */
+export const getPostAuditLog = async (req, res) => {
+  const logs = await prisma.postAuditLog.findMany({
+    where: { postId: req.params.postId },
+    orderBy: { createdAt: "desc" },
+    include: { admin: { select: { firstName: true, lastName: true } } },
+  });
+  res.json(logs);
+};
 
-    res.json(formatPost(post));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+/** GET /posts/:postId/contributions — the owning organization's review queue. */
+export const getPostContributions = async (req, res) => {
+  const contributions = await prisma.contribution.findMany({
+    where: { postId: req.params.postId },
+    orderBy: { createdAt: "desc" },
+    include: { inKindItem: { select: { id: true, itemName: true, unit: true } } },
+  });
+  res.json({ postId: req.params.postId, contributions });
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * WRITE
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** POST /posts */
+export const createPost = async (req, res) => {
+  const { postFields, inKindItems, supportOptionsData } = buildPostData(req.body);
+
+  const post = await prisma.post.create({
+    data: {
+      ...postFields,
+      // Taken from the session, never from the body — the schema rejects an
+      // orgId field outright, so a project cannot be created on another
+      // organization's behalf.
+      orgId: req.user.id,
+      overallStatus: "Pending",
+      inKindItems: { create: inKindItems },
+      supportOptions: { create: supportOptionsData },
+    },
+    include: POST_INCLUDE,
+  });
+
+  res.status(201).json({ message: "Project submitted for review.", post: formatPost(post) });
 };
 
 /**
  * PUT /posts/:postId
- * Updates a post and replaces its support options and in-kind items.
+ *
+ * Ownership is enforced by owners.post. Before that resolver existed this route
+ * checked only that the caller was *an* organization, so any NGO could rewrite
+ * any other NGO's project.
  */
 export const updatePost = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const data = buildPostData(req.body);
-    const { inKindItems, supportOptionsData, ...postFields } = data;
+  const current = req.resource; // loaded by the ownership resolver
+  const { postFields, inKindItems, supportOptionsData } = buildPostData(req.body);
 
-    const updated = await prisma.post.update({
-      where: { id: postId },
-      data: {
-        ...postFields,
-        overallStatus: req.body.overallStatus || "Edited",
-        inKindItems: {
-          deleteMany: {},
-          create: inKindItems,
-        },
-        supportOptions: {
-          deleteMany: {},
-          create: supportOptionsData,
-        },
-      },
-      include: { inKindItems: true, supportOptions: true, organization: true },
-    });
+  // An edit returns the project to review. The state machine rejects editing a
+  // deleted project rather than silently resurrecting it.
+  assertPostTransition(current.overallStatus, "Edited", req.user.role === "admin" ? "admin" : "owner");
 
-    res.json({
-      message: "Post updated successfully",
-      post: formatPost(updated),
-    });
-  } catch (err) {
-    if (err.code === "P2025") {
-      return res.status(404).json({ error: "Post not found" });
-    }
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+  const updated = await prisma.post.update({
+    where: { id: req.params.postId },
+    data: {
+      ...postFields,
+      overallStatus: "Edited",
+      inKindItems: { deleteMany: {}, create: inKindItems },
+      supportOptions: { deleteMany: {}, create: supportOptionsData },
+    },
+    include: POST_INCLUDE,
+  });
+
+  res.json({ message: "Project updated and resubmitted for review.", post: formatPost(updated) });
 };
 
-/**
- * DELETE /posts/:postId (soft delete)
- * Sets overallStatus to "Deleted".
- */
+/** DELETE /posts/:postId — soft delete. */
 export const deletePost = async (req, res) => {
-  try {
-    const post = await prisma.post.update({
-      where: { id: req.params.postId },
-      data: { overallStatus: "Deleted" },
-    });
-    res.json({ message: "Post marked as deleted", post });
-  } catch (err) {
-    if (err.code === "P2025") {
-      return res.status(404).json({ error: "Post not found" });
-    }
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+  const current = req.resource;
+  assertPostTransition(
+    current.overallStatus,
+    "Deleted",
+    req.user.role === "admin" ? "admin" : "owner",
+  );
+
+  await prisma.post.update({
+    where: { id: req.params.postId },
+    data: { overallStatus: "Deleted" },
+  });
+
+  await logSecurityEvent(req, {
+    eventType: EVENTS.POST_STATUS_CHANGED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `Project "${current.projectName}" was deleted.`,
+    targetType: "Post",
+    targetId: req.params.postId,
+    metadata: { from: current.overallStatus, to: "Deleted" },
+  });
+
+  res.json({ message: "Project deleted." });
 };
 
 /**
  * DELETE /posts/:postId/permanent
- * Permanently removes the post and all related rows from the database.
+ *
+ * Irreversible, and cascades to every contribution, payment, refund and
+ * document attached to the project. Requires re-authentication. [2.1.13]
  */
 export const permanentDeletePost = async (req, res) => {
-  try {
-    const post = await prisma.post.delete({
-      where: { id: req.params.postId },
-    });
-    res.json({ message: "Post permanently deleted", post });
-  } catch (err) {
-    if (err.code === "P2025") {
-      return res.status(404).json({ error: "Post not found" });
-    }
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+  const post = await prisma.post.findUnique({
+    where: { id: req.params.postId },
+    select: { id: true, projectName: true, orgId: true },
+  });
+  if (!post) throw notFound();
+
+  await prisma.post.delete({ where: { id: req.params.postId } });
+
+  await logSecurityEvent(req, {
+    eventType: EVENTS.POST_STATUS_CHANGED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.CRITICAL,
+    message: `Project "${post.projectName}" was permanently destroyed, along with all related records.`,
+    targetType: "Post",
+    targetId: post.id,
+    metadata: { organizationId: post.orgId },
+  });
+
+  res.json({ message: "Project permanently deleted." });
 };
 
 /**
- * PATCH /posts/:postId/status
- * Updates only the overallStatus field of a post and logs the action.
+ * PATCH /posts/:postId/status — moderation.
+ *
+ * The state machine is what stops Deleted → Approved, which the previous
+ * implementation permitted because it validated the target status against the
+ * enum and wrote it straight through.
  */
 export const updatePostStatus = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { overallStatus } = req.body;
+  const { overallStatus } = req.body;
+  const current = await prisma.post.findUnique({
+    where: { id: req.params.postId },
+    select: { id: true, overallStatus: true, projectName: true },
+  });
+  if (!current) throw notFound();
 
-    const validStatuses = [
-      "Pending",
-      "Approved",
-      "Unapproved",
-      "Edited",
-      "Deleted",
-    ];
-    if (!validStatuses.includes(overallStatus)) {
-      return res.status(400).json({ error: "Invalid status value." });
-    }
+  assertPostTransition(current.overallStatus, overallStatus, "admin");
 
-    const updated = await prisma.post.update({
-      where: { id: postId },
-      data: { overallStatus },
-    });
+  const [updated] = await prisma.$transaction([
+    prisma.post.update({ where: { id: req.params.postId }, data: { overallStatus } }),
+    prisma.postAuditLog.create({
+      data: { postId: req.params.postId, adminId: req.user.id, action: overallStatus },
+    }),
+  ]);
 
-    // Log the action to the audit trail
-    await prisma.postAuditLog.create({
-      data: {
-        postId,
-        adminId: req.user.id,
-        action: overallStatus,
-      },
-    });
+  await logSecurityEvent(req, {
+    eventType: EVENTS.POST_STATUS_CHANGED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `Project "${current.projectName}" moved from ${current.overallStatus} to ${overallStatus}.`,
+    targetType: "Post",
+    targetId: req.params.postId,
+    metadata: { from: current.overallStatus, to: overallStatus },
+  });
 
-    res.json({ message: "Status updated successfully", post: updated });
-  } catch (err) {
-    if (err.code === "P2025") {
-      return res.status(404).json({ error: "Post not found" });
-    }
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+  res.json({ message: "Project status updated.", post: updated });
 };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * CONTRIBUTIONS
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
 /**
  * PATCH /posts/:postId/contribute
- * Creates Contribution records (status: Confirmed) for each donation entry
- * and updates the current amounts/counts on the post's support options.
  *
- * Body shape:
- * {
- *   monetary: [{ donorName, amount }],
- *   inKind:   [{ donorName, itemId, quantity }],
- *   volunteer:[{ donorName, count }],
- * }
+ * Records contributions as PENDING. Progress totals do not move here.
+ *
+ * They used to: every contribution incremented `currentAmount` / `currentCount`
+ * the instant the row was created, even with `status: "Pending"`. Any donor
+ * could therefore drive a project's fundraising bar to its goal without giving
+ * anything, and the organization had no say. Totals now move only when the
+ * receiving organization confirms — see decideContribution below. [2.2.3]
  */
 export const addContribution = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    let { monetary = [], inKind = [], volunteer = [] } = req.body;
+  const { postId } = req.params;
+  const { monetary = [], inKind = [], volunteer = [] } = req.body;
 
-    // When donor uploads proof via FormData, arrays arrive as JSON strings.
-    if (typeof monetary === "string") monetary = JSON.parse(monetary || "[]");
-    if (typeof inKind === "string") inKind = JSON.parse(inKind || "[]");
-    if (typeof volunteer === "string")
-      volunteer = JSON.parse(volunteer || "[]");
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    include: { inKindItems: true, supportOptions: true },
+  });
 
-    // Fetch post with support options and in-kind items
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-      include: { inKindItems: true, supportOptions: true },
+  assertPostAcceptsContributions(post);
+
+  // An organization logging a walk-in donation may only do so on its own
+  // project. Donors may contribute to any approved project.
+  if (req.user.role === "ngo" && post.orgId !== req.user.id) {
+    throw notFound();
+  }
+
+  // Validate every entry against the project's real support options BEFORE
+  // writing any of them, so a partly-valid submission is rejected whole rather
+  // than half-applied.
+  for (const entry of monetary) {
+    assertContributionAllowed(post, { type: "Monetary", amount: entry.amount });
+  }
+  for (const entry of inKind) {
+    assertContributionAllowed(post, {
+      type: "InKind",
+      itemId: entry.itemId,
+      quantity: entry.quantity,
     });
-    if (!post) return res.status(404).json({ error: "Post not found" });
+  }
+  for (const entry of volunteer) {
+    assertContributionAllowed(post, { type: "Volunteer", count: entry.count });
+  }
 
-    let partnershipId = null;
-    let donorName = "Anonymous";
-    const contributionStatus =
-      req.user?.role === "donor" ? "Pending" : "Confirmed";
+  // Identity comes from the session. `donorId` in the request body is ignored.
+  let partnershipId = null;
+  let sessionDonorName = "Anonymous";
 
-    // registered donors create/maintain an org partnership when they contribute.
-    if (req.user?.role === "donor") {
-      const donor = await prisma.donor.findUnique({
-        where: { id: req.user.id },
-      });
-      if (donor) {
-        donorName = `${donor.firstName} ${donor.lastName}`.trim();
-        const partnership = await prisma.donorOrganizationPartner.upsert({
-          where: {
-            donorId_orgId: {
-              donorId: donor.id,
-              orgId: post.orgId,
-            },
-          },
-          update: {},
-          create: {
-            donorId: donor.id,
-            orgId: post.orgId,
-          },
-        });
-        partnershipId = partnership.id;
-      }
-    }
+  if (req.user.role === "donor") {
+    const donor = await prisma.donor.findUnique({ where: { id: req.user.id } });
+    if (!donor) throw notFound();
+    sessionDonorName = `${donor.firstName} ${donor.lastName}`.trim();
 
-    const monetaryOption = post.supportOptions.find(
-      (o) => o.type === "Monetary",
-    );
-    const volunteerOption = post.supportOptions.find(
-      (o) => o.type === "Volunteer",
-    );
-
-    const proofData = req.file
-      ? {
-          proofFileName: req.file.originalname,
-          proofFilePath: req.file.path,
-          proofMimeType: req.file.mimetype,
-          proofFileSize: req.file.size,
-        }
-      : {};
-
-    // ── Create Contribution records and update totals ──────────────────────
-
-    // Monetary
-    for (const entry of monetary) {
-      if (!entry.amount || entry.amount <= 0) continue;
-      await prisma.contribution.create({
-        data: {
-          donorName: entry.donorName || donorName,
-          partnershipId,
-          postId,
-          type: "Monetary",
-          amount: parseFloat(entry.amount),
-          ...proofData,
-          status: contributionStatus,
-        },
-      });
-      if (monetaryOption) {
-        await prisma.postSupportOption.update({
-          where: { id: monetaryOption.id },
-          data: { currentAmount: { increment: parseFloat(entry.amount) } },
-        });
-      }
-    }
-
-    // In-Kind
-    for (const entry of inKind) {
-      if (!entry.quantity || entry.quantity <= 0) continue;
-      await prisma.contribution.create({
-        data: {
-          donorName: entry.donorName || donorName,
-          partnershipId,
-          postId,
-          type: "InKind",
-          inKindItemId: entry.itemId,
-          quantity: parseFloat(entry.quantity),
-          ...proofData,
-          status: contributionStatus,
-        },
-      });
-      await prisma.postInKindItem.update({
-        where: { id: entry.itemId },
-        data: { currentQuantity: { increment: parseFloat(entry.quantity) } },
-      });
-    }
-
-    // Volunteer
-    for (const entry of volunteer) {
-      if (!entry.count || entry.count <= 0) continue;
-      await prisma.contribution.create({
-        data: {
-          donorName: entry.donorName || donorName,
-          partnershipId,
-          postId,
-          type: "Volunteer",
-          volunteerCount: Math.round(entry.count),
-          ...proofData,
-          status: contributionStatus,
-        },
-      });
-      if (volunteerOption) {
-        await prisma.postSupportOption.update({
-          where: { id: volunteerOption.id },
-          data: { currentCount: { increment: Math.round(entry.count) } },
-        });
-      }
-    }
-
-    // Re-fetch updated post
-    const finalPost = await prisma.post.findUnique({
-      where: { id: postId },
-      include: { inKindItems: true, supportOptions: true, organization: true },
+    const partnership = await prisma.donorOrganizationPartner.upsert({
+      where: { donorId_orgId: { donorId: donor.id, orgId: post.orgId } },
+      update: {},
+      create: { donorId: donor.id, orgId: post.orgId },
     });
+    partnershipId = partnership.id;
+  }
 
-    res.json({
-      message: "Contributions recorded successfully",
-      post: formatPost(finalPost),
+  const proof = req.file
+    ? {
+        proofFileName: req.file.originalname,
+        proofFilePath: req.file.path,
+        proofMimeType: req.file.mimetype,
+        proofFileSize: req.file.size,
+      }
+    : {};
+
+  /**
+   * An organization recording a walk-in donation is itself the confirming
+   * party, so those are Confirmed on creation. A donor's own claim is Pending
+   * until the organization agrees.
+   */
+  const status = req.user.role === "ngo" ? "Confirmed" : "Pending";
+  const now = new Date();
+
+  const rows = [
+    ...monetary.map((entry) => ({
+      donorName: req.user.role === "donor" ? sessionDonorName : entry.donorName,
+      partnershipId,
+      postId,
+      type: "Monetary",
+      amount: entry.amount,
+      status,
+      ...(status === "Confirmed" ? { statusChangedAt: now, statusChangedBy: req.user.id } : {}),
+      ...proof,
+    })),
+    ...inKind.map((entry) => ({
+      donorName: req.user.role === "donor" ? sessionDonorName : entry.donorName,
+      partnershipId,
+      postId,
+      type: "InKind",
+      inKindItemId: entry.itemId,
+      quantity: entry.quantity,
+      status,
+      ...(status === "Confirmed" ? { statusChangedAt: now, statusChangedBy: req.user.id } : {}),
+      ...proof,
+    })),
+    ...volunteer.map((entry) => ({
+      donorName: req.user.role === "donor" ? sessionDonorName : entry.donorName,
+      partnershipId,
+      postId,
+      type: "Volunteer",
+      volunteerCount: entry.count,
+      status,
+      ...(status === "Confirmed" ? { statusChangedAt: now, statusChangedBy: req.user.id } : {}),
+      ...proof,
+    })),
+  ];
+
+  await prisma.$transaction(async (tx) => {
+    for (const row of rows) {
+      const created = await tx.contribution.create({ data: row });
+      if (status === "Confirmed") await applyContributionToTotals(tx, created);
+    }
+  });
+
+  await logSecurityEvent(req, {
+    eventType: EVENTS.CONTRIBUTION_CREATED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `${rows.length} contribution(s) recorded as ${status.toLowerCase()}.`,
+    targetType: "Post",
+    targetId: postId,
+    metadata: { count: rows.length, status },
+  });
+
+  const finalPost = await prisma.post.findUnique({
+    where: { id: postId },
+    include: POST_INCLUDE,
+  });
+
+  res.json({
+    message:
+      status === "Pending"
+        ? "Thank you. Your contribution has been sent to the organization for confirmation."
+        : "Contribution recorded.",
+    post: formatPost(finalPost),
+  });
+};
+
+/**
+ * Move a confirmed contribution into the project's running totals.
+ * Called only from inside a transaction, only once per contribution.
+ */
+const applyContributionToTotals = async (tx, contribution) => {
+  if (contribution.type === "Monetary") {
+    await tx.postSupportOption.updateMany({
+      where: { postId: contribution.postId, type: "Monetary" },
+      data: { currentAmount: { increment: contribution.amount ?? 0 } },
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+  } else if (contribution.type === "Volunteer") {
+    await tx.postSupportOption.updateMany({
+      where: { postId: contribution.postId, type: "Volunteer" },
+      data: { currentCount: { increment: contribution.volunteerCount ?? 0 } },
+    });
+  } else if (contribution.type === "InKind" && contribution.inKindItemId) {
+    await tx.postInKindItem.update({
+      where: { id: contribution.inKindItemId },
+      data: { currentQuantity: { increment: contribution.quantity ?? 0 } },
+    });
   }
 };
 
 /**
- * GET /posts/partnerships/me
- * Returns all current partnerships for the logged-in donor with project snapshots. :DDD
+ * PATCH /posts/contributions/:contributionId/status
+ *
+ * The organization that received a contribution confirms or declines it. This
+ * is the only path that moves a project's progress totals, and it is one-way:
+ * a decided contribution cannot be decided again, which is what prevents
+ * double-counting.
  */
+export const decideContribution = async (req, res) => {
+  const contribution = req.resource; // loaded and ownership-checked upstream
+  const { status } = req.body;
+
+  assertContributionTransition(contribution.status, status);
+
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.contribution.update({
+      where: { id: contribution.id },
+      data: { status, statusChangedAt: new Date(), statusChangedBy: req.user.id },
+    });
+    if (status === "Confirmed") await applyContributionToTotals(tx, updated);
+  });
+
+  await logSecurityEvent(req, {
+    eventType: status === "Confirmed" ? EVENTS.CONTRIBUTION_CONFIRMED : EVENTS.CONTRIBUTION_DECLINED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `Contribution ${status.toLowerCase()} by the receiving organization.`,
+    targetType: "Contribution",
+    targetId: contribution.id,
+    metadata: { postId: contribution.postId, type: contribution.type },
+  });
+
+  res.json({ message: `Contribution ${status.toLowerCase()}.` });
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * PARTNERSHIPS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Earliest moment each project's monetary goal was met, per project. */
+const goalReachedAtMap = (postsById, monetaryContributions) => {
+  const reachedAt = {};
+  const running = {};
+
+  for (const contribution of monetaryContributions) {
+    const post = postsById[contribution.postId];
+    const monetary = post?.supportTypes?.monetary;
+    if (!monetary?.enabled || !(monetary.targetAmount > 0)) continue;
+
+    running[contribution.postId] = (running[contribution.postId] ?? 0) + (contribution.amount ?? 0);
+    if (!reachedAt[contribution.postId] && running[contribution.postId] >= monetary.targetAmount) {
+      reachedAt[contribution.postId] = contribution.createdAt;
+    }
+  }
+  return reachedAt;
+};
+
+/** GET /posts/partnerships/me — the signed-in donor's partnerships. */
 export const getMyDonorPartnerships = async (req, res) => {
-  try {
-    const partnerships = await prisma.donorOrganizationPartner.findMany({
-      where: { donorId: req.user.id },
-      include: {
-        organization: {
-          select: {
-            id: true,
-            orgName: true,
-            email: true,
-            country: true,
+  const partnerships = await prisma.donorOrganizationPartner.findMany({
+    where: { donorId: req.user.id },
+    include: {
+      organization: { select: { id: true, orgName: true, email: true, country: true } },
+      contributions: {
+        orderBy: { createdAt: "desc" },
+        include: { post: { include: POST_INCLUDE } },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const postsById = {};
+  const monetaryCountByPost = {};
+
+  const result = partnerships.map((partnership) => {
+    const projects = [];
+    const seen = new Set();
+
+    for (const contribution of partnership.contributions) {
+      if (contribution.type === "Monetary" && contribution.postId) {
+        monetaryCountByPost[contribution.postId] = (monetaryCountByPost[contribution.postId] ?? 0) + 1;
+      }
+      const post = contribution.post;
+      if (!post || seen.has(post.id)) continue;
+      seen.add(post.id);
+      const formatted = formatPost(post);
+      postsById[formatted.id] = formatted;
+      projects.push(formatted);
+    }
+
+    return {
+      id: partnership.id,
+      createdAt: partnership.createdAt,
+      status: partnership.status,
+      organization: partnership.organization,
+      projects,
+      totalContributions: partnership.contributions.length,
+    };
+  });
+
+  const postIds = Object.keys(postsById);
+  if (postIds.length > 0) {
+    const monetaryContributions = await prisma.contribution.findMany({
+      where: { postId: { in: postIds }, type: "Monetary", status: "Confirmed" },
+      select: { postId: true, amount: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    });
+    const reachedAt = goalReachedAtMap(postsById, monetaryContributions);
+
+    for (const partnership of result) {
+      partnership.projects = partnership.projects.map((project) => {
+        const monetary = project.supportTypes?.monetary;
+        const hasGoal = monetary?.enabled && (monetary.targetAmount ?? 0) > 0;
+        const donorGave = (monetaryCountByPost[project.id] ?? 0) > 0;
+        if (!hasGoal || !donorGave) return { ...project, fundraisingUpdate: null };
+
+        const goalMet = (monetary.currentAmount ?? 0) >= (monetary.targetAmount ?? 0);
+        return {
+          ...project,
+          fundraisingUpdate: {
+            goalMet,
+            targetAmount: monetary.targetAmount,
+            currentAmount: monetary.currentAmount,
+            reachedAt: goalMet ? (reachedAt[project.id] ?? null) : null,
+            message: goalMet
+              ? "Fundraising goal reached. Thank you for helping this project succeed."
+              : "Fundraising is still in progress.",
           },
-        },
-        contributions: {
-          orderBy: { createdAt: "desc" },
-          include: {
-            post: {
-              include: {
-                supportOptions: true,
-                inKindItems: true,
-                organization: true,
-              },
-            },
-          },
+        };
+      });
+    }
+  }
+
+  res.json(result);
+};
+
+/** GET /posts/partnerships/incoming — an organization's donor partnerships. */
+export const getOrgPartnershipOffers = async (req, res) => {
+  const partnerships = await prisma.donorOrganizationPartner.findMany({
+    where: { orgId: req.user.id },
+    include: {
+      donor: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          country: true,
+          affiliation: true,
+          bio: true,
         },
       },
-      orderBy: { createdAt: "desc" },
-    });
+      contributions: {
+        include: {
+          post: { select: { id: true, projectName: true, priority: true, causes: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-    const postsById = {};
-    const partnershipMonetaryContributionsByPost = {};
+  const offers = partnerships.flatMap((partnership) => {
+    const byPost = {};
+    for (const contribution of partnership.contributions) {
+      if (!contribution.postId) continue;
+      (byPost[contribution.postId] ??= []).push(contribution);
+    }
 
-    const result = partnerships.map((partnership) => {
-      const uniquePosts = [];
-      const seenPostIds = new Set();
+    const donorProjects = [...
+      new Map(partnership.contributions.map((c) => [c.postId, c.post])).values()
+    ].filter(Boolean);
 
-      for (const contribution of partnership.contributions) {
-        if (contribution.type !== "Monetary" || !contribution.postId) continue;
-        partnershipMonetaryContributionsByPost[contribution.postId] =
-          (partnershipMonetaryContributionsByPost[contribution.postId] ?? 0) +
-          1;
-      }
+    return Object.entries(byPost).map(([postId, contributions]) => {
+      const post = contributions[0]?.post;
+      const donor = partnership.donor;
 
-      for (const contribution of partnership.contributions) {
-        const post = contribution.post;
-        if (!post || seenPostIds.has(post.id)) continue;
-        seenPostIds.add(post.id);
-
-        const formattedPost = formatPost(post);
-        postsById[formattedPost.id] = formattedPost;
-        uniquePosts.push(formattedPost);
-      }
+      const totalAmount = contributions
+        .filter((c) => c.type === "Monetary")
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0);
+      const volunteerCount = contributions
+        .filter((c) => c.type === "Volunteer")
+        .reduce((sum, c) => sum + (c.volunteerCount ?? 0), 0);
 
       return {
-        id: partnership.id,
-        createdAt: partnership.createdAt,
+        id: `${partnership.id}-${postId}`,
+        companyName: `${donor.firstName} ${donor.lastName}`.trim(),
+        sector: donor.country || "International",
+        supportFocus: [...new Set(contributions.map((c) => c.type))].join(", ") || "Various Support",
+        annualBudget: "N/A",
+        certifications: [],
+        projectId: postId,
+        projectName: post?.projectName || "Unknown Project",
+        projectPriority: post?.priority || "Medium",
+        proposedValue:
+          totalAmount > 0 ? `PHP ${totalAmount.toLocaleString("en-PH")}` : "In-Kind Support",
+        volunteerHours: volunteerCount,
         status: partnership.status,
-        organization: partnership.organization,
-        projects: uniquePosts,
-        totalContributions: partnership.contributions.length,
+        partnershipId: partnership.id,
+        donorId: donor.id,
+        donorEmail: donor.email,
+        donorAffiliation: donor.affiliation || "",
+        donorBio: donor.bio || "",
+        donorProjects,
+        createdAt: partnership.createdAt,
       };
     });
+  });
 
-    const postIds = Object.keys(postsById);
-    if (postIds.length > 0) {
-      const monetaryContributions = await prisma.contribution.findMany({
-        where: {
-          postId: { in: postIds },
-          type: "Monetary",
-          status: "Confirmed",
-        },
-        select: {
-          postId: true,
-          amount: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "asc" },
-      });
-
-      const reachedAtMap = getMonetaryGoalReachedAtMap(
-        postsById,
-        monetaryContributions,
-      );
-
-      for (const partnership of result) {
-        partnership.projects = (partnership.projects || []).map((project) => {
-          const monetary = project.supportTypes?.monetary;
-          const hasMonetaryGoal =
-            monetary?.enabled && (monetary.targetAmount ?? 0) > 0;
-          const donorContributedMonetary =
-            (partnershipMonetaryContributionsByPost[project.id] ?? 0) > 0;
-
-          if (!hasMonetaryGoal || !donorContributedMonetary) {
-            return {
-              ...project,
-              fundraisingUpdate: null,
-            };
-          }
-
-          const targetAmount = monetary.targetAmount ?? 0;
-          const currentAmount = monetary.currentAmount ?? 0;
-          const goalMet = currentAmount >= targetAmount;
-
-          return {
-            ...project,
-            fundraisingUpdate: {
-              goalMet,
-              targetAmount,
-              currentAmount,
-              reachedAt: goalMet ? (reachedAtMap[project.id] ?? null) : null,
-              message: goalMet
-                ? "Fundraising goal reached. Thank you for helping this project succeed."
-                : "Fundraising is still in progress.",
-            },
-          };
-        });
-      }
-    }
-
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-/**
- * GET /posts/organization/partnership-offers
- * Returns all partnership offers (DonorOrganizationPartner entries) for the org.
- * Used by organizations to view incoming partnership proposals from donors.
- */
-export const getOrgPartnershipOffers = async (req, res) => {
-  try {
-    const orgId = req.user.id;
-
-    const partnerships = await prisma.donorOrganizationPartner.findMany({
-      where: { orgId },
-      include: {
-        donor: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            country: true,
-            affiliation: true,
-            bio: true,
-          },
-        },
-        contributions: {
-          include: {
-            post: {
-              select: {
-                id: true,
-                projectName: true,
-                priority: true,
-                causes: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    // Transform partnerships into partnership offers format
-    const offers = partnerships.flatMap((partnership) => {
-      // Group contributions by post to create one offer per post
-      const postContributions = {};
-
-      for (const contribution of partnership.contributions) {
-        if (!contribution.postId) continue;
-        if (!postContributions[contribution.postId]) {
-          postContributions[contribution.postId] = [];
-        }
-        postContributions[contribution.postId].push(contribution);
-      }
-
-      // Create an offer for each post
-      return Object.entries(postContributions).map(
-        ([postId, contributions]) => {
-          const post = contributions[0]?.post;
-          const donor = partnership.donor;
-
-          // Calculate total contribution value
-          const totalAmount = contributions
-            .filter((c) => c.type === "Monetary" && c.amount)
-            .reduce((sum, c) => sum + (c.amount ?? 0), 0);
-
-          const volunteerCount = contributions
-            .filter((c) => c.type === "Volunteer" && c.volunteerCount)
-            .reduce((sum, c) => sum + (c.volunteerCount ?? 0), 0);
-
-          // Determine support focus based on contribution types
-          const supportTypes = new Set(contributions.map((c) => c.type));
-          const supportFocus = Array.from(supportTypes).join(", ");
-
-          // Get all unique projects this donor has contributed to with this org
-          const donorProjects = Array.from(
-            new Map(
-              partnership.contributions.map((c) => [c.postId, c.post]),
-            ).values(),
-          );
-
-          return {
-            id: `${partnership.id}-${postId}`,
-            companyName: `${donor.firstName} ${donor.lastName}`.trim(),
-            sector: donor.country || "International",
-            supportFocus: supportFocus || "Various Support",
-            annualBudget: "N/A",
-            certifications: [],
-            projectId: postId,
-            projectName: post?.projectName || "Unknown Project",
-            projectPriority: post?.priority || "Medium",
-            proposedValue:
-              totalAmount > 0
-                ? `PHP ${totalAmount.toLocaleString("en-PH")}`
-                : "In-Kind Support",
-            volunteerHours: volunteerCount,
-            status: "pending",
-            partnershipId: partnership.id,
-            donorId: donor.id,
-            donorEmail: donor.email,
-            donorAffiliation: donor.affiliation || "",
-            donorBio: donor.bio || "",
-            donorProjects: donorProjects,
-            createdAt: partnership.createdAt,
-          };
-        },
-      );
-    });
-
-    res.json(offers);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+  res.json(offers);
 };

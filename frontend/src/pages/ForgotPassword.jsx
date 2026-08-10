@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getApiUrl } from "../config/api.js";
+import { apiPost } from "../config/api.js";
 import "../css/ForgotPassword.css";
 
 export default function ForgotPassword() {
@@ -18,23 +18,16 @@ export default function ForgotPassword() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(getApiUrl("/forgot-password"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to process password reset request.");
-      }
-
+      // The server answers identically whether or not the address is
+      // registered, so this screen must not infer anything from the response.
+      // Anything else would turn this endpoint into a free way to discover
+      // which email addresses have accounts. [CSSECDV 2.1.4]
+      const data = await apiPost("/forgot-password", { email });
       setMessage(data.message);
       setIsSuccess(true);
       setEmail("");
     } catch (submitError) {
-      setError(submitError.message || "An error occurred.");
+      setError(submitError.message);
     } finally {
       setIsSubmitting(false);
     }

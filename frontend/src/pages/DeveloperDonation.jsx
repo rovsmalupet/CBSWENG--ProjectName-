@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { StripePaymentModal } from "../components/StripePayment";
-import { getApiUrl } from "../config/api";
 import "../css/DeveloperDonation.css";
 
 const fmtPHP = (n) =>
@@ -31,10 +30,10 @@ export default function DeveloperDonation() {
       return;
     }
 
-    // Open modal - it will handle payment intent creation
+    // The modal asks the server for the price. We only describe the gift.
     setPaymentData({
-      amount,
-      projectName: "Support BayaniHub - Admin Fund",
+      contribution: { monetaryAmount: amount },
+      projectName: "Support BayaniHub — Admin Fund",
     });
     setShowPaymentModal(true);
   };
@@ -155,10 +154,7 @@ export default function DeveloperDonation() {
               setPaymentData(null);
             }}
             postId="admin"
-            donationAmount={paymentData.amount}
-            monetaryFee={0}
-            volunteerFee={0}
-            inKindFee={0}
+            contribution={paymentData.contribution}
             projectName={paymentData.projectName}
             onPaymentSuccess={handlePaymentSuccess}
           />

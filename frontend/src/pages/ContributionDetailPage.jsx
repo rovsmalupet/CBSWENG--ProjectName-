@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import "../css/ProjectDetailPage.css";
 import { apiFetch, getApiUrl } from "../config/api.js";
+import PendingContributions from "../components/PendingContributions.jsx";
 
 const CAUSE_STYLES = {
   noPoverty:              { label: "Poverty",             bg: "#E5243B", color: "#fff" },
@@ -66,19 +67,20 @@ export default function ContributionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        const data = await apiFetch(getApiUrl(`/posts/${id}`));
-        setProject(data);
-      } catch (err) {
-        setError(err.message || "failed to load project");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProject();
+  const fetchProject = useCallback(async () => {
+    try {
+      const data = await apiFetch(getApiUrl(`/posts/${id}`));
+      setProject(data);
+    } catch (err) {
+      setError(err.message || "failed to load project");
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchProject();
+  }, [fetchProject]);
 
   if (loading) return <div className="apd-page"><p>loading...</p></div>;
   if (error) return <div className="apd-page"><p style={{ color: "red" }}>{error}</p></div>;
@@ -108,6 +110,8 @@ export default function ContributionDetailPage() {
             )}
           </div>
           <div className="apd-secondary-actions">
+            {/* A donor's contribution stays pending until reviewed below, so
+                the review queue lives on this page. [CSSECDV 2.2.3] */}
             <button className="apd-support-btn" onClick={() => navigate(`/add-contribution/${id}`)}>
               Add Manual Contribution
             </button>
@@ -215,6 +219,14 @@ export default function ContributionDetailPage() {
           </>
         )}
       </div>
+
+      {/*
+        The review queue. Confirming a contribution is what moves the progress
+        bars above — they no longer move the moment a donor submits, which is
+        the point of the change. Refetching the project afterwards keeps the
+        figures on this page in step. [CSSECDV 2.2.3]
+      */}
+      <PendingContributions postId={id} onDecided={fetchProject} />
     </div>
   );
 }

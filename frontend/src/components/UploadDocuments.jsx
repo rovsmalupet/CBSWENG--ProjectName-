@@ -62,7 +62,8 @@ export default function UploadDocuments({ postId, onUploadSuccess }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Upload failed.");
+        // The API error envelope is { error: { message, code } }.
+        throw new Error(data?.error?.message || "Upload failed.");
       }
 
       setSuccess("Document uploaded successfully!");
