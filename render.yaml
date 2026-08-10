@@ -1,0 +1,46 @@
+# Render Blueprint — deploys the Express backend.
+# The database stays on Supabase and the frontend stays on Vercel.
+#
+# Secrets are marked `sync: false`, so Render prompts for them when you create
+# the Blueprint instead of them being committed here. Copy the values from
+# backend/.env (which is gitignored).
+services:
+  - type: web
+    name: bayanihub-api
+    runtime: node
+    plan: free
+    region: singapore # same region as the Supabase project (ap-southeast-1)
+    rootDir: backend
+    buildCommand: npm install # postinstall runs `prisma generate`
+    startCommand: npm start # runs `prisma migrate deploy && node server.js`
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Must match the Vercel origin exactly — no trailing slash, or the
+      # CORS allowlist in server.js won't match the browser's Origin header.
+      - key: FRONTEND_URL
+        value: https://cbsweng-project-name-ddtf.vercel.app
+      - key: RESET_PASSWORD_URL
+        value: https://cbsweng-project-name-ddtf.vercel.app/reset-password
+      # Render assigns PORT itself; server.js already reads process.env.PORT.
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
