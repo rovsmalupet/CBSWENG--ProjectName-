@@ -7,6 +7,9 @@ Development). The security work is documented in
 [SECURITY.md](SECURITY.md), and the original plan is in
 [SECURITY_IMPLEMENTATION_PLAN.md](SECURITY_IMPLEMENTATION_PLAN.md).
 
+Deploying? See [DEPLOYMENT.md](DEPLOYMENT.md) — backend on Render, frontend on
+Vercel, database on Supabase.
+
 ---
 
 ## Stack
@@ -27,7 +30,7 @@ Development). The security work is documented in
 ## Prerequisites
 
 - Node.js 20 or newer (developed on 22)
-- A PostgreSQL database (Supabase, Railway, Neon, or local)
+- A PostgreSQL database (Supabase, Neon, Render, or local)
 
 ---
 

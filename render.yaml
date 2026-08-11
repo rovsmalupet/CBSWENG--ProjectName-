@@ -32,7 +32,15 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: VITE_STRIPE_PUBLISHABLE_KEY
+      # The SECRET key, not the publishable one. `VITE_*` variables are
+      # build-time frontend values and belong on Vercel — the backend never
+      # reads them, and payments/refunds return 503 without this.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      # Optional. Gives the bootstrap administrator a password you choose.
+      # Without it, one is generated and printed ONCE to the Render logs at
+      # first boot, which is easy to miss.
+      - key: SEED_ADMIN_PASSWORD
         sync: false
       - key: SMTP_HOST
         sync: false

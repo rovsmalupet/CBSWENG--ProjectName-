@@ -63,7 +63,7 @@ app.use(
 app.disable("x-powered-by");
 
 /**
- * Trust exactly one proxy hop in production (Railway/Vercel sit in front).
+ * Trust exactly one proxy hop in production (Render/Vercel sit in front).
  *
  * This governs whether req.ip believes X-Forwarded-For. Trusting it blindly
  * would let anyone forge the source address of their own failed logins and
