@@ -12,16 +12,17 @@ const calculateAmount = (payment) => {
          (payment.inKindTransactionFee || 0);
 };
 
-export function PaymentStatusWidget({ projectId, showSummary = true }) {
+export function PaymentStatusWidget({ projectId }) {
   const [paymentData, setPaymentData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const userRole = localStorage.getItem("userRole");
+  const canViewPaymentData = userRole === "ngo" || userRole === "admin";
 
   useEffect(() => {
     const loadPaymentData = async () => {
-      if (!projectId || !shouldShowPaymentData()) {
+      if (!projectId || !canViewPaymentData) {
         setLoading(false);
         return;
       }
@@ -33,7 +34,7 @@ export function PaymentStatusWidget({ projectId, showSummary = true }) {
         const data = await apiFetch(getApiUrl(`/payments/project/${projectId}`));
         setPaymentData(data);
       } catch (err) {
-        console.error("Failed to load payment data:", err);
+        if (import.meta.env.DEV) console.error("Failed to load payment data:", err);
         // Don't show error in UI if user doesn't have permission
         if (err.message?.includes("Unauthorized")) {
           setPaymentData(null);
@@ -46,13 +47,9 @@ export function PaymentStatusWidget({ projectId, showSummary = true }) {
     };
 
     loadPaymentData();
-  }, [projectId]);
+  }, [projectId, canViewPaymentData]);
 
-  const shouldShowPaymentData = () => {
-    return userRole === "ngo" || userRole === "admin";
-  };
-
-  if (!shouldShowPaymentData() || loading) {
+  if (!canViewPaymentData || loading) {
     return null;
   }
 

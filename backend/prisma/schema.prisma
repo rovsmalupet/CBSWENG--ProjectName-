@@ -70,6 +70,7 @@ model UserAccount {
   securityAnswers SecurityAnswer[]
   resetTokens     PasswordResetToken[]
   securityLogs    SecurityLog[]
+  bookmarks       DonorBookmark[]
 
   @@index([role, status])
 }
@@ -244,6 +245,23 @@ model Post {
   documents      DocumentUpload[]
   payments       Payment[]
   refunds        Refund[]
+  bookmarks      DonorBookmark[]
+}
+
+// A donor-owned, private project bookmark. The account id is always taken
+// from the authenticated session; clients never submit or select an owner.
+model DonorBookmark {
+  id        String      @id @default(uuid())
+  accountId String
+  account   UserAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Post        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  note      String      @default("")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([accountId, projectId])
+  @@index([accountId, updatedAt])
 }
 
 // POST AUDIT LOG
@@ -324,6 +342,9 @@ model Contribution {
   postId        String
   post          Post                      @relation(fields: [postId], references: [id], onDelete: Cascade)
   type          SupportType
+  // All rows created in one paid contribution batch share this reference.
+  // It is intentionally not unique because one batch may contain several rows.
+  paymentIntentId String?
 
   // Monetary — only populated when type = Monetary
   amount Float?
@@ -354,6 +375,7 @@ model Contribution {
 
   @@index([postId, status])
   @@index([partnershipId])
+  @@index([paymentIntentId])
 }
 
 // DONOR ORGANIZATION PARTNER

@@ -38,10 +38,12 @@ function getStripePromise() {
   if (!stripePromise) {
     const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
     if (!key || key.includes("YOUR_PUBLISHABLE_KEY")) {
-      console.warn(
-        "VITE_STRIPE_PUBLISHABLE_KEY is not set or is a placeholder. " +
-          "Add a valid Stripe publishable key to your .env file.",
-      );
+      if (import.meta.env.DEV) {
+        console.warn(
+          "VITE_STRIPE_PUBLISHABLE_KEY is not set or is a placeholder. " +
+            "Add a valid Stripe publishable key to your .env file.",
+        );
+      }
       return null;
     }
     stripePromise = loadStripe(key);
@@ -249,6 +251,14 @@ function StripePaymentForm({ clientSecret, totalAmount, onSuccess, onCancel }) {
        * trusting a client-supplied project is exactly the flaw this replaced.
        */
       await apiPost("/payments/confirm", { paymentIntentId: paymentIntent.id });
+
+      if (paymentIntent.status === "processing") {
+        setError(
+          "Your payment is still processing. No contribution was recorded yet; please try again once the payment completes.",
+        );
+        setLoading(false);
+        return;
+      }
 
       setLoading(false);
       onSuccess(paymentIntent.id);

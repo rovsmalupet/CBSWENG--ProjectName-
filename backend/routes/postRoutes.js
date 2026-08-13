@@ -8,8 +8,9 @@
 
 import express from "express";
 
-import upload from "../middleware/uploadMiddleware.js";
+import upload, { verifyUploadedFile } from "../middleware/uploadMiddleware.js";
 import { validate } from "../middleware/validate.js";
+import { emptyRequestSchema } from "../schemas/common.js";
 import {
   createPost,
   getOrgPosts,
@@ -40,10 +41,10 @@ const router = express.Router();
 
 // Static paths are declared before parameterised ones for readability; the
 // policy matcher scores by specificity, so it does not depend on this order.
-router.get("/approved", getApprovedPosts);
-router.get("/admin/all", getAllPosts);
-router.get("/partnerships/me", getMyDonorPartnerships);
-router.get("/partnerships/incoming", getOrgPartnershipOffers);
+router.get("/approved", validate(emptyRequestSchema), getApprovedPosts);
+router.get("/admin/all", validate(emptyRequestSchema), getAllPosts);
+router.get("/partnerships/me", validate(emptyRequestSchema), getMyDonorPartnerships);
+router.get("/partnerships/incoming", validate(emptyRequestSchema), getOrgPartnershipOffers);
 
 router.patch(
   "/contributions/:contributionId/status",
@@ -52,7 +53,7 @@ router.patch(
 );
 
 router.post("/", validate(createPostSchema), createPost);
-router.get("/", getOrgPosts);
+router.get("/", validate(emptyRequestSchema), getOrgPosts);
 
 router.get("/:postId", validate(postIdSchema), getPostById);
 router.get("/:postId/audit", validate(postIdSchema), getPostAuditLog);
@@ -68,6 +69,7 @@ router.patch(
   "/:postId/contribute",
   upload.single("proofFile"),
   validate(addContributionSchema),
+  verifyUploadedFile,
   addContribution,
 );
 

@@ -24,6 +24,7 @@ import {
   isoDate,
   timeOfDay,
   shortText,
+  noSurroundingWhitespace,
 } from "./common.js";
 
 /**
@@ -37,11 +38,13 @@ const budgetBreakdown = z
   .array(
     z
       .object({
-        label: z
-          .string()
-          .trim()
-          .min(1, "Each budget category needs a name.")
-          .max(60, "Category names must be 60 characters or fewer."),
+        label: noSurroundingWhitespace(
+          z
+            .string()
+            .min(1, "Each budget category needs a name.")
+            .max(60, "Category names must be 60 characters or fewer."),
+          "Category name",
+        ),
         percentage: z
           .number()
           .int("Percentages must be whole numbers.")
@@ -68,11 +71,13 @@ const budgetBreakdown = z
  */
 const inKindItem = z
   .object({
-    itemName: z
-      .string()
-      .trim()
-      .min(1, "Item name is required.")
-      .max(100, "Item names must be 100 characters or fewer."),
+    itemName: noSurroundingWhitespace(
+      z
+        .string()
+        .min(1, "Item name is required.")
+        .max(100, "Item names must be 100 characters or fewer."),
+      "Item name",
+    ),
     targetQuantity: quantity,
     unit: shortText(20, "Unit").nullable().optional(),
     pricePerUnit: pricePerUnit.nullable().optional(),
@@ -110,6 +115,12 @@ const supportTypes = z
           message: result.error.issues[0].message,
         });
       }
+    } else if (value.monetary && value.monetary.targetAmount !== 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["monetary", "targetAmount"],
+        message: "A disabled monetary option must have a target of 0.",
+      });
     }
     if (value.volunteer?.enabled) {
       const result = volunteerCount.safeParse(value.volunteer.targetVolunteers);
@@ -120,6 +131,12 @@ const supportTypes = z
           message: result.error.issues[0].message,
         });
       }
+    } else if (value.volunteer && value.volunteer.targetVolunteers !== 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["volunteer", "targetVolunteers"],
+        message: "A disabled volunteer option must have a target of 0.",
+      });
     }
 
     const hasSupport =
@@ -163,12 +180,12 @@ const postBody = z
 export const createPostSchema = request({ body: postBody });
 
 export const updatePostSchema = request({
-  params: z.object({ postId: uuid }).passthrough(),
+  params: z.object({ postId: uuid }).strict(),
   body: postBody,
 });
 
 export const postIdSchema = request({
-  params: z.object({ postId: uuid }).passthrough(),
+  params: z.object({ postId: uuid }).strict(),
 });
 
 /**
@@ -177,12 +194,12 @@ export const postIdSchema = request({
  * governs which transitions are permitted; this only checks the shape.
  */
 export const updatePostStatusSchema = request({
-  params: z.object({ postId: uuid }).passthrough(),
+  params: z.object({ postId: uuid }).strict(),
   body: z.object({ overallStatus: postStatus }).strict(),
 });
 
 export const contributionDecisionSchema = request({
-  params: z.object({ contributionId: uuid }).passthrough(),
+  params: z.object({ contributionId: uuid }).strict(),
   body: z
     .object({
       status: z.enum(["Confirmed", "Declined"], {
@@ -225,14 +242,16 @@ const jsonArray = (itemSchema, label) =>
     .pipe(z.array(itemSchema).max(100, `No more than 100 ${label} entries at once.`))
     .optional();
 
-const donorName = z
-  .string()
-  .trim()
-  .min(1, "A donor name is required.")
-  .max(150, "Donor names must be 150 characters or fewer.");
+const donorName = noSurroundingWhitespace(
+  z
+    .string()
+    .min(1, "A donor name is required.")
+    .max(150, "Donor names must be 150 characters or fewer."),
+  "Donor name",
+);
 
 export const addContributionSchema = request({
-  params: z.object({ postId: uuid }).passthrough(),
+  params: z.object({ postId: uuid }).strict(),
   body: z
     .object({
       monetary: jsonArray(
@@ -244,25 +263,13 @@ export const addContributionSchema = request({
         "In-kind",
       ),
       volunteer: jsonArray(
-        z
-          .object({
-            donorName,
-            count: volunteerCount,
-            startDate: z.string().max(40).nullish(),
-            endDate: z.string().max(40).nullish(),
-            startTime: z.string().max(10).nullish(),
-            endTime: z.string().max(10).nullish(),
-          })
-          .strict(),
+        z.object({ donorName, count: volunteerCount }).strict(),
         "Volunteer",
       ),
       paymentIntentId: z
         .string()
         .regex(/^pi_[A-Za-z0-9_]{1,100}$/, "Not a valid payment reference.")
         .optional(),
-      // Sent by the frontend but never trusted: the acting donor is taken from
-      // the session, not from the request body.
-      donorId: z.string().max(100).optional(),
     })
     .strict()
     .refine(

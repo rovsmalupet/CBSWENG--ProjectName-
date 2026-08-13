@@ -7,6 +7,7 @@ import SecurityQuestionsFields from "../components/SecurityQuestionsFields.jsx";
 import "../css/NgoRegistration.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const hasSurroundingWhitespace = (value) => value !== value.trim();
 
 const ASEAN_COUNTRIES = [
   "Brunei",
@@ -55,17 +56,25 @@ export default function NgoRegistration() {
 
     if (!formData.orgName.trim()) {
       nextErrors.orgName = "Organization name is required.";
+    } else if (hasSurroundingWhitespace(formData.orgName)) {
+      nextErrors.orgName = "Organization name cannot start or end with spaces.";
     }
     if (!formData.firstName.trim()) {
       nextErrors.firstName = "First name is required.";
+    } else if (hasSurroundingWhitespace(formData.firstName)) {
+      nextErrors.firstName = "First name cannot start or end with spaces.";
     }
     if (!formData.surname.trim()) {
       nextErrors.surname = "Surname is required.";
+    } else if (hasSurroundingWhitespace(formData.surname)) {
+      nextErrors.surname = "Surname cannot start or end with spaces.";
     }
 
     if (!formData.email.trim()) {
       nextErrors.email = "Email address is required.";
-    } else if (!EMAIL_REGEX.test(formData.email.trim())) {
+    } else if (hasSurroundingWhitespace(formData.email)) {
+      nextErrors.email = "Email address cannot start or end with spaces.";
+    } else if (!EMAIL_REGEX.test(formData.email)) {
       nextErrors.email = "Enter a valid email address.";
     }
 
@@ -76,6 +85,10 @@ export default function NgoRegistration() {
 
     if (!formData.country) {
       nextErrors.country = "Please select your country.";
+    }
+
+    if (formData.bio && hasSurroundingWhitespace(formData.bio)) {
+      nextErrors.bio = "Bio cannot start or end with spaces.";
     }
 
     if (
@@ -101,13 +114,13 @@ export default function NgoRegistration() {
       // Posted to the dedicated organization endpoint, which hard-codes the
       // role. No `role` field travels in the body.
       await apiPost("/organizations/register", {
-        orgName: formData.orgName.trim(),
-        firstName: formData.firstName.trim(),
-        surname: formData.surname.trim(),
-        email: formData.email.trim(),
+        orgName: formData.orgName,
+        firstName: formData.firstName,
+        surname: formData.surname,
+        email: formData.email.toLowerCase(),
         password: formData.password,
         country: formData.country,
-        ...(formData.bio.trim() ? { bio: formData.bio.trim() } : {}),
+        ...(formData.bio ? { bio: formData.bio } : {}),
         securityAnswers,
       });
 
@@ -142,7 +155,9 @@ export default function NgoRegistration() {
             value={formData.orgName}
             onChange={handleChange}
             placeholder="e.g. Philippine Red Cross"
+            aria-invalid={Boolean(errors.orgName)}
           />
+          {errors.orgName && <span className="field-error">{errors.orgName}</span>}
 
           <label htmlFor="firstName">First Name</label>
           <input
@@ -222,7 +237,9 @@ export default function NgoRegistration() {
               value={formData.bio}
               onChange={handleChange}
               className="bio-textarea"
+              aria-invalid={Boolean(errors.bio)}
             />
+            {errors.bio && <span className="field-error">{errors.bio}</span>}
           </div>
 
           <SecurityQuestionsFields

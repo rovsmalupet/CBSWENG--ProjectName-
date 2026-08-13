@@ -19,6 +19,8 @@ import helmet from "helmet";
 import { enforceAccessControl, auditRoutePolicies } from "./security/accessControl.js";
 import { generalLimiter } from "./middleware/rateLimit.js";
 import { handleUploadErrors } from "./middleware/uploadMiddleware.js";
+import { validate } from "./middleware/validate.js";
+import { emptyRequestSchema } from "./schemas/common.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -34,6 +36,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import refundRoutes from "./routes/refundRoutes.js";
 import adminUserRoutes from "./routes/adminUserRoutes.js";
 import securityLogRoutes from "./routes/securityLogRoutes.js";
+import bookmarkRoutes from "./routes/bookmarkRoutes.js";
 
 installProcessHandlers();
 
@@ -117,7 +120,7 @@ app.use(enforceAccessControl);
 
 /* ── 6. Routes ────────────────────────────────────────────────────────────── */
 
-app.get("/health", (req, res) => {
+app.get("/health", validate(emptyRequestSchema), (req, res) => {
   // Deliberately minimal. A health check that reports the version, database
   // status, or environment is free reconnaissance.
   res.status(200).json({ status: "OK" });
@@ -137,6 +140,7 @@ const MOUNTS = [
   { prefix: "/refunds", router: refundRoutes },
   { prefix: "/admin", router: adminUserRoutes },
   { prefix: "/security-logs", router: securityLogRoutes },
+  { prefix: "/bookmarks", router: bookmarkRoutes },
 ];
 
 for (const { prefix, router } of MOUNTS) {

@@ -195,6 +195,57 @@ export const assertContributionTransition = (from, to) => {
   }
 };
 
+/** Permanent destruction is the second step after an explicit soft delete. */
+export const assertPermanentDeleteAllowed = (post) => {
+  if (post?.overallStatus !== "Deleted") {
+    throw new AppError(
+      "This project must be deleted before it can be permanently removed.",
+      409,
+      "PROJECT_NOT_DELETED",
+    );
+  }
+};
+
+/**
+ * Once a project has contribution history, its support rows are referenced by
+ * that history and their accumulated totals must not be replaced. Descriptive
+ * project fields may still be edited when the submitted support structure is
+ * unchanged.
+ */
+export const assertProjectStructureChangeAllowed = (currentPost, nextStructure) => {
+  if ((currentPost?._count?.contributions ?? 0) === 0) return;
+
+  const normalizeNumber = (value) => (value == null ? null : Number(value));
+  const normalizeText = (value) => value ?? null;
+  const normalize = ({ supportOptions = [], inKindItems = [] }) => ({
+    supportOptions: supportOptions
+      .map((option) => ({
+        type: option.type,
+        targetAmount: normalizeNumber(option.targetAmount),
+        targetCount: normalizeNumber(option.targetCount),
+      }))
+      .sort((left, right) => left.type.localeCompare(right.type)),
+    inKindItems: inKindItems
+      .map((item) => ({
+        itemName: item.itemName,
+        targetQuantity: normalizeNumber(item.targetQuantity),
+        unit: normalizeText(item.unit),
+        pricePerUnit: normalizeNumber(item.pricePerUnit),
+      }))
+      .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
+  });
+
+  const current = normalize(currentPost);
+  const next = normalize(nextStructure);
+  if (JSON.stringify(current) !== JSON.stringify(next)) {
+    throw new AppError(
+      "Support types, targets, and requested items cannot be changed after contributions have been recorded.",
+      409,
+      "PROJECT_STRUCTURE_LOCKED",
+    );
+  }
+};
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * TRANSACTION FEES
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -285,6 +336,69 @@ export const assertPaymentIntentBelongsTo = (paymentIntent, user) => {
 };
 
 /**
+ * Link the contribution being recorded to the server-side Payment row created
+ * from Stripe. This prevents a caller from paying for one project or amount and
+ * then attaching that payment reference to a different contribution.
+ */
+export const assertRecordedPaymentMatches = (payment, { user, postId, breakdown }) => {
+  if (!payment) {
+    throw new AppError(
+      "Complete and confirm the payment before recording this contribution.",
+      409,
+      "PAYMENT_NOT_RECORDED",
+    );
+  }
+  if (payment.userId !== user.id || payment.userRole !== user.role) {
+    throw new AppError("That payment does not belong to your account.", 403, "PAYMENT_NOT_YOURS");
+  }
+  if (payment.postId !== postId) {
+    throw new AppError(
+      "That payment was created for a different project.",
+      409,
+      "PAYMENT_PROJECT_MISMATCH",
+    );
+  }
+  if (payment.status !== "succeeded") {
+    throw new AppError("That payment has not completed successfully.", 409, "PAYMENT_INCOMPLETE");
+  }
+  if (payment.refundIntentId) {
+    throw new AppError("That payment has already been refunded.", 409, "PAYMENT_REFUNDED");
+  }
+
+  const actual = {
+    donationAmount: round2(Number(payment.monetaryContribution ?? 0)),
+    monetaryFee: round2(Number(payment.monetaryTransactionFee ?? 0)),
+    volunteerFee: round2(Number(payment.volunteerTransactionFee ?? 0)),
+    inKindFee: round2(Number(payment.inKindTransactionFee ?? 0)),
+  };
+  const expected = {
+    donationAmount: round2(Number(breakdown.donationAmount ?? 0)),
+    monetaryFee: round2(Number(breakdown.monetaryFee ?? 0)),
+    volunteerFee: round2(Number(breakdown.volunteerFee ?? 0)),
+    inKindFee: round2(Number(breakdown.inKindFee ?? 0)),
+  };
+
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new AppError(
+      "That payment does not match this contribution.",
+      409,
+      "PAYMENT_AMOUNT_MISMATCH",
+    );
+  }
+};
+
+/** A successful payment reference may create exactly one contribution batch. */
+export const assertPaymentIntentUnused = (existingContribution) => {
+  if (existingContribution) {
+    throw new AppError(
+      "That payment has already been recorded as a contribution.",
+      409,
+      "PAYMENT_ALREADY_USED",
+    );
+  }
+};
+
+/**
  * @param {object} payment loaded server-side
  */
 export const assertRefundable = (payment) => {
@@ -311,6 +425,10 @@ export const paymentTotal = (payment) =>
       (payment.volunteerTransactionFee ?? 0) +
       (payment.inKindTransactionFee ?? 0),
   );
+
+/** Stable Stripe idempotency key: one external refund per local payment. */
+export const refundIdempotencyKey = (paymentId) =>
+  `bayanihub-refund:${String(paymentId)}`;
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * ACCOUNTS
@@ -347,15 +465,20 @@ export const assertAssignableRole = (role) => {
 export default {
   POST_TRANSITIONS,
   assertPostTransition,
+  assertPermanentDeleteAllowed,
   assertPostAcceptsContributions,
   assertContributionAllowed,
   assertContributionTransition,
+  assertProjectStructureChangeAllowed,
   FEE_RULES,
   computeFees,
   computeInKindValue,
   assertPaymentIntentBelongsTo,
+  assertRecordedPaymentMatches,
+  assertPaymentIntentUnused,
   assertRefundable,
   paymentTotal,
+  refundIdempotencyKey,
   assertNotLastAdmin,
   assertAssignableRole,
 };

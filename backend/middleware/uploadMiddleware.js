@@ -77,6 +77,16 @@ const ALLOWED_TYPES = {
 /** Conservative: letters, digits, space, dot, dash, underscore. */
 const SAFE_FILENAME = /^[A-Za-z0-9._ -]{1,255}$/;
 
+/**
+ * Remove the file created for the current request. This is intentionally
+ * idempotent so validation, content verification, and the terminal error
+ * handler can all call it without coordinating who noticed the failure first.
+ */
+export const removeUploadedFile = async (file) => {
+  if (!file?.path) return;
+  await fs.promises.unlink(file.path).catch(() => {});
+};
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
@@ -157,7 +167,7 @@ export const verifyUploadedFile = async (req, res, next) => {
   }
 
   if (!detected || !declared.magic.includes(detected.mime)) {
-    await fs.promises.unlink(req.file.path).catch(() => {});
+    await removeUploadedFile(req.file);
 
     await logSecurityEvent(req, {
       eventType: EVENTS.INPUT_VALIDATION_FAILURE,
@@ -168,17 +178,18 @@ export const verifyUploadedFile = async (req, res, next) => {
       metadata: {
         declaredMimeType: req.file.mimetype,
         detectedMimeType: detected?.mime ?? "unrecognised",
-        originalName: req.file.originalname,
       },
     });
 
-    return next(
-      new AppError(
-        "That file's contents do not match its type. Please upload a genuine file of the type you selected.",
-        400,
-        "FILE_CONTENT_MISMATCH",
-      ),
+    const error = new AppError(
+      "That file's contents do not match its type. Please upload a genuine file of the type you selected.",
+      400,
+      "FILE_CONTENT_MISMATCH",
     );
+    // The specific attempt was already recorded above; the terminal handler
+    // should create the response without writing a duplicate audit event.
+    error.validationLogged = true;
+    return next(error);
   }
 
   return next();
@@ -191,8 +202,9 @@ export const verifyUploadedFile = async (req, res, next) => {
  * reaches the client through the error handler — minor, but it is internal
  * library text rather than something we chose to say. [2.4.1]
  */
-export const handleUploadErrors = (err, req, res, next) => {
+export const handleUploadErrors = async (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
+    await removeUploadedFile(req.file);
     const messages = {
       LIMIT_FILE_SIZE: `That file is too large. The maximum size is ${Math.round(config.maxUploadBytes / (1024 * 1024))} MB.`,
       LIMIT_FILE_COUNT: "Please upload one file at a time.",
@@ -203,6 +215,17 @@ export const handleUploadErrors = (err, req, res, next) => {
     return next(
       new AppError(messages[err.code] ?? "That file could not be accepted.", 400, "UPLOAD_REJECTED"),
     );
+  }
+
+  // File-filter errors are AppErrors rather than MulterErrors, but multer may
+  // already have opened a temporary file before a later multipart error.
+  if (
+    err instanceof AppError &&
+    ["UNSUPPORTED_FILE_TYPE", "UNSAFE_FILENAME", "EXTENSION_MISMATCH", "FILE_CONTENT_MISMATCH"].includes(
+      err.code,
+    )
+  ) {
+    await removeUploadedFile(req.file);
   }
   return next(err);
 };

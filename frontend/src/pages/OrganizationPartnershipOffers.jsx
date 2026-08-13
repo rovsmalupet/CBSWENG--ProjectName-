@@ -6,12 +6,10 @@ import "../css/OrganizationPartnershipOffers.css";
 
 export default function OrganizationPartnershipOffers() {
   const navigate = useNavigate();
-  const orgId = localStorage.getItem("userId") || "ngo";
 
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [statusFilter, setStatusFilter] = useState("pending");
   const [search, setSearch] = useState("");
   const [profileModal, setProfileModal] = useState(null);
 
@@ -28,7 +26,7 @@ export default function OrganizationPartnershipOffers() {
 
         setOffers(allOffers);
       } catch (err) {
-        console.error("Failed to load partnership offers:", err);
+        if (import.meta.env.DEV) console.error("Failed to load partnership offers:", err);
         setError(err.message || "Failed to load partnership offers.");
       } finally {
         setLoading(false);
@@ -38,18 +36,10 @@ export default function OrganizationPartnershipOffers() {
     loadOffers();
   }, []);
 
-  const updateOfferStatus = (offerId, status) => {
-    const updated = offers.map((offer) =>
-      offer.id === offerId ? { ...offer, status } : offer,
-    );
-    setOffers(updated);
-  };
-
   const filteredOffers = useMemo(() => {
     const query = search.trim().toLowerCase();
 
     return offers.filter((offer) => {
-      if (statusFilter !== "all" && offer.status !== statusFilter) return false;
       if (!query) return true;
 
       return (
@@ -59,7 +49,7 @@ export default function OrganizationPartnershipOffers() {
         offer.supportFocus.toLowerCase().includes(query)
       );
     });
-  }, [offers, search, statusFilter]);
+  }, [offers, search]);
 
   return (
     <div className="offers-page">
@@ -81,8 +71,7 @@ export default function OrganizationPartnershipOffers() {
 
         <h1 className="offers-title">Partnership Offers</h1>
         <p className="offers-subtitle">
-          Review donor partnership proposals and accept the most suitable offers
-          for your projects.
+          View donor partnership activity for your projects.
         </p>
 
         <div className="offers-controls">
@@ -94,16 +83,6 @@ export default function OrganizationPartnershipOffers() {
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          <select
-            className="offers-filter"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="accepted">Accepted</option>
-            <option value="declined">Declined</option>
-          </select>
         </div>
 
         {loading ? (
@@ -147,20 +126,6 @@ export default function OrganizationPartnershipOffers() {
                 )}
 
                 <div className="offer-actions">
-                  <button
-                    className="accept-btn"
-                    onClick={() => updateOfferStatus(offer.id, "accepted")}
-                    disabled={offer.status === "accepted"}
-                  >
-                    Accept
-                  </button>
-                  <button
-                    className="decline-btn"
-                    onClick={() => updateOfferStatus(offer.id, "declined")}
-                    disabled={offer.status === "declined"}
-                  >
-                    Decline
-                  </button>
                   <button
                     className="view-project-btn"
                     onClick={() => navigate(`/project/${offer.projectId}`)}

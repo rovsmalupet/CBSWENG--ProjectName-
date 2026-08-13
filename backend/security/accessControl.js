@@ -73,7 +73,14 @@ export const POLICIES = [
   { method: "GET", path: "/auth/me" },
   { method: "POST", path: "/auth/logout" },
   { method: "POST", path: "/auth/reauth" },
-  { method: "POST", path: "/auth/security-questions" },
+  // Security answers are credentials. Replacing them requires the same fresh
+  // password proof as changing the password itself.
+  {
+    method: "POST",
+    path: "/auth/security-questions",
+    reauth: true,
+    sensitive: true,
+  },
   // Changing a password is the specification's named example of a critical
   // operation requiring re-authentication. [2.1.13]
   { method: "POST", path: "/auth/change-password", reauth: true, sensitive: true },
@@ -89,7 +96,12 @@ export const POLICIES = [
   { method: "GET", path: "/posts/:postId/contributions", roles: ["ngo", "admin"], owner: owners.post },
   { method: "PUT", path: "/posts/:postId", roles: ["ngo"], owner: owners.post },
   { method: "DELETE", path: "/posts/:postId", roles: ["ngo"], owner: owners.post },
-  { method: "PATCH", path: "/posts/:postId/contribute", roles: ["donor", "ngo"] },
+  {
+    method: "PATCH",
+    path: "/posts/:postId/contribute",
+    roles: ["donor", "ngo"],
+    owner: owners.contributionTarget,
+  },
   { method: "PATCH", path: "/posts/:postId/status", roles: ["admin"], sensitive: true },
   {
     method: "PATCH",
@@ -110,6 +122,29 @@ export const POLICIES = [
   },
 
   // ── Organizations ─────────────────────────────────────────────────────────
+  // Donor bookmarks. Collection reads derive the owner from the authenticated
+  // account; row mutations resolve the bookmark owner before dispatch.
+  { method: "GET", path: "/bookmarks", roles: ["donor"] },
+  {
+    method: "POST",
+    path: "/bookmarks",
+    roles: ["donor"],
+    owner: owners.approvedBookmarkProject,
+    bodyUuid: ["projectId"],
+  },
+  {
+    method: "PATCH",
+    path: "/bookmarks/:bookmarkId",
+    roles: ["donor"],
+    owner: owners.bookmark,
+  },
+  {
+    method: "DELETE",
+    path: "/bookmarks/:bookmarkId",
+    roles: ["donor"],
+    owner: owners.bookmark,
+  },
+
   { method: "GET", path: "/organizations/pending", roles: ["admin"] },
   { method: "GET", path: "/organizations/:id/verification" },
   { method: "PATCH", path: "/organizations/:id/approve", roles: ["admin"], sensitive: true },
@@ -130,7 +165,14 @@ export const POLICIES = [
   { method: "DELETE", path: "/documents/:documentId", roles: ["ngo", "admin"], owner: owners.documentOwned },
 
   // ── Payments ──────────────────────────────────────────────────────────────
-  { method: "POST", path: "/payments/intent", roles: ["donor", "ngo"] },
+  {
+    method: "POST",
+    path: "/payments/intent",
+    roles: ["donor", "ngo"],
+    owner: owners.paymentIntentTarget,
+    bodyUuid: ["postId"],
+    bodyUuidLiterals: { postId: ["admin"] },
+  },
   { method: "POST", path: "/payments/confirm", roles: ["donor", "ngo"], sensitive: true },
   { method: "GET", path: "/payments/history/:postId", roles: ["ngo", "admin"], owner: owners.paymentsForPost },
   { method: "GET", path: "/payments/donor/:donorId", owner: owners.donorPayments },
@@ -143,6 +185,7 @@ export const POLICIES = [
     path: "/refunds/issue",
     roles: ["ngo", "admin"],
     owner: owners.refundablePayment,
+    bodyUuid: ["paymentId"],
     reauth: true,
     sensitive: true,
   },
@@ -211,6 +254,46 @@ const compile = (policy) => {
 };
 
 const COMPILED = POLICIES.map(compile);
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Access control runs before route-level Zod validation. Any identifier used
+ * by an ownership resolver must therefore be rejected here before it can be
+ * handed to Prisma. The return value contains field names only; submitted
+ * values are deliberately not copied into the security log.
+ */
+export const invalidPolicyIdentifiers = (policy, params = {}, body = {}) => {
+  const invalid = [];
+
+  for (const [name, value] of Object.entries(params)) {
+    if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
+      invalid.push(`params.${name}`);
+    }
+  }
+
+  for (const name of policy.bodyUuid ?? []) {
+    const value = body?.[name];
+    const literals = policy.bodyUuidLiterals?.[name] ?? [];
+    if ((typeof value !== "string" || !UUID_PATTERN.test(value)) && !literals.includes(value)) {
+      invalid.push(`body.${name}`);
+    }
+  }
+
+  return invalid;
+};
+
+const FORCED_PASSWORD_ROUTES = new Set([
+  "GET /auth/me",
+  "POST /auth/logout",
+  "POST /auth/reauth",
+  "POST /auth/security-questions",
+  "POST /auth/change-password",
+]);
+
+export const allowedDuringForcedPasswordChange = (method, path) =>
+  FORCED_PASSWORD_ROUTES.has(`${method} ${path}`);
 
 const matchSegments = (policy, pathSegments) => {
   if (policy.segments.length !== pathSegments.length) return null;
@@ -400,6 +483,29 @@ export const enforceAccessControl = async (req, res, next) => {
     };
     req.account = account;
 
+    // A temporary password is only a bootstrap credential. Enforce the forced
+    // change in the API itself so bypassing the React route guard cannot grant
+    // normal account privileges first.
+    if (
+      account.mustChangePassword &&
+      !allowedDuringForcedPasswordChange(method, policy.path)
+    ) {
+      await logSecurityEvent(req, {
+        eventType: EVENTS.ACCESS_DENIED_ACCOUNT_STATE,
+        outcome: OUTCOME.FAILURE,
+        severity: SEVERITY.WARN,
+        message: "Normal access was denied until the temporary password is changed.",
+        metadata: { state: "password_change_required" },
+      });
+      return next(
+        new AppError(
+          "Change your temporary password before continuing.",
+          403,
+          "PASSWORD_CHANGE_REQUIRED",
+        ),
+      );
+    }
+
     // ── 5. Role check [2.2.2] ──────────────────────────────────────────────
     if (Array.isArray(policy.roles) && !policy.roles.includes(account.role)) {
       await logSecurityEvent(req, {
@@ -410,6 +516,24 @@ export const enforceAccessControl = async (req, res, next) => {
         metadata: { requiredRoles: policy.roles, actualRole: account.role },
       });
       return next(forbidden());
+    }
+
+    // Route validators execute after this middleware. Validate identifiers
+    // needed for authorization now, before any ownership database lookup.
+    const invalidIdentifiers = invalidPolicyIdentifiers(policy, params, req.body);
+    if (invalidIdentifiers.length > 0) {
+      await logSecurityEvent(req, {
+        eventType: EVENTS.INPUT_VALIDATION_FAILURE,
+        outcome: OUTCOME.FAILURE,
+        severity: SEVERITY.WARN,
+        message: "Request identifiers failed validation before authorization.",
+        metadata: { fields: invalidIdentifiers },
+      });
+      return next(
+        new AppError("The information you submitted was rejected.", 400, "VALIDATION_FAILED", {
+          details: { fields: invalidIdentifiers },
+        }),
+      );
     }
 
     // ── 6. Re-authentication [2.1.13] ──────────────────────────────────────
@@ -462,7 +586,7 @@ export const enforceAccessControl = async (req, res, next) => {
       eventType: EVENTS.ACCESS_DENIED_NO_POLICY,
       outcome: OUTCOME.FAILURE,
       severity: SEVERITY.CRITICAL,
-      message: `Access control failed unexpectedly and denied the request: ${error.message}`,
+      message: "Access control failed unexpectedly and denied the request.",
       metadata: { errorName: error.name },
     });
     return next(forbidden());
@@ -477,12 +601,12 @@ const runOwnershipCheck = async (req, policy) => {
   let result;
   try {
     result = await policy.owner(req);
-  } catch (error) {
+  } catch {
     await logSecurityEvent(req, {
       eventType: EVENTS.ACCESS_DENIED_OWNERSHIP,
       outcome: OUTCOME.FAILURE,
       severity: SEVERITY.CRITICAL,
-      message: `Ownership check threw and was treated as a denial: ${error.message}`,
+      message: "Ownership check failed unexpectedly and was treated as a denial.",
     });
     return false;
   }

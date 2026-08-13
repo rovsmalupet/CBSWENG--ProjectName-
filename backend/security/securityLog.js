@@ -65,6 +65,7 @@ export const EVENTS = Object.freeze({
 
   // ── Validation [2.4.5] ───────────────────────────────────────────────────
   INPUT_VALIDATION_FAILURE: "INPUT_VALIDATION_FAILURE",
+  RATE_LIMITED: "RATE_LIMITED",
 
   // ── Administrative actions ───────────────────────────────────────────────
   USER_CREATED: "USER_CREATED",
@@ -87,6 +88,9 @@ export const EVENTS = Object.freeze({
   BUSINESS_RULE_VIOLATION: "BUSINESS_RULE_VIOLATION",
   DOCUMENT_UPLOADED: "DOCUMENT_UPLOADED",
   DOCUMENT_DELETED: "DOCUMENT_DELETED",
+  BOOKMARK_CREATED: "BOOKMARK_CREATED",
+  BOOKMARK_UPDATED: "BOOKMARK_UPDATED",
+  BOOKMARK_DELETED: "BOOKMARK_DELETED",
 
   // ── Errors [2.4.1] ───────────────────────────────────────────────────────
   UNHANDLED_ERROR: "UNHANDLED_ERROR",
@@ -107,6 +111,21 @@ const MAX_STRING_LENGTH = 500;
 const MAX_DEPTH = 4;
 
 /**
+ * Metadata is structurally redacted, while an event message is free text. Give
+ * that second channel its own final safety net so an unexpected third-party
+ * exception cannot persist a password, token, cookie, or bearer credential.
+ */
+export const sanitizeLogMessage = (value) =>
+  String(value ?? "")
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
+    .replace(/\b[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, "[REDACTED_TOKEN]")
+    .replace(
+      /\b(password|passphrase|secret|token|answer|authorization|cookie|cvv)\b\s*[:=]\s*[^\s,;]+/gi,
+      "$1=[REDACTED]",
+    )
+    .slice(0, 1000);
+
+/**
  * Strips secrets out of a metadata object before it is written.
  *
  * Deliberately key-name based rather than a fixed allowlist: a future developer
@@ -118,9 +137,10 @@ export const redact = (value, depth = 0) => {
   if (depth > MAX_DEPTH) return "[truncated: too deep]";
 
   if (typeof value === "string") {
-    return value.length > MAX_STRING_LENGTH
-      ? value.slice(0, MAX_STRING_LENGTH) + "…[truncated]"
-      : value;
+    const sanitized = sanitizeLogMessage(value);
+    return sanitized.length > MAX_STRING_LENGTH
+      ? sanitized.slice(0, MAX_STRING_LENGTH) + "…[truncated]"
+      : sanitized;
   }
   if (typeof value === "number" || typeof value === "boolean") return value;
   if (value instanceof Date) return value.toISOString();
@@ -220,7 +240,7 @@ export const logSecurityEvent = async (req, event) => {
         eventType,
         outcome,
         severity,
-        message: String(message ?? "").slice(0, 1000),
+        message: sanitizeLogMessage(message),
         actorAccountId: resolvedAccountId,
         actorEmail: resolvedEmail ? String(resolvedEmail).toLowerCase().slice(0, 254) : null,
         actorRole: resolvedRole,

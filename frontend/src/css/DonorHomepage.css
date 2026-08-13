@@ -616,3 +616,7 @@
     align-items: flex-start;
   }
 }
+.donor-bookmark-error {
+  color: #b91c1c;
+  font-size: 0.9rem;
+}

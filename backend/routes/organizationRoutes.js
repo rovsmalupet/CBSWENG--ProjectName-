@@ -15,12 +15,13 @@ import {
 } from "../controllers/organizationController.js";
 import { registerOrganizationSchema } from "../schemas/auth.schema.js";
 import { organizationIdSchema } from "../schemas/misc.schema.js";
+import { emptyRequestSchema } from "../schemas/common.js";
 
 const router = express.Router();
 
 router.post("/register", authLimiter, validate(registerOrganizationSchema), registerOrganization);
 
-router.get("/pending", getPendingOrganizations);
+router.get("/pending", validate(emptyRequestSchema), getPendingOrganizations);
 router.get("/:id/verification", validate(organizationIdSchema), getOrganizationVerificationProfile);
 router.patch("/:id/approve", validate(organizationIdSchema), approveOrganization);
 router.patch("/:id/reject", validate(organizationIdSchema), rejectOrganization);

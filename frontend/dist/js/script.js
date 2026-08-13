@@ -1,14 +1,3 @@
-// Helper function to format date
-function formatDate(date) {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return date.toLocaleDateString('en-US', options);
-}
-
-// Helper function to get today's date
-function getTodayDate() {
-    return formatDate(new Date());
-}
-
 function getCause(cause) {
     if (cause === 'Education and Children') return 'educationAndChildren';
     else if (cause === 'Health and Medicine') return 'healthAndMedical';
@@ -133,8 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 alert(`Error: ${data.error || 'Failed to create project.'}`);
             }
-        } catch (err) {
-            console.error(err);
+        } catch {
             alert('Network error. Please try again later.');
         }
     });

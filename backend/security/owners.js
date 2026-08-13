@@ -26,6 +26,10 @@ import prisma from "../prisma/client.js";
 
 const DENY = { allowed: false };
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const isUuid = (value) => typeof value === "string" && UUID_PATTERN.test(value);
+
 /** Roles are trusted here because accessControl.js has already verified them. */
 const isAdmin = (req) => req.user?.role === "admin";
 
@@ -39,7 +43,7 @@ const isAdmin = (req) => req.user?.role === "admin";
  */
 export const post = async (req) => {
   const postId = req.params.postId ?? req.params.id;
-  if (!postId) return DENY;
+  if (!isUuid(postId)) return DENY;
 
   const record = await prisma.post.findUnique({
     where: { id: postId },
@@ -66,7 +70,7 @@ export const post = async (req) => {
  */
 export const postVisible = async (req) => {
   const postId = req.params.postId ?? req.params.id;
-  if (!postId) return DENY;
+  if (!isUuid(postId)) return DENY;
 
   const record = await prisma.post.findUnique({
     where: { id: postId },
@@ -92,7 +96,7 @@ export const documentsForPost = postVisible;
 /** Downloading one document, resolved through its post. */
 export const document = async (req) => {
   const { documentId } = req.params;
-  if (!documentId) return DENY;
+  if (!isUuid(documentId)) return DENY;
 
   const record = await prisma.documentUpload.findUnique({
     where: { id: documentId },
@@ -117,7 +121,7 @@ export const document = async (req) => {
 /** Deleting a document requires ownership of its post regardless of post state. */
 export const documentOwned = async (req) => {
   const { documentId } = req.params;
-  if (!documentId) return DENY;
+  if (!isUuid(documentId)) return DENY;
 
   const record = await prisma.documentUpload.findUnique({
     where: { id: documentId },
@@ -143,7 +147,7 @@ export const documentOwned = async (req) => {
  */
 export const postFromBody = async (req) => {
   const postId = req.body?.postId;
-  if (!postId || typeof postId !== "string") return DENY;
+  if (!isUuid(postId)) return DENY;
 
   const record = await prisma.post.findUnique({
     where: { id: postId },
@@ -169,7 +173,7 @@ export const postFromBody = async (req) => {
  */
 export const payment = async (req) => {
   const { paymentId } = req.params;
-  if (!paymentId) return DENY;
+  if (!isUuid(paymentId)) return DENY;
 
   const record = await prisma.payment.findUnique({
     where: { id: paymentId },
@@ -193,7 +197,7 @@ export const payment = async (req) => {
 /** Payment or refund history for a post — owning organization or admin only. */
 export const paymentsForPost = async (req) => {
   const postId = req.params.postId ?? req.params.projectId;
-  if (!postId) return DENY;
+  if (!isUuid(postId)) return DENY;
 
   const record = await prisma.post.findUnique({
     where: { id: postId },
@@ -211,9 +215,32 @@ export const paymentsForPost = async (req) => {
 /** A donor's own payment history. Admins may also read it. */
 export const donorPayments = async (req) => {
   const { donorId } = req.params;
-  if (!donorId) return DENY;
+  if (!isUuid(donorId)) return DENY;
   if (isAdmin(req)) return { allowed: true };
   return donorId === req.user?.id ? { allowed: true } : DENY;
+};
+
+/**
+ * Creating a payment intent is allowed for donors on any approved project and
+ * for an NGO only on its own approved project. The special `admin` target is
+ * the intentionally shared platform-donation flow.
+ */
+export const paymentIntentTarget = async (req) => {
+  const postId = req.body?.postId;
+  if (postId === "admin") return { allowed: true };
+  if (!isUuid(postId)) return DENY;
+
+  const record = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true, orgId: true, overallStatus: true, endDate: true },
+  });
+  if (!record || record.overallStatus !== "Approved") return DENY;
+
+  if (req.user?.role === "donor") return { allowed: true, resource: record };
+  if (req.user?.role === "ngo" && record.orgId === req.user.id) {
+    return { allowed: true, resource: record };
+  }
+  return DENY;
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -222,7 +249,7 @@ export const donorPayments = async (req) => {
 
 export const refund = async (req) => {
   const { refundId } = req.params;
-  if (!refundId) return DENY;
+  if (!isUuid(refundId)) return DENY;
 
   const record = await prisma.refund.findUnique({
     where: { id: refundId },
@@ -253,7 +280,7 @@ export const refund = async (req) => {
  */
 export const refundablePayment = async (req) => {
   const paymentId = req.body?.paymentId;
-  if (!paymentId || typeof paymentId !== "string") return DENY;
+  if (!isUuid(paymentId)) return DENY;
 
   const record = await prisma.payment.findUnique({
     where: { id: paymentId },
@@ -290,9 +317,32 @@ export const refundablePayment = async (req) => {
  * received it — this is the action that moves a project's progress totals, so
  * it must not be reachable by the donor who created the contribution.
  */
+
+/**
+ * A donor may contribute to an approved project. An NGO contribution is scoped
+ * to that NGO's own approved project. Keeping this rule in the policy layer
+ * ensures a denial is recorded as an access-control failure rather than as an
+ * unrelated controller exception.
+ */
+export const contributionTarget = async (req) => {
+  const postId = req.params.postId;
+  if (!isUuid(postId)) return DENY;
+
+  const record = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true, orgId: true, overallStatus: true, endDate: true },
+  });
+  if (!record || record.overallStatus !== "Approved") return DENY;
+
+  if (req.user?.role === "donor") return { allowed: true, resource: record };
+  if (req.user?.role === "ngo" && record.orgId === req.user.id) {
+    return { allowed: true, resource: record };
+  }
+  return DENY;
+};
 export const contributionForOrg = async (req) => {
   const { contributionId } = req.params;
-  if (!contributionId) return DENY;
+  if (!isUuid(contributionId)) return DENY;
 
   const record = await prisma.contribution.findUnique({
     where: { id: contributionId },
@@ -330,9 +380,42 @@ export const contributionForOrg = async (req) => {
  * The "last remaining admin" case is enforced in the controller, where the
  * count is available.
  */
+/** True only when a bookmark belongs to the authenticated account. */
+export const bookmarkBelongsToAccount = (record, accountId) =>
+  Boolean(record?.accountId && accountId && record.accountId === accountId);
+
+/** A new bookmark may point only to a currently approved project. */
+export const approvedBookmarkProject = async (req) => {
+  const projectId = req.body?.projectId;
+  if (!isUuid(projectId)) return DENY;
+
+  const record = await prisma.post.findFirst({
+    where: { id: projectId, overallStatus: "Approved" },
+    select: { id: true, overallStatus: true },
+  });
+
+  return record ? { allowed: true, resource: record } : DENY;
+};
+
+/** Updates and removals are limited to the caller's account-owned row. */
+export const bookmark = async (req) => {
+  const bookmarkId = req.params.bookmarkId;
+  if (!isUuid(bookmarkId)) return DENY;
+
+  const record = await prisma.donorBookmark.findUnique({
+    where: { id: bookmarkId },
+    select: { id: true, accountId: true, projectId: true },
+  });
+
+  return bookmarkBelongsToAccount(record, req.user?.accountId)
+    ? { allowed: true, resource: record }
+    : DENY;
+};
+
+/** Refuse an administrator's account-management action against itself. */
 export const notSelfAccount = async (req) => {
   const targetAccountId = req.params.id;
-  if (!targetAccountId) return DENY;
+  if (!isUuid(targetAccountId)) return DENY;
   if (targetAccountId === req.user?.accountId) return DENY;
 
   const record = await prisma.userAccount.findUnique({
@@ -354,8 +437,12 @@ export default {
   payment,
   paymentsForPost,
   donorPayments,
+  paymentIntentTarget,
   refund,
   refundablePayment,
+  contributionTarget,
   contributionForOrg,
+  approvedBookmarkProject,
+  bookmark,
   notSelfAccount,
 };

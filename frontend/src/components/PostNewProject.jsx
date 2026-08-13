@@ -121,7 +121,7 @@ export default function PostNewProject({ onProjectCreated }) {
     } catch (err) {
       setErrorMsg(err.message || "Failed to create project.");
       setStatus("error");
-      console.error(err);
+      if (import.meta.env.DEV) console.error(err);
     }
   };
 

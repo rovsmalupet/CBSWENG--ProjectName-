@@ -28,7 +28,7 @@ export default function PendingAccounts() {
       setPendingAccounts(data);
     } catch (err) {
       setError(err.message);
-      console.error("Error fetching pending accounts:", err);
+      if (import.meta.env.DEV) console.error("Error fetching pending accounts:", err);
     } finally {
       setLoading(false);
     }
@@ -44,7 +44,7 @@ export default function PendingAccounts() {
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
       alert("Account approved successfully!");
     } catch (err) {
-      console.error("Error approving account:", err);
+      if (import.meta.env.DEV) console.error("Error approving account:", err);
       alert("Failed to approve account. Please try again.");
     }
   };
@@ -65,7 +65,7 @@ export default function PendingAccounts() {
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
       alert("Account rejected successfully.");
     } catch (err) {
-      console.error("Error rejecting account:", err);
+      if (import.meta.env.DEV) console.error("Error rejecting account:", err);
       alert("Failed to reject account. Please try again.");
     }
   };

@@ -20,6 +20,8 @@ import { useAuth } from "../context/authContext.js";
 import { apiPost, clearReauthToken, getReauthToken } from "../config/api.js";
 import PasswordField from "../components/PasswordField.jsx";
 import ReauthModal from "../components/ReauthModal.jsx";
+import SecurityQuestionsFields from "../components/SecurityQuestionsFields.jsx";
+import LastAccessBanner from "../components/LastAccessBanner.jsx";
 import "../css/ChangePassword.css";
 
 export default function ChangePassword() {
@@ -29,15 +31,26 @@ export default function ChangePassword() {
 
   // Set when ProtectedRoute redirected here because the account is flagged
   // mustChangePassword (a new or administrator-reset account).
-  const forced = location.state?.forced === true;
+  const forced = user?.mustChangePassword === true || location.state?.forced === true;
 
   const [confirmed, setConfirmed] = useState(Boolean(getReauthToken()));
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [securityAnswers, setSecurityAnswers] = useState([]);
+  const [questionsSaved, setQuestionsSaved] = useState(false);
   const [error, setError] = useState("");
   const [failures, setFailures] = useState([]);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+
+  const needsSecurityQuestionSetup =
+    forced && user?.securityQuestionsConfigured !== true && !questionsSaved;
+  const securityAnswersComplete =
+    !needsSecurityQuestionSetup ||
+    (securityAnswers.length > 0 &&
+      securityAnswers.every(
+        (entry) => entry.questionKey && String(entry.answer ?? "").trim().length >= 4,
+      ));
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -46,6 +59,15 @@ export default function ChangePassword() {
     setBusy(true);
 
     try {
+      if (needsSecurityQuestionSetup) {
+        await apiPost(
+          "/auth/security-questions",
+          { securityAnswers },
+          { withReauth: true },
+        );
+        setQuestionsSaved(true);
+      }
+
       await apiPost(
         "/auth/change-password",
         { newPassword, confirmPassword },
@@ -83,6 +105,7 @@ export default function ChangePassword() {
         description="Before you can set a new password, please confirm the one you use now."
         onConfirmed={() => setConfirmed(true)}
         onCancel={() => navigate(forced ? "/login" : -1)}
+        showAccountActivity={forced}
       />
     );
   }
@@ -90,11 +113,15 @@ export default function ChangePassword() {
   return (
     <div className="change-password-page">
       <div className="change-password-card">
+        {forced && <LastAccessBanner />}
         <h1>Change your password</h1>
 
         {forced && (
           <div className="change-password-notice" role="alert">
-            Your account is using a temporary password. Please choose your own before continuing.
+            Your account is using a temporary password. Please choose your own
+            {user?.securityQuestionsConfigured !== true
+              ? " and set your recovery questions"
+              : ""} before continuing.
           </div>
         )}
 
@@ -111,6 +138,14 @@ export default function ChangePassword() {
             <p className="change-password-signed-in">
               Signed in as <strong>{user?.email}</strong>
             </p>
+
+            {needsSecurityQuestionSetup && (
+              <SecurityQuestionsFields
+                answers={securityAnswers}
+                onChange={setSecurityAnswers}
+                disabled={busy}
+              />
+            )}
 
             <PasswordField
               label="New password"
@@ -160,7 +195,12 @@ export default function ChangePassword() {
               )}
               <button
                 type="submit"
-                disabled={busy || !newPassword || newPassword !== confirmPassword}
+                disabled={
+                  busy ||
+                  !securityAnswersComplete ||
+                  !newPassword ||
+                  newPassword !== confirmPassword
+                }
               >
                 {busy ? "Changing…" : "Change password"}
               </button>

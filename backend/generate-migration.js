@@ -7,14 +7,15 @@
  */
 
 import bcrypt from "bcrypt";
-import { randomUUID } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 12;
+const generatePassword = () => `Bh-${randomBytes(12).toString("base64url")}!4`;
 
 // Sample org + donor per ASEAN member state (must match ASEANCountry enum in schema.prisma)
 const accountsData = [
@@ -131,26 +132,32 @@ const accountsData = [
 ];
 
 async function generateMigration() {
+  const generatedCredentials = [];
   console.log("🔐 Generating bcrypt hashes for passwords...\n");
 
   let migrationSql = `-- Migration: Add ASEAN sample Organization and Donor accounts
 -- One verified org + one verified donor per ASEAN member state (ASEANCountry enum)
--- Generated with proper bcrypt hashing (SALT_ROUNDS=10)
+-- Generated with proper bcrypt hashing (SALT_ROUNDS=12)
 
 `;
 
   for (const account of accountsData) {
     const orgId = randomUUID();
     const donorId = randomUUID();
-    const orgPassword = `${account.country}123`;
-    const donorPassword = `${account.country}123`;
+    const orgPassword = generatePassword();
+    const donorPassword = generatePassword();
 
     const orgPasswordHash = await bcrypt.hash(orgPassword, SALT_ROUNDS);
     const donorPasswordHash = await bcrypt.hash(donorPassword, SALT_ROUNDS);
 
     console.log(`✓ ${account.country}: Generated hashes`);
-    console.log(`  - Password: ${orgPassword}`);
-    console.log(`  - Hash: ${orgPasswordHash}\n`);
+    generatedCredentials.push(
+      { email: `${account.country.toLowerCase()}@gov.org.${account.shorthand}`, password: orgPassword },
+      {
+        email: `${account.country.toLowerCase()}.donor@gov.org.${account.shorthand}`,
+        password: donorPassword,
+      },
+    );
 
     // Organization insert (id has no DB default — must supply UUID)
     migrationSql += `-- ${account.country} Organization
@@ -204,6 +211,11 @@ VALUES (
   console.log(`\n✅ Migration file generated successfully!`);
   console.log(`📁 Location: ${migrationFile}\n`);
   console.log("📝 Next steps:");
+  console.log("Generated passwords (shown once; store them in a password manager):");
+  for (const credential of generatedCredentials) {
+    console.log(`  ${credential.email}: ${credential.password}`);
+  }
+  console.log("");
   console.log("   1. npx prisma migrate deploy");
   console.log("   2. npx prisma generate\n");
 }

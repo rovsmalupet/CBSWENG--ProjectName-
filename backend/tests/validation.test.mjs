@@ -6,10 +6,22 @@
  * forbids.
  */
 
-import { suite, test, assert, assertIncludes } from "./_harness.mjs";
+import { suite, test, assert, assertEqual, assertIncludes } from "./_harness.mjs";
 import { createPostSchema, addContributionSchema, updatePostStatusSchema } from "../schemas/post.schema.js";
-import { createPaymentIntentSchema, confirmPaymentSchema, securityLogQuerySchema } from "../schemas/misc.schema.js";
-import { loginSchema, registerDonorSchema, changePasswordSchema } from "../schemas/auth.schema.js";
+import {
+  createPaymentIntentSchema,
+  confirmPaymentSchema,
+  issueRefundSchema,
+  securityLogQuerySchema,
+} from "../schemas/misc.schema.js";
+import {
+  loginSchema,
+  registerDonorSchema,
+  registerOrganizationSchema,
+  changePasswordSchema,
+  listUsersSchema,
+} from "../schemas/auth.schema.js";
+import { emptyRequestSchema } from "../schemas/common.js";
 
 const UUID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
 const OTHER_UUID = "550e8400-e29b-41d4-a716-446655440000";
@@ -144,6 +156,23 @@ test("a project cannot smuggle in its own orgId", () => {
   rejects(createPostSchema, { body: { ...validProject, orgId: OTHER_UUID } });
 });
 
+test("omitted request sections are strict-empty rather than passthrough", () => {
+  rejects(emptyRequestSchema, { body: { unexpected: true } });
+  rejects(emptyRequestSchema, { params: { unexpected: "value" } });
+  rejects(emptyRequestSchema, { query: { unexpected: "value" } });
+});
+
+test("non-identity surrounding whitespace is rejected, not trimmed", () => {
+  rejects(createPostSchema, { body: { ...validProject, projectName: " Community Mission" } });
+  rejects(createPostSchema, { body: { ...validProject, description: "Description " } });
+  rejects(createPostSchema, {
+    body: {
+      ...validProject,
+      budgetBreakdown: [{ label: "Food ", percentage: 100 }],
+    },
+  });
+});
+
 suite("Validation — range [2.3.2]");
 
 const rangeCases = [
@@ -152,6 +181,8 @@ const rangeCases = [
   ["a fractional volunteer count", { volunteer: { enabled: true, targetVolunteers: 3.5 } }],
   ["a negative volunteer count", { volunteer: { enabled: true, targetVolunteers: -10 } }],
   ["a volunteer count above the ceiling", { volunteer: { enabled: true, targetVolunteers: 99_999 }}],
+  ["a nonzero target on a disabled monetary option", { monetary: { enabled: false, targetAmount: 500 } }],
+  ["a nonzero target on a disabled volunteer option", { volunteer: { enabled: false, targetVolunteers: 5 } }],
 ];
 
 for (const [label, supportOverride] of rangeCases) {
@@ -190,6 +221,7 @@ test("an end date before the start date is rejected", () => {
 
 test("a nonsensical date is rejected", () => {
   rejects(createPostSchema, { body: { ...validProject, startDate: "2026-13-45" } });
+  rejects(createPostSchema, { body: { ...validProject, startDate: "2026-02-30" } });
   rejects(createPostSchema, { body: { ...validProject, startDate: "not a date" } });
   rejects(createPostSchema, { body: { ...validProject, startDate: "20256-01-01" } });
 });
@@ -300,6 +332,13 @@ test("confirmation accepts only a payment reference — no postId to spoof", () 
   rejects(confirmPaymentSchema, { body: { paymentIntentId: "not-an-intent" } });
 });
 
+test("refund input cannot attach an unverified contribution id", () => {
+  accepts(issueRefundSchema, { body: { paymentId: UUID, reason: "Duplicate charge" } });
+  rejects(issueRefundSchema, {
+    body: { paymentId: UUID, reason: "Duplicate charge", contributionId: OTHER_UUID },
+  });
+});
+
 suite("Validation — contributions submitted as multipart JSON");
 
 test("a valid contribution payload is parsed and accepted", () => {
@@ -355,6 +394,33 @@ test("a submission with nothing in it is rejected", () => {
   });
 });
 
+test("ignored identity and volunteer schedule fields are rejected", () => {
+  rejects(addContributionSchema, {
+    params: { postId: UUID },
+    body: {
+      monetary: JSON.stringify([{ donorName: "Maria", amount: 500 }]),
+      donorId: OTHER_UUID,
+    },
+  });
+  rejects(addContributionSchema, {
+    params: { postId: UUID },
+    body: {
+      volunteer: JSON.stringify([
+        { donorName: "Maria", count: 1, startDate: "2026-08-20" },
+      ]),
+    },
+  });
+});
+
+test("contributor names with surrounding whitespace are rejected, not trimmed", () => {
+  rejects(addContributionSchema, {
+    params: { postId: UUID },
+    body: {
+      monetary: JSON.stringify([{ donorName: " Maria Santos", amount: 500 }]),
+    },
+  });
+});
+
 suite("Validation — authentication endpoints");
 
 test("sign-in does not apply the password policy to the submitted password", () => {
@@ -370,6 +436,16 @@ test("sign-in still bounds the field lengths", () => {
 
 test("sign-in rejects extra fields such as a role claim", () => {
   rejects(loginSchema, { body: { email: "a@b.com", password: "x", role: "admin" } });
+});
+
+test("email whitespace is rejected before lowercase canonicalisation", () => {
+  rejects(loginSchema, { body: { email: " user@example.com", password: "short" } });
+  rejects(loginSchema, { body: { email: "user@example.com ", password: "short" } });
+  const parsed = accepts(loginSchema, {
+    body: { email: "USER@EXAMPLE.COM", password: "short" },
+  });
+  assertEqual(parsed.body.email, "user@example.com");
+  rejects(securityLogQuerySchema, { query: { actorEmail: " admin@example.com" } });
 });
 
 test("registration requires exactly two security answers", () => {
@@ -421,6 +497,46 @@ test("a password change must be confirmed", () => {
   });
 });
 
+test("registration identity fields with surrounding whitespace are rejected, not trimmed", () => {
+  const securityAnswers = [
+    { questionKey: "first_concert", answer: "Eraserheads at Cubao" },
+    { questionKey: "street_age_ten", answer: "Mapagmahal Street" },
+  ];
+  const donor = {
+    firstName: "Maria",
+    surname: "Santos",
+    email: "maria@example.com",
+    password: "Kalinga!Tulay72",
+    affiliation: "Community Group",
+    securityAnswers,
+  };
+
+  for (const [field, value] of [
+    ["firstName", " Maria"],
+    ["surname", "Santos "],
+    ["affiliation", " Community Group"],
+  ]) {
+    rejects(registerDonorSchema, { body: { ...donor, [field]: value } }, field);
+  }
+
+  rejects(registerOrganizationSchema, {
+    body: {
+      firstName: "Maria",
+      surname: "Santos",
+      email: "ngo@example.com",
+      password: "Kalinga!Tulay72",
+      orgName: " Community Partners",
+      securityAnswers,
+    },
+  });
+});
+
+test("password confirmation has the same maximum length bound", () => {
+  rejects(changePasswordSchema, {
+    body: { newPassword: "Kalinga!Tulay72", confirmPassword: "x".repeat(65) },
+  });
+});
+
 suite("Validation — security log filters are bounded [2.4.4]");
 
 test("normal filters are accepted", () => {
@@ -438,7 +554,22 @@ test("an unknown filter key is rejected", () => {
 });
 
 test("an over-large page size is rejected", () => {
+  rejects(securityLogQuerySchema, { query: { page: "0" } });
+  rejects(securityLogQuerySchema, { query: { limit: "999" } });
   rejects(securityLogQuerySchema, { query: { limit: "9999" } });
+});
+
+test("bounded pagination is parsed once for controllers", () => {
+  const logQuery = accepts(securityLogQuerySchema, { query: { page: "2", limit: "50" } });
+  const usersQuery = accepts(listUsersSchema, { query: { page: "3", limit: "25" } });
+  assertEqual(logQuery.query, { page: 2, limit: 50 });
+  assertEqual(usersQuery.query, { page: 3, limit: 25 });
+  rejects(listUsersSchema, { query: { page: "0" } });
+  rejects(listUsersSchema, { query: { limit: "101" } });
+});
+
+test("security-log filters reject impossible calendar dates", () => {
+  rejects(securityLogQuerySchema, { query: { from: "2026-02-30" } });
 });
 
 test("a malformed event type is rejected", () => {

@@ -79,7 +79,7 @@ export default function PaymentHistory() {
           totalSpent: data.totalSpent,
         });
       } catch (err) {
-        console.error("Failed to load payment history:", err);
+        if (import.meta.env.DEV) console.error("Failed to load payment history:", err);
         setError(err.message || "Failed to load payment history");
       } finally {
         setLoading(false);

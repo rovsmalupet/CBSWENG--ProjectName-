@@ -16,11 +16,12 @@ import {
   getSecurityLogSummary,
 } from "../controllers/securityLogController.js";
 import { securityLogQuerySchema } from "../schemas/misc.schema.js";
+import { emptyRequestSchema } from "../schemas/common.js";
 
 const router = express.Router();
 
-router.get("/event-types", listEventTypes);
-router.get("/summary", getSecurityLogSummary);
+router.get("/event-types", validate(emptyRequestSchema), listEventTypes);
+router.get("/summary", validate(emptyRequestSchema), getSecurityLogSummary);
 router.get("/", validate(securityLogQuerySchema), listSecurityLogs);
 
 export default router;

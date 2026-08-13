@@ -22,7 +22,7 @@ import dotenv from "dotenv";
  */
 dotenv.config();
 
-const REQUIRED = ["DATABASE_URL", "JWT_SECRET"];
+const REQUIRED = ["DATABASE_URL", "DIRECT_URL", "JWT_SECRET"];
 
 /** Values a developer might leave in place from a template. */
 const PLACEHOLDER_SECRETS = new Set([
@@ -59,6 +59,14 @@ const readInt = (name, fallback) => {
   const parsed = Number.parseInt(raw, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     fail([`${name} must be a positive integer (received "${raw}").`]);
+  }
+  return parsed;
+};
+
+const readIntAtLeast = (name, fallback, minimum) => {
+  const parsed = readInt(name, fallback);
+  if (parsed < minimum) {
+    fail([`${name} must be at least ${minimum} (received "${parsed}").`]);
   }
   return parsed;
 };
@@ -132,7 +140,9 @@ export const config = {
   lockoutDurationMinutes: readInt("LOCKOUT_DURATION_MINUTES", 15),
 
   // ── Password lifecycle [2.1.10, 2.1.11] ───────────────────────────────────
-  passwordMinAgeHours: readInt("PASSWORD_MIN_AGE_HOURS", 24),
+  // This is a compliance floor, not merely a tuning default. An environment
+  // override may make the control stricter, but may not weaken it below a day.
+  passwordMinAgeHours: readIntAtLeast("PASSWORD_MIN_AGE_HOURS", 24, 24),
   passwordHistoryDepth: readInt("PASSWORD_HISTORY_DEPTH", 5),
 
   // ── Security questions [2.1.9] ────────────────────────────────────────────

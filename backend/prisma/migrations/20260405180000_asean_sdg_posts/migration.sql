@@ -2,6 +2,31 @@
 -- Each post has Monetary + Volunteer support options (matches app expectations).
 -- Org resolved by email: {country}@gov.org.{cc}
 
+-- Historical note: Prisma sorts this legacy migration name before
+-- `20260405_add_international_accounts` on a brand-new database, even though
+-- that later migration creates the organizations referenced below. Keep the
+-- fixture migration safe in either ordering: insert the optional SDG catalogue
+-- only when all ten organization rows already exist. The demo seed supplies
+-- its own current fixtures, so skipping these historical samples is harmless.
+DO $asean_seed$
+BEGIN
+  IF (
+    SELECT count(*)
+    FROM "Organization"
+    WHERE "email" IN (
+      'brunei@gov.org.bn',
+      'cambodia@gov.org.kh',
+      'indonesia@gov.org.id',
+      'laos@gov.org.la',
+      'malaysia@gov.org.my',
+      'myanmar@gov.org.mm',
+      'philippines@gov.org.ph',
+      'singapore@gov.org.sg',
+      'thailand@gov.org.th',
+      'vietnam@gov.org.vn'
+    )
+  ) = 10 THEN
+
 -- === Brunei (brunei@gov.org.bn) ===
 
 INSERT INTO "Post" ("id", "orgId", "projectName", "description", "budgetBreakdown", "causes", "location", "priority", "overallStatus", "startDate", "endDate", "startTime", "endTime", "createdAt")
@@ -3932,3 +3957,5 @@ VALUES
   ('a810b0af-521b-42ae-99d1-99ed79d2c39d', '08352bd3-4ecc-41f3-8edd-10e5e18c0b33', 'Monetary', 368100, 0, NULL, 0, 'Open'),
   ('ab765dcc-6ff9-4369-b283-bb5c12ed2187', '08352bd3-4ecc-41f3-8edd-10e5e18c0b33', 'Volunteer', NULL, 0, 30, 0, 'Open');
 
+  END IF;
+END $asean_seed$;

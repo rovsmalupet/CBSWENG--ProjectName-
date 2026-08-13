@@ -7,6 +7,7 @@ import SecurityQuestionsFields from "../components/SecurityQuestionsFields.jsx";
 import "../css/DonorRegistration.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const hasSurroundingWhitespace = (value) => value !== value.trim();
 
 const ASEAN_COUNTRIES = [
   "Brunei",
@@ -56,11 +57,19 @@ export default function DonorRegistration() {
     const next = {};
 
     if (!formData.firstName.trim()) next.firstName = "First name is required.";
+    else if (hasSurroundingWhitespace(formData.firstName)) {
+      next.firstName = "First name cannot start or end with spaces.";
+    }
     if (!formData.surname.trim()) next.surname = "Surname is required.";
+    else if (hasSurroundingWhitespace(formData.surname)) {
+      next.surname = "Surname cannot start or end with spaces.";
+    }
 
     if (!formData.email.trim()) {
       next.email = "Email address is required.";
-    } else if (!EMAIL_REGEX.test(formData.email.trim())) {
+    } else if (hasSurroundingWhitespace(formData.email)) {
+      next.email = "Email address cannot start or end with spaces.";
+    } else if (!EMAIL_REGEX.test(formData.email)) {
       next.email = "Enter a valid email address.";
     }
 
@@ -72,6 +81,12 @@ export default function DonorRegistration() {
 
     if (!formData.country) next.country = "Please select your country.";
     if (!formData.affiliation.trim()) next.affiliation = "Affiliation is required.";
+    else if (hasSurroundingWhitespace(formData.affiliation)) {
+      next.affiliation = "Affiliation cannot start or end with spaces.";
+    }
+    if (formData.bio && hasSurroundingWhitespace(formData.bio)) {
+      next.bio = "Bio cannot start or end with spaces.";
+    }
 
     if (
       securityAnswers.length < 2 ||
@@ -95,13 +110,13 @@ export default function DonorRegistration() {
       // No `role` field: the endpoint hard-codes donor, so registration cannot
       // be used to request a privileged account.
       await apiPost("/register", {
-        firstName: formData.firstName.trim(),
-        surname: formData.surname.trim(),
-        email: formData.email.trim(),
+        firstName: formData.firstName,
+        surname: formData.surname,
+        email: formData.email.toLowerCase(),
         password: formData.password,
         country: formData.country,
-        affiliation: formData.affiliation.trim(),
-        ...(formData.bio.trim() ? { bio: formData.bio.trim() } : {}),
+        affiliation: formData.affiliation,
+        ...(formData.bio ? { bio: formData.bio } : {}),
         securityAnswers,
       });
 
@@ -226,7 +241,9 @@ export default function DonorRegistration() {
               value={formData.bio}
               onChange={handleChange}
               className="bio-textarea"
+              aria-invalid={Boolean(errors.bio)}
             />
+            {errors.bio && <span className="field-error">{errors.bio}</span>}
           </div>
 
           <SecurityQuestionsFields

@@ -29,7 +29,13 @@
  * screen, turning the audit log into a credential dump.
  */
 
+import crypto from "crypto";
+
 import { logSecurityEvent, EVENTS, OUTCOME, SEVERITY } from "../security/securityLog.js";
+import { removeUploadedFile } from "./uploadMiddleware.js";
+
+const isLoginAttempt = (req) =>
+  req.method === "POST" && req.originalUrl?.split("?")[0] === "/login";
 
 /**
  * @param {import('zod').ZodType} schema  validates { body, params, query }
@@ -50,6 +56,8 @@ export const validate = (schema) => async (req, res, next) => {
       rule: issue.code,
     }));
 
+    await removeUploadedFile(req.file);
+
     await logSecurityEvent(req, {
       eventType: EVENTS.INPUT_VALIDATION_FAILURE,
       outcome: OUTCOME.FAILURE,
@@ -59,6 +67,28 @@ export const validate = (schema) => async (req, res, next) => {
         .join(", ")}`,
       metadata: { issueCount: issues.length, issues },
     });
+
+    // A malformed sign-in request is still an authentication attempt. Record
+    // it in both required audit categories and return the same public status,
+    // message, and code as every other failed login. Do not expose which field
+    // failed, because that would create a response-shape oracle. [2.1.4, 2.4.6]
+    if (isLoginAttempt(req)) {
+      await logSecurityEvent(req, {
+        eventType: EVENTS.LOGIN_FAILURE,
+        outcome: OUTCOME.FAILURE,
+        severity: SEVERITY.WARN,
+        message: "Failed sign-in attempt: request validation failed.",
+        metadata: { issueCount: issues.length, issues },
+      });
+
+      return res.status(401).json({
+        error: {
+          message: "Invalid username and/or password.",
+          code: "UNAUTHORIZED",
+          errorId: crypto.randomUUID(),
+        },
+      });
+    }
 
     return res.status(400).json({
       error: {

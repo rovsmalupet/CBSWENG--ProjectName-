@@ -1,6 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { apiFetch, getApiUrl } from "../config/api.js";
+import {
+  loadBookmarks,
+  MAX_BOOKMARK_NOTE_LENGTH,
+  removeBookmark,
+  updateBookmarkNote,
+} from "../utils/bookmarks.js";
 import "../css/BookmarkedProjects.css";
 
 const CAUSE_STYLES = {
@@ -47,7 +54,7 @@ const CAUSE_STYLES = {
 const normalizeCauseKey = (raw) => {
   if (!raw) return "others";
   if (CAUSE_STYLES[raw]) return raw;
-  const normalized = raw.toLowerCase().replace(/[\s_\-]+/g, "");
+  const normalized = raw.toLowerCase().replace(/[\s_-]+/g, "");
   const match = Object.keys(CAUSE_STYLES).find(
     (key) => key.toLowerCase() === normalized,
   );
@@ -56,49 +63,44 @@ const normalizeCauseKey = (raw) => {
 
 export default function BookmarkedProjects() {
   const navigate = useNavigate();
-
-  const userId = localStorage.getItem("userId");
-  const bookmarkKey = `bookmarkedProjects_${userId}`;
-
-  const [bookmarkedCampaigns, setBookmarkedCampaigns] = useState([]);
+  const [approvedCampaigns, setApprovedCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("latest");
-  const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
-    const saved = localStorage.getItem(bookmarkKey);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [bookmarks, setBookmarks] = useState([]);
+  const [error, setError] = useState("");
+  const [noteStatus, setNoteStatus] = useState({});
 
   useEffect(() => {
-    fetchBookmarkedCampaigns();
-  }, [bookmarkedProjects]);
+    let cancelled = false;
+    const fetchPageData = async () => {
+      try {
+        const [campaignData, bookmarkData] = await Promise.all([
+          apiFetch(getApiUrl("/posts/approved")),
+          loadBookmarks(),
+        ]);
+        if (!cancelled) {
+          setApprovedCampaigns(Array.isArray(campaignData) ? campaignData : []);
+          setBookmarks(Array.isArray(bookmarkData) ? bookmarkData : []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setApprovedCampaigns([]);
+          setBookmarks([]);
+          setError(err.message || "Could not load your bookmarks.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchPageData();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const fetchBookmarkedCampaigns = async () => {
-    if (bookmarkedProjects.length === 0) {
-      setBookmarkedCampaigns([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // fetch all approved posts
-      const { getApiUrl, apiFetch } = await import("../config/api");
-      const data = await apiFetch(getApiUrl("/posts/approved"));
-
-      // filter only bookmarked ones
-      const bookmarked = data.filter((campaign) =>
-        bookmarkedProjects.includes(campaign.id),
-      );
-
-      setBookmarkedCampaigns(sortCampaigns(bookmarked));
-    } catch (error) {
-      console.error("error fetching bookmarked campaigns:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const sortCampaigns = (campaignsList) => {
-    const sorted = [...campaignsList];
+  const bookmarkedCampaigns = useMemo(() => {
+    const ids = new Set(bookmarks.map((entry) => entry.projectId));
+    const sorted = approvedCampaigns.filter((campaign) => ids.has(campaign.id));
     switch (sortBy) {
       case "urgency":
         return sorted.sort((a, b) => {
@@ -117,15 +119,45 @@ export default function BookmarkedProjects() {
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
         );
     }
+  }, [approvedCampaigns, bookmarks, sortBy]);
+
+  const toggleBookmark = async (e, bookmarkId) => {
+    e.stopPropagation();
+    setError("");
+    try {
+      await removeBookmark(bookmarkId);
+      setBookmarks((previous) =>
+        previous.filter((entry) => entry.id !== bookmarkId),
+      );
+    } catch (err) {
+      setError(err.message || "Could not remove this bookmark.");
+    }
   };
 
-  const toggleBookmark = (e, campaignId) => {
-    e.stopPropagation();
-    setBookmarkedProjects((prev) => {
-      const updated = prev.filter((id) => id !== campaignId);
-      localStorage.setItem(bookmarkKey, JSON.stringify(updated));
-      return updated;
-    });
+  const handleNoteChange = (bookmarkId, note) => {
+    setBookmarks((previous) =>
+      previous.map((entry) =>
+        entry.id === bookmarkId ? { ...entry, note } : entry,
+      ),
+    );
+    setNoteStatus((previous) => ({ ...previous, [bookmarkId]: "changed" }));
+  };
+
+  const saveNote = async (event, bookmark) => {
+    event.stopPropagation();
+    setNoteStatus((previous) => ({ ...previous, [bookmark.id]: "saving" }));
+    try {
+      const updated = await updateBookmarkNote(bookmark.id, bookmark.note);
+      setBookmarks((previous) =>
+        previous.map((entry) =>
+          entry.id === bookmark.id ? updated : entry,
+        ),
+      );
+      setNoteStatus((previous) => ({ ...previous, [bookmark.id]: "saved" }));
+    } catch (err) {
+      setNoteStatus((previous) => ({ ...previous, [bookmark.id]: "error" }));
+      setError(err.message || "Could not save that note.");
+    }
   };
 
   const getCauseDisplay = (cause) => {
@@ -153,12 +185,6 @@ export default function BookmarkedProjects() {
       : text;
   };
 
-  useEffect(() => {
-    if (!loading) {
-      setBookmarkedCampaigns(sortCampaigns(bookmarkedCampaigns));
-    }
-  }, [sortBy]);
-
   if (loading) {
     return (
       <div className="bookmarked-page">
@@ -184,6 +210,7 @@ export default function BookmarkedProjects() {
       </div>
 
       <div className="bookmarked-main">
+        {error && <p className="bookmark-error" role="alert">{error}</p>}
         {bookmarkedCampaigns.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">NONE</div>
@@ -224,6 +251,9 @@ export default function BookmarkedProjects() {
                 const target =
                   campaign.supportTypes?.monetary?.targetAmount || 1;
                 const remaining = Math.max(0, target - raised);
+                const bookmark = bookmarks.find(
+                  (entry) => entry.projectId === campaign.id,
+                );
 
                 return (
                   <div
@@ -245,7 +275,7 @@ export default function BookmarkedProjects() {
                       </div>
                       <button
                         className="bookmark-btn bookmarked"
-                        onClick={(e) => toggleBookmark(e, campaign.id)}
+                        onClick={(e) => toggleBookmark(e, bookmark.id)}
                         title="remove bookmark"
                         aria-label="remove bookmark"
                       >
@@ -300,6 +330,45 @@ export default function BookmarkedProjects() {
                       {volunteerEnabled && (
                         <span className="support-badge">volunteer</span>
                       )}
+                    </div>
+
+                    <div
+                      className="bookmark-note-editor"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <label htmlFor={`bookmark-note-${campaign.id}`}>
+                        Personal note
+                      </label>
+                      <textarea
+                        id={`bookmark-note-${campaign.id}`}
+                        value={bookmark?.note ?? ""}
+                        maxLength={MAX_BOOKMARK_NOTE_LENGTH}
+                        disabled={noteStatus[bookmark.id] === "saving"}
+                        rows="3"
+                        placeholder="Add a reminder about this project..."
+                        onChange={(event) =>
+                          handleNoteChange(bookmark.id, event.target.value)
+                        }
+                      />
+                      <small>
+                        {noteStatus[bookmark.id] === "saving"
+                          ? "Saving…"
+                          : noteStatus[bookmark.id] === "saved"
+                            ? "Saved"
+                            : noteStatus[bookmark.id] === "error"
+                              ? "Not saved"
+                              : "Private note"}
+                        {" · "}{bookmark?.note?.length ?? 0}/
+                        {MAX_BOOKMARK_NOTE_LENGTH}
+                      </small>
+                      <button
+                        type="button"
+                        className="bookmark-note-save"
+                        disabled={noteStatus[bookmark.id] === "saving"}
+                        onClick={(event) => saveNote(event, bookmark)}
+                      >
+                        Save note
+                      </button>
                     </div>
 
                     {monetaryEnabled && (

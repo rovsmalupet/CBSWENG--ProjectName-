@@ -14,7 +14,7 @@ import nodemailer from "nodemailer";
 
 import prisma from "../prisma/client.js";
 import config from "../security/env.js";
-import { AppError, badRequest, unauthorized } from "../errors/AppError.js";
+import { AppError, badRequest, conflict, unauthorized } from "../errors/AppError.js";
 import {
   validatePassword,
   hashPassword,
@@ -23,12 +23,15 @@ import {
   rehashIfNeeded,
   isPasswordReused,
   checkPasswordAge,
+  applyPreparedPassword,
   applyNewPassword,
 } from "../security/passwordPolicy.js";
 import {
   validateAnswerSet,
+  prepareSecurityAnswers,
   setSecurityAnswers,
   getQuestionsForAccount,
+  hasSecurityQuestions,
   verifySecurityAnswers,
 } from "../security/securityQuestions.js";
 import { issueAccessToken, issueReauthToken } from "../security/tokens.js";
@@ -72,7 +75,7 @@ const loadProfile = async (account) => {
 };
 
 /** The user-facing shape of an account. Never includes a hash. */
-const publicUser = (account, profile) => ({
+const publicUser = (account, profile, securityQuestionsConfigured = false) => ({
   id: profile?.id ?? null,
   accountId: account.id,
   email: account.email,
@@ -86,6 +89,7 @@ const publicUser = (account, profile) => ({
   isVerified: profile?.isVerified ?? true,
   status: account.status,
   mustChangePassword: account.mustChangePassword,
+  securityQuestionsConfigured: Boolean(securityQuestionsConfigured),
   createdAt: profile?.createdAt ?? account.createdAt,
 });
 
@@ -106,10 +110,9 @@ export const seedDefaultUsers = async () => {
   const existingAdmins = await prisma.userAccount.count({ where: { role: "admin" } });
   if (existingAdmins > 0) return;
 
-  const generated = !config.isProduction && !process.env.SEED_ADMIN_PASSWORD;
-  const password =
-    process.env.SEED_ADMIN_PASSWORD?.trim() ||
-    `Bootstrap-${crypto.randomBytes(9).toString("base64url")}!7`;
+  const configuredPassword = process.env.SEED_ADMIN_PASSWORD?.trim();
+  const generated = !configuredPassword;
+  const password = configuredPassword || `Bootstrap-${crypto.randomBytes(9).toString("base64url")}!7`;
 
   const check = validatePassword(password);
   if (!check.valid) {
@@ -228,7 +231,10 @@ export const registerUser = async (input, req = null) => {
     throw new AppError("That email address cannot be used.", 409, "EMAIL_UNAVAILABLE");
   }
 
-  const passwordHash = await hashPassword(password);
+  const [passwordHash, preparedSecurityAnswers] = await Promise.all([
+    hashPassword(password),
+    prepareSecurityAnswers(securityAnswers),
+  ]);
 
   // Donors are usable immediately; organizations must be approved by an
   // administrator before they can sign in.
@@ -274,10 +280,13 @@ export const registerUser = async (input, req = null) => {
     });
 
     await tx.passwordHistory.create({ data: { accountId: created.id, passwordHash } });
+    for (const answer of preparedSecurityAnswers) {
+      await tx.securityAnswer.create({
+        data: { accountId: created.id, ...answer },
+      });
+    }
     return created;
   });
-
-  await setSecurityAnswers(account.id, securityAnswers);
 
   await logSecurityEvent(req, {
     eventType: EVENTS.REGISTRATION_SUCCESS,
@@ -297,7 +306,7 @@ export const registerUser = async (input, req = null) => {
       role === "donor"
         ? "Registration successful. You can now sign in."
         : "Registration submitted. Your organization is pending administrator approval.",
-    user: publicUser(account, profile),
+    user: publicUser(account, profile, true),
   };
 };
 
@@ -310,34 +319,59 @@ export const registerUser = async (input, req = null) => {
  * [2.1.8, 2.1.12]
  */
 const recordLoginFailure = async (account, req, reason) => {
-  const attempts = account.failedLoginAttempts + 1;
-  const shouldLock = attempts >= config.lockoutThreshold;
+  const attemptedAt = new Date();
+  const attemptedFrom = clientIp(req);
+  const lockedUntil = new Date(
+    attemptedAt.getTime() + config.lockoutDurationMinutes * 60 * 1000,
+  );
 
-  await prisma.userAccount.update({
-    where: { id: account.id },
-    data: {
-      failedLoginAttempts: attempts,
-      failedAttemptsSinceLogin: { increment: 1 },
-      lastFailedLoginAt: new Date(),
-      lastFailedLoginIp: clientIp(req),
-      ...(shouldLock
-        ? { lockedUntil: new Date(Date.now() + config.lockoutDurationMinutes * 60 * 1000) }
-        : {}),
-    },
+  const { attempts, lockStarted } = await prisma.$transaction(async (tx) => {
+    // Once a lock has expired, begin a fresh threshold window. Keep the
+    // since-last-login total intact because it is reported to the account owner.
+    await tx.userAccount.updateMany({
+      where: { id: account.id, lockedUntil: { lte: attemptedAt } },
+      data: { failedLoginAttempts: 0, lockedUntil: null },
+    });
+
+    // Database-side increments serialize concurrent failures. Computing this
+    // from the account object read before password verification could otherwise
+    // let simultaneous guesses overwrite each other with the same value.
+    const updated = await tx.userAccount.update({
+      where: { id: account.id },
+      data: {
+        failedLoginAttempts: { increment: 1 },
+        failedAttemptsSinceLogin: { increment: 1 },
+        lastFailedLoginAt: attemptedAt,
+        lastFailedLoginIp: attemptedFrom,
+      },
+      select: { failedLoginAttempts: true },
+    });
+
+    let started = false;
+    if (updated.failedLoginAttempts >= config.lockoutThreshold) {
+      const locked = await tx.userAccount.updateMany({
+        // Do not extend an active lock when requests were already in flight.
+        where: { id: account.id, lockedUntil: null },
+        data: { lockedUntil },
+      });
+      started = locked.count === 1;
+    }
+
+    return { attempts: updated.failedLoginAttempts, lockStarted: started };
   });
 
   await logSecurityEvent(req, {
     eventType: EVENTS.LOGIN_FAILURE,
     outcome: OUTCOME.FAILURE,
     severity: SEVERITY.WARN,
-    message: `Failed sign-in attempt (${reason}). ${attempts} of ${config.lockoutThreshold} before lockout.`,
+    message: `Failed sign-in attempt (${reason}). Attempt ${attempts}; lockout threshold ${config.lockoutThreshold}.`,
     actorAccountId: account.id,
     actorEmail: account.email,
     actorRole: account.role,
     metadata: { reason, attempts },
   });
 
-  if (shouldLock) {
+  if (lockStarted) {
     await logSecurityEvent(req, {
       eventType: EVENTS.ACCOUNT_LOCKED,
       outcome: OUTCOME.FAILURE,
@@ -388,6 +422,16 @@ export const loginUser = async ({ email, password }, req = null) => {
   // is the denial-of-service the specification warns against.
   if (account.lockedUntil && account.lockedUntil > new Date()) {
     await wasteTime();
+    await prisma.userAccount.update({
+      where: { id: account.id },
+      data: {
+        // Record the use without extending the lock. The owner must see every
+        // attempt made against the account at their next successful sign-in.
+        failedAttemptsSinceLogin: { increment: 1 },
+        lastFailedLoginAt: new Date(),
+        lastFailedLoginIp: clientIp(req),
+      },
+    });
     await logSecurityEvent(req, {
       eventType: EVENTS.LOGIN_FAILURE,
       outcome: OUTCOME.FAILURE,
@@ -412,6 +456,16 @@ export const loginUser = async ({ email, password }, req = null) => {
   // Same message, same status code. An organization awaiting approval, a
   // rejected registration, and a disabled account are indistinguishable here.
   if (account.status !== "Active") {
+    await prisma.userAccount.update({
+      where: { id: account.id },
+      data: {
+        // This is an unsuccessful use for reporting purposes, but the password
+        // was correct, so it must not advance the brute-force lockout counter.
+        failedAttemptsSinceLogin: { increment: 1 },
+        lastFailedLoginAt: new Date(),
+        lastFailedLoginIp: clientIp(req),
+      },
+    });
     await logSecurityEvent(req, {
       eventType: EVENTS.LOGIN_FAILURE,
       outcome: OUTCOME.FAILURE,
@@ -425,7 +479,10 @@ export const loginUser = async ({ email, password }, req = null) => {
     throw unauthorized(GENERIC_LOGIN_FAILURE);
   }
 
-  const profile = await loadProfile(account);
+  const [profile, securityQuestionsConfigured] = await Promise.all([
+    loadProfile(account),
+    hasSecurityQuestions(account.id),
+  ]);
   if (!profile) {
     // An account with no profile row is a data integrity failure. Deny. [2.1.2]
     await logSecurityEvent(req, {
@@ -485,7 +542,7 @@ export const loginUser = async ({ email, password }, req = null) => {
 
   return {
     message: "Signed in successfully.",
-    user: publicUser(updated, profile),
+    user: publicUser(updated, profile, securityQuestionsConfigured),
     token: issueAccessToken(updated, profile.id),
     previousAccess, // rendered as a banner on the landing page [2.1.12]
   };
@@ -523,8 +580,11 @@ export const logoutUser = async (accountId, req = null) => {
 export const getCurrentUser = async (accountId) => {
   const account = await prisma.userAccount.findUnique({ where: { id: accountId } });
   if (!account) throw unauthorized();
-  const profile = await loadProfile(account);
-  return { user: publicUser(account, profile) };
+  const [profile, securityQuestionsConfigured] = await Promise.all([
+    loadProfile(account),
+    hasSecurityQuestions(account.id),
+  ]);
+  return { user: publicUser(account, profile, securityQuestionsConfigured) };
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -548,6 +608,25 @@ export const reauthenticate = async (accountId, currentPassword, req = null) => 
 
   if (account.lockedUntil && account.lockedUntil > new Date()) {
     await wasteTime();
+    await prisma.userAccount.update({
+      where: { id: account.id },
+      data: {
+        // Record the use without extending the lock. The owner must see every
+        // attempt made against the account at their next successful sign-in.
+        failedAttemptsSinceLogin: { increment: 1 },
+        lastFailedLoginAt: new Date(),
+        lastFailedLoginIp: clientIp(req),
+      },
+    });
+    await logSecurityEvent(req, {
+      eventType: EVENTS.REAUTH_FAILURE,
+      outcome: OUTCOME.FAILURE,
+      severity: SEVERITY.WARN,
+      message: "Re-authentication was refused for a locked account.",
+      actorAccountId: account.id,
+      actorEmail: account.email,
+      actorRole: account.role,
+    });
     throw unauthorized("This account is temporarily locked.");
   }
 
@@ -617,6 +696,16 @@ export const changePassword = async (accountId, { newPassword }, req = null) => 
   };
 
   // ── Minimum age [2.1.11] ────────────────────────────────────────────────
+  // Bootstrap and administrator-created accounts do not yet have recovery
+  // answers. Do not let an API caller clear the forced-change flag without
+  // first making the account's required reset flow usable.
+  if (account.mustChangePassword && !(await hasSecurityQuestions(account.id))) {
+    await fail(
+      EVENTS.PASSWORD_CHANGE_FAILURE,
+      "Set your security questions before replacing the temporary password.",
+    );
+  }
+
   const age = checkPasswordAge(account);
   if (!age.allowed) {
     await fail(EVENTS.PASSWORD_MIN_AGE_REJECTED, age.reason);
@@ -699,8 +788,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
         </div>`,
     });
     return true;
-  } catch (error) {
-    console.error("Password reset email failed to send:", error.message);
+  } catch {
     return false;
   }
 };
@@ -720,18 +808,16 @@ export const requestPasswordReset = async ({ email }, req = null) => {
 
   const account = await prisma.userAccount.findUnique({ where: { email: normalizedEmail } });
 
-  await logSecurityEvent(req, {
-    eventType: EVENTS.PASSWORD_RESET_REQUESTED,
-    outcome: OUTCOME.SUCCESS,
-    severity: SEVERITY.INFO,
-    message: account
-      ? "Password reset requested."
-      : "Password reset requested for an email address with no account.",
-    actorAccountId: account?.id,
-    actorEmail: normalizedEmail,
-  });
-
-  if (!account) return genericResponse;
+  if (!account) {
+    await logSecurityEvent(req, {
+      eventType: EVENTS.PASSWORD_RESET_REQUESTED,
+      outcome: OUTCOME.SUCCESS,
+      severity: SEVERITY.INFO,
+      message: "Password reset requested for an email address with no account.",
+      actorEmail: normalizedEmail,
+    });
+    return genericResponse;
+  }
 
   // Invalidate any earlier outstanding tokens for this account so a user cannot
   // accumulate live reset links.
@@ -755,6 +841,25 @@ export const requestPasswordReset = async ({ email }, req = null) => {
   const sent = await sendPasswordResetEmail(normalizedEmail, resetToken);
   if (!sent) {
     await prisma.passwordResetToken.deleteMany({ where: { token: hashedToken } });
+    await logSecurityEvent(req, {
+      eventType: EVENTS.PASSWORD_RESET_FAILURE,
+      outcome: OUTCOME.FAILURE,
+      severity: SEVERITY.WARN,
+      message: "Password reset delivery failed.",
+      actorAccountId: account.id,
+      actorEmail: account.email,
+      actorRole: account.role,
+    });
+  } else {
+    await logSecurityEvent(req, {
+      eventType: EVENTS.PASSWORD_RESET_REQUESTED,
+      outcome: OUTCOME.SUCCESS,
+      severity: SEVERITY.INFO,
+      message: "Password reset email was accepted for delivery.",
+      actorAccountId: account.id,
+      actorEmail: account.email,
+      actorRole: account.role,
+    });
   }
 
   // Deliberately the same response either way.
@@ -821,13 +926,40 @@ export const verifyResetAnswers = async ({ resetToken, answers }, req = null) =>
   const correct = await verifySecurityAnswers(record.accountId, answers);
 
   if (!correct) {
-    const attempts = record.answerAttempts + 1;
-    const exhausted = attempts >= config.securityAnswerMaxAttempts;
+    const attemptedAt = new Date();
+    const result = await prisma.$transaction(async (tx) => {
+      // The predicate is re-evaluated after PostgreSQL acquires the row lock,
+      // so concurrent wrong guesses increment independently instead of
+      // overwriting one another with the same stale value.
+      const claimed = await tx.passwordResetToken.updateMany({
+        where: {
+          id: record.id,
+          accountId: record.accountId,
+          isUsed: false,
+          lockedAt: null,
+          answersVerifiedAt: null,
+          expiresAt: { gt: attemptedAt },
+          answerAttempts: { lt: config.securityAnswerMaxAttempts },
+        },
+        data: { answerAttempts: { increment: 1 } },
+      });
+      if (claimed.count !== 1) return null;
 
-    await prisma.passwordResetToken.update({
-      where: { id: record.id },
-      data: { answerAttempts: attempts, ...(exhausted ? { lockedAt: new Date() } : {}) },
+      const latest = await tx.passwordResetToken.findUnique({ where: { id: record.id } });
+      const exhausted = latest.answerAttempts >= config.securityAnswerMaxAttempts;
+      if (exhausted) {
+        await tx.passwordResetToken.update({
+          where: { id: record.id },
+          data: { lockedAt: attemptedAt },
+        });
+      }
+      return { attempts: latest.answerAttempts, exhausted };
     });
+
+    if (!result) {
+      throw badRequest("This password reset link is no longer valid. Please request a new one.");
+    }
+    const { attempts, exhausted } = result;
 
     await logSecurityEvent(req, {
       eventType: EVENTS.SECURITY_ANSWER_FAILURE,
@@ -848,10 +980,22 @@ export const verifyResetAnswers = async ({ resetToken, answers }, req = null) =>
     });
   }
 
-  await prisma.passwordResetToken.update({
-    where: { id: record.id },
-    data: { answersVerifiedAt: new Date() },
+  const verifiedAt = new Date();
+  const marked = await prisma.passwordResetToken.updateMany({
+    where: {
+      id: record.id,
+      accountId: record.accountId,
+      isUsed: false,
+      lockedAt: null,
+      answersVerifiedAt: null,
+      expiresAt: { gt: verifiedAt },
+      answerAttempts: { lt: config.securityAnswerMaxAttempts },
+    },
+    data: { answersVerifiedAt: verifiedAt },
   });
+  if (marked.count !== 1) {
+    throw badRequest("This password reset link is no longer valid. Please request a new one.");
+  }
 
   await logSecurityEvent(req, {
     eventType: EVENTS.SECURITY_ANSWER_SUCCESS,
@@ -926,11 +1070,35 @@ export const resetPassword = async ({ resetToken, newPassword }, req = null) => 
     );
   }
 
-  await applyNewPassword(account.id, newPassword);
-  await prisma.passwordResetToken.update({
-    where: { id: record.id },
-    data: { isUsed: true },
+  const passwordHash = await hashPassword(newPassword);
+  const changedAt = new Date();
+  const consumed = await prisma.$transaction(async (tx) => {
+    // Claim this single-use token before changing the password. A concurrent
+    // reset can no longer pass the earlier read and apply a second password;
+    // any failure below rolls this claim back with the password write.
+    const claim = await tx.passwordResetToken.updateMany({
+      where: {
+        id: record.id,
+        accountId: account.id,
+        isUsed: false,
+        lockedAt: null,
+        answersVerifiedAt: { not: null },
+        expiresAt: { gt: changedAt },
+      },
+      data: { isUsed: true },
+    });
+    if (claim.count !== 1) return false;
+
+    await applyPreparedPassword(tx, account.id, passwordHash, changedAt);
+    return true;
   });
+
+  if (!consumed) {
+    await fail(
+      EVENTS.PASSWORD_RESET_FAILURE,
+      "This password reset link is no longer valid. Please request a new one.",
+    );
+  }
 
   await logSecurityEvent(req, {
     eventType: EVENTS.PASSWORD_RESET_SUCCESS,
@@ -1001,20 +1169,32 @@ export const getPendingNgoUsers = async () => {
 export const updateNgoApproval = async (organizationId, action, req = null) => {
   const approve = action === "approve";
 
-  const organization = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { id: true, accountId: true, orgName: true, email: true },
-  });
-  if (!organization) return null;
-
-  const updated = await prisma.$transaction(async (tx) => {
-    const org = await tx.organization.update({
+  const result = await prisma.$transaction(async (tx) => {
+    const organization = await tx.organization.findUnique({
       where: { id: organizationId },
+      select: {
+        id: true,
+        accountId: true,
+        orgName: true,
+        email: true,
+        status: true,
+        account: { select: { status: true } },
+      },
+    });
+    if (!organization) return null;
+
+    if (organization.status !== "Pending" || organization.account.status !== "Pending") {
+      throw conflict("This organization registration has already been reviewed.");
+    }
+
+    // Conditional updates make a second concurrent review fail with 409 after
+    // the first transaction changes either Pending state.
+    const profileUpdate = await tx.organization.updateMany({
+      where: { id: organizationId, status: "Pending" },
       data: { status: approve ? "Approved" : "Rejected", isVerified: approve },
     });
-
-    await tx.userAccount.update({
-      where: { id: organization.accountId },
+    const accountUpdate = await tx.userAccount.updateMany({
+      where: { id: organization.accountId, status: "Pending" },
       data: {
         status: approve ? "Active" : "Rejected",
         // A rejected organization's outstanding sessions die immediately.
@@ -1022,8 +1202,16 @@ export const updateNgoApproval = async (organizationId, action, req = null) => {
       },
     });
 
-    return org;
+    if (profileUpdate.count !== 1 || accountUpdate.count !== 1) {
+      throw conflict("This organization registration has already been reviewed.");
+    }
+
+    const updated = await tx.organization.findUnique({ where: { id: organizationId } });
+    return { organization, updated };
   });
+
+  if (!result) return null;
+  const { organization, updated } = result;
 
   await logSecurityEvent(req, {
     eventType: approve ? EVENTS.ACCOUNT_APPROVED : EVENTS.ACCOUNT_REJECTED,

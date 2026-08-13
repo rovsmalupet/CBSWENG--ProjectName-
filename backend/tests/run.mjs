@@ -10,14 +10,24 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// Pure suites need configuration modules to load, but never connect to this
+// test-only URL or use this process-local signing key. Server startup remains
+// fail-closed because these fallbacks exist only in the test runner.
+process.env.NODE_ENV ??= "test";
+process.env.DATABASE_URL ??= "postgresql://test:test@127.0.0.1:5432/bayanihub_test";
+process.env.DIRECT_URL ??= process.env.DATABASE_URL;
+process.env.JWT_SECRET ??= "test-runner-only-secret-9a7d4c2f6b8e1d3a5c7f";
+
 import { report } from "./_harness.mjs";
 
 const suites = [
   "./passwordPolicy.test.mjs",
   "./securityQuestions.test.mjs",
   "./accessControl.test.mjs",
+  "./bookmarks.test.mjs",
   "./businessRules.test.mjs",
   "./validation.test.mjs",
+  "./errorHandling.test.mjs",
   "./securityLog.test.mjs",
 ];
 

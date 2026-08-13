@@ -17,9 +17,9 @@
 import rateLimit from "express-rate-limit";
 import { logSecurityEvent, EVENTS, OUTCOME, SEVERITY } from "../security/securityLog.js";
 
-const limitReached = (label) => async (req, res, next, options) => {
+const limitReached = (label, eventType = EVENTS.RATE_LIMITED) => async (req, res, next, options) => {
   await logSecurityEvent(req, {
-    eventType: EVENTS.LOGIN_FAILURE,
+    eventType,
     outcome: OUTCOME.FAILURE,
     severity: SEVERITY.CRITICAL,
     message: `Rate limit reached on ${label} from this address — possible automated attack.`,
@@ -40,7 +40,7 @@ export const authLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: limitReached("authentication"),
+  handler: limitReached("authentication", EVENTS.LOGIN_FAILURE),
 });
 
 /**

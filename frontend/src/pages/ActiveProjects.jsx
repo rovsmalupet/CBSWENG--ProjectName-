@@ -92,7 +92,7 @@ export default function ActiveProjects() {
         );
         setProjects(approvedProjects);
       } catch (err) {
-        console.error("Failed to fetch projects:", err);
+        if (import.meta.env.DEV) console.error("Failed to fetch projects:", err);
       } finally {
         setLoading(false);
       }

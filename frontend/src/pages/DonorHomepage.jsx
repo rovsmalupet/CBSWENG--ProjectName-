@@ -1,7 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getApiUrl } from "../config/api.js";
+import { apiGet } from "../config/api.js";
 import LastAccessBanner from "../components/LastAccessBanner.jsx";
+import { useAuth } from "../context/authContext.js";
+import {
+  addBookmark,
+  hasBookmark,
+  loadBookmarks,
+  removeBookmark,
+} from "../utils/bookmarks.js";
 import "../css/DonorHomepage.css";
 
 const ASEAN_COUNTRIES = [
@@ -33,7 +40,7 @@ const CAUSE_STYLES = {
 const normalizeCauseKey = (raw) => {
   if (!raw) return "others";
   if (CAUSE_STYLES[raw]) return raw;
-  const normalized = raw.toLowerCase().replace(/[\s_\-]+/g, "");
+  const normalized = raw.toLowerCase().replace(/[\s_-]+/g, "");
   const match = Object.keys(CAUSE_STYLES).find(
     (key) => key.toLowerCase() === normalized
   );
@@ -43,19 +50,16 @@ const normalizeCauseKey = (raw) => {
 export default function DonorHomepage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const firstName = localStorage.getItem("userFirstName") || "Donor";
-  const userId = localStorage.getItem("userId");
-  const userCountry = localStorage.getItem("userCountry") || "Philippines";
-  const bookmarkKey = `bookmarkedProjects_${userId}`;
+  const { user, logout } = useAuth();
+  const firstName = user?.firstName || "Donor";
+  const userCountry = user?.country || "Philippines";
 
   const [campaigns, setCampaigns] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("latest");
-  const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
-    const saved = localStorage.getItem(bookmarkKey);
-    if (!saved) return [];
-    try { return JSON.parse(saved); } catch { return []; }
-  });
+  const [bookmarks, setBookmarks] = useState([]);
+  const [bookmarkBusy, setBookmarkBusy] = useState(null);
+  const [bookmarkError, setBookmarkError] = useState("");
 
   const [filters, setFilters] = useState(() => {
     const selectedCountry = location.state?.selectedCountry;
@@ -71,13 +75,16 @@ export default function DonorHomepage() {
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
-        const response = await fetch(getApiUrl("/posts/approved"));
-        if (!response.ok) { setCampaigns([]); return; }
-        const data = await response.json();
-        setCampaigns(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("error fetching campaigns:", error);
+        const [campaignData, bookmarkData] = await Promise.all([
+          apiGet("/posts/approved"),
+          loadBookmarks(),
+        ]);
+        setCampaigns(Array.isArray(campaignData) ? campaignData : []);
+        setBookmarks(Array.isArray(bookmarkData) ? bookmarkData : []);
+      } catch (err) {
         setCampaigns([]);
+        setBookmarks([]);
+        setBookmarkError(err.message || "Could not load your bookmarks.");
       }
     };
     fetchCampaigns();
@@ -180,22 +187,31 @@ export default function DonorHomepage() {
     }
   };
 
-  const toggleBookmark = (e, campaignId) => {
+  const toggleBookmark = async (e, campaignId) => {
     e.stopPropagation();
-    setBookmarkedProjects((prev) => {
-      const isBookmarked = prev.includes(campaignId);
-      const updated = isBookmarked ? prev.filter((id) => id !== campaignId) : [...prev, campaignId];
-      localStorage.setItem(bookmarkKey, JSON.stringify(updated));
-      return updated;
-    });
+    if (bookmarkBusy === campaignId) return;
+    setBookmarkBusy(campaignId);
+    setBookmarkError("");
+    try {
+      const existing = bookmarks.find((entry) => entry.projectId === campaignId);
+      if (existing) {
+        await removeBookmark(existing.id);
+        setBookmarks((previous) =>
+          previous.filter((entry) => entry.id !== existing.id),
+        );
+      } else {
+        const created = await addBookmark(campaignId);
+        setBookmarks((previous) => [created, ...previous]);
+      }
+    } catch (err) {
+      setBookmarkError(err.message || "Could not update that bookmark.");
+    } finally {
+      setBookmarkBusy(null);
+    }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("userFirstName");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("token");
-    localStorage.removeItem("userCountry");
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -238,6 +254,9 @@ export default function DonorHomepage() {
             <h3 className="section-title">Active Campaigns</h3>
             <p className="section-subtitle">{filteredCampaigns.length} campaign{filteredCampaigns.length !== 1 ? "s" : ""} found</p>
           </div>
+          {bookmarkError && (
+            <p className="donor-bookmark-error" role="alert">{bookmarkError}</p>
+          )}
 
           <div className="search-sort-bar">
             <input type="text" placeholder="search campaigns..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="search-input" />
@@ -307,6 +326,7 @@ export default function DonorHomepage() {
               const volunteerTarget = campaign.supportTypes?.volunteer?.targetVolunteers || 0;
               const volunteerCurrent = campaign.supportTypes?.volunteer?.currentVolunteers || 0;
               const volunteerRemaining = Math.max(0, volunteerTarget - volunteerCurrent);
+              const isBookmarked = hasBookmark(bookmarks, campaign.id);
 
               return (
                 <div key={campaign.id} className="campaign-card" onClick={() => navigate(`/project/${campaign.id}`)}>
@@ -322,12 +342,14 @@ export default function DonorHomepage() {
                       })}
                     </div>
                     <button
-                      className={`bookmark-btn ${bookmarkedProjects.includes(campaign.id) ? "bookmarked" : ""}`}
+                      className={`bookmark-btn ${isBookmarked ? "bookmarked" : ""}`}
                       onClick={(e) => toggleBookmark(e, campaign.id)}
-                      title={bookmarkedProjects.includes(campaign.id) ? "Remove bookmark" : "Bookmark project"}
-                      aria-label={bookmarkedProjects.includes(campaign.id) ? "Remove bookmark" : "Bookmark project"}
+                      disabled={bookmarkBusy === campaign.id}
+                      aria-busy={bookmarkBusy === campaign.id}
+                      title={isBookmarked ? "Remove bookmark" : "Bookmark project"}
+                      aria-label={isBookmarked ? "Remove bookmark" : "Bookmark project"}
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill={bookmarkedProjects.includes(campaign.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                         <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
                       </svg>
                     </button>

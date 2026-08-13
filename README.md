@@ -1,14 +1,26 @@
 # BayaniHub
 
 A donation and volunteering platform connecting donors with NGOs across ASEAN.
+Organizations post projects that need funding, volunteers, or in-kind goods;
+donors browse and contribute; administrators moderate and keep the platform
+trustworthy.
 
-Originally built for CCAPDEV/CBSWENG; hardened for **CSSECDV** (Secure Web
-Development). The security work is documented in
-[SECURITY.md](SECURITY.md), and the original plan is in
-[SECURITY_IMPLEMENTATION_PLAN.md](SECURITY_IMPLEMENTATION_PLAN.md).
+---
 
-Deploying? See [DEPLOYMENT.md](DEPLOYMENT.md) — backend on Render, frontend on
-Vercel, database on Supabase.
+## Features
+
+- **Organizations** register, get verified, and post projects with monetary,
+  volunteer, and in-kind support goals. They confirm or decline incoming
+  contributions and track funding progress in real time.
+- **Donors** browse approved projects by country and cause, contribute money,
+  volunteer hours, or goods, bookmark projects, and keep a history of their
+  own contributions and payments.
+- **Administrators** review and approve new organizations, moderate posted
+  projects, manage accounts, and oversee platform activity.
+- **Payments** are processed through Stripe, with transaction fees computed
+  server-side from each project's own data.
+- Project browsing is organized by ASEAN country and UN Sustainable
+  Development Goal, with per-country statistics and cause-based filtering.
 
 ---
 
@@ -18,117 +30,67 @@ Vercel, database on Supabase.
 |---|---|
 | Frontend | React 19, Vite 7, React Router 7 |
 | Backend | Node.js, Express 5 |
-| Database | **PostgreSQL** via Prisma 5 |
-| Auth | JWT (30-minute sessions, server-side revocation) |
+| Database | PostgreSQL via Prisma 5 |
+| Auth | JWT-based sessions |
 | Payments | Stripe |
 
-> Earlier revisions of this README said MongoDB. That was never accurate for
-> this codebase — it uses PostgreSQL through Prisma.
-
 ---
 
-## Prerequisites
+## Getting started
 
-- Node.js 20 or newer (developed on 22)
-- A PostgreSQL database (Supabase, Neon, Render, or local)
+### Prerequisites
 
----
+- Node.js 22 or newer
+- A PostgreSQL database (a free tier from Supabase, Neon, or Render works fine,
+  or run one locally)
 
-## Setup
-
-### 1. Configure the backend
+### 1. Backend
 
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-Fill in `.env`. Two variables are **required** and the server refuses to start
-without them:
+Fill in `.env`. At minimum you need:
 
-- `DATABASE_URL`
-- `JWT_SECRET` — at least 32 characters of high-entropy random data:
+- `DATABASE_URL` and `DIRECT_URL` — your PostgreSQL connection strings
+- `JWT_SECRET` — a random signing key, at least 32 characters:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+  ```
 
-```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
-```
-
-Refusing to boot on a missing or weak signing key is deliberate — see
-[SECURITY.md](SECURITY.md) §2.1.2. A server that cannot verify tokens correctly
-must not serve requests.
-
-### 2. Install, migrate, seed
+SMTP credentials are needed for the password-reset emails, and a Stripe secret
+key is needed for payments — see the comments in `backend/.env.example` for the
+full list.
 
 ```bash
-cd backend
 npm install
-npm run db:deploy   # applies migrations, including the CSSECDV security migration
-npm run db:seed     # demo accounts and fixtures — prints the passwords ONCE
+npm run db:deploy   # applies database migrations
+npm run db:seed     # optional: creates sample accounts and projects
+npm run dev          # http://localhost:3000
 ```
 
-`npm run db:seed` prints the generated passwords to the console a single time.
-They are stored nowhere in readable form. To choose your own, set
-`SEED_ADMIN_PASSWORD`, `SEED_NGO_PASSWORD`, `SEED_DONOR_PASSWORD` (and the rest,
-listed in `.env.example`) before seeding.
-
-### 3. Configure the frontend
+### 2. Frontend
 
 ```bash
 cd frontend
 cp .env.example .env
-# VITE_API_URL=http://localhost:3000
+# set VITE_API_URL to your backend URL (defaults to http://localhost:3000)
 npm install
+npm run dev           # http://localhost:5173
 ```
-
-### 4. Run
-
-Two terminals:
-
-```bash
-# Terminal 1
-cd backend && npm run dev        # http://localhost:3000
-
-# Terminal 2
-cd frontend && npm run dev       # http://localhost:5173
-```
-
-For a demo or deployment, run the backend with `NODE_ENV=production` so error
-responses are fully generic.
 
 ---
 
 ## Testing
 
 ```bash
-cd backend && npm test
+cd backend
+npm test
 ```
 
-257 tests covering the password policy, the access-control policy table, the
-security-question catalogue, business rules, input validation, and log
-redaction. No database or network required — every suite exercises pure
-decision logic, which is where a mistake becomes a vulnerability.
-
----
-
-## Demo accounts
-
-Created by `npm run db:seed`. Passwords are printed once when it runs.
-
-| Rubric | Role | Email |
-|---|---|---|
-| 1.1.1 | Website Administrator | `admin@bayanihub.local` |
-| 1.1.2 | Product Manager (NGO) | `mary.angela@redcross.ph` |
-| 1.1.3 | Customer (Donor) | `donor@bayanihub.local` |
-
-Plus fixtures that exist to make specific controls demonstrable — a second
-administrator, a second NGO (for cross-tenant access attempts), a pending NGO,
-an already-locked account, and an account whose password is too new to change.
-See [SECURITY.md](SECURITY.md) §Demo.
-
-Every seeded account answers the same two security questions:
-
-- *street you lived on when you were ten* → `Mapagmahal Street`
-- *first live concert you attended* → `Eraserheads at Cubao Expo`
+Runs the backend's automated test suite. No live database or network
+connection is required.
 
 ---
 
@@ -136,42 +98,28 @@ Every seeded account answers the same two security questions:
 
 ```
 backend/
-  security/          the security core
-    accessControl.js   THE single site-wide authorization component
-    owners.js          object-level ownership resolvers
-    passwordPolicy.js  complexity, length, hashing, history, minimum age
-    securityQuestions.js
-    securityLog.js     append-only audit log + redaction
-    businessRules.js   state machines, server-side fee computation
-    tokens.js          JWT issuing and verification
-    env.js             boot-time configuration validation
-  middleware/
-    validate.js        one zod validator for every endpoint
-    errorHandler.js    the one place an error becomes a response
-    rateLimit.js
-    uploadMiddleware.js
-  schemas/           per-endpoint zod schemas
-  controllers/       thin; no authorization, no error formatting
-  routes/            pure route declarations
-  tests/             npm test
-  prisma/            schema, migrations, seed
+  controllers/    request handlers
+  routes/         API route definitions
+  services/       business logic
+  security/       authentication, authorization, and validation
+  middleware/     request validation, error handling, rate limiting
+  schemas/        request validation schemas
+  prisma/         database schema, migrations, and seed data
+  tests/          automated test suite
 
 frontend/src/
-  context/           AuthContext — session state from the server
-  components/        ProtectedRoute, PasswordField, ReauthModal,
-                     LastAccessBanner, ErrorBoundary, SecurityQuestionsFields
-  pages/             including ChangePassword, SecurityLogs, AdminUserManagement
-  config/            api client and the client-side policy mirror
+  pages/          route-level views
+  components/     shared UI components
+  context/        app-wide state (e.g. the current session)
+  css/            stylesheets
+  config/         API client configuration
 ```
 
 ---
 
-## Roles
+## Deployment
 
-| Role | Can do |
-|---|---|
-| **Administrator** | Create/disable administrator and NGO accounts, assign roles, approve NGO registrations, moderate projects, read the security log |
-| **NGO** (Role A) | Create/edit/delete **own** projects, confirm or decline contributions to them, upload documentation |
-| **Donor** (Role B) | Browse approved projects, contribute, manage **own** contributions and payment history |
-
-All three can change their own password.
+The frontend deploys to Vercel and the backend to a Node host such as Render,
+with a PostgreSQL database (e.g. Supabase). Configure the environment variables
+described above on whichever platforms you use, and point the frontend's
+`VITE_API_URL` at your deployed backend.

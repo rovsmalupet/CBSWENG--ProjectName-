@@ -7,7 +7,12 @@
  */
 
 import { suite, test, assert, assertEqual } from "./_harness.mjs";
-import { resolvePolicy, POLICIES } from "../security/accessControl.js";
+import {
+  resolvePolicy,
+  POLICIES,
+  invalidPolicyIdentifiers,
+  allowedDuringForcedPasswordChange,
+} from "../security/accessControl.js";
 
 suite("Access control — route matching");
 
@@ -125,6 +130,8 @@ const mustHaveOwnershipCheck = [
   ["GET", "/documents/download/sample", "any user could download any document"],
   ["DELETE", "/documents/sample", "any NGO could delete another project's documents"],
   ["POST", "/documents/upload", "any NGO could attach documents to another project"],
+  ["PATCH", "/posts/sample/contribute", "an NGO could target another organization's project"],
+  ["POST", "/payments/intent", "a payment could target a project outside the caller's scope"],
 ];
 
 for (const [method, path, wasExploitable] of mustHaveOwnershipCheck) {
@@ -142,6 +149,7 @@ suite("Access control — re-authentication on critical operations [2.1.13]");
 
 const mustRequireReauth = [
   ["POST", "/auth/change-password", "named by the specification"],
+  ["POST", "/auth/security-questions", "security answers are reset credentials"],
   ["DELETE", "/posts/sample/permanent", "irreversible destruction of data"],
   ["POST", "/refunds/issue", "moves money"],
   ["POST", "/admin/users", "creates a privileged account"],
@@ -156,6 +164,45 @@ for (const [method, path, why] of mustRequireReauth) {
     assert(match.policy.reauth === true, "policy does not require re-authentication");
   });
 }
+
+suite("Access control — pre-ownership identifier validation");
+
+test("malformed path ids are rejected before an ownership query", () => {
+  const match = resolvePolicy("PUT", "/posts/not-a-uuid");
+  assertEqual(invalidPolicyIdentifiers(match.policy, match.params), ["params.postId"]);
+});
+
+test("valid path and refund body ids pass the pre-ownership check", () => {
+  const id = "9f1c2d3e-0000-4444-8888-abcdefabcdef";
+  const pathMatch = resolvePolicy("PUT", `/posts/${id}`);
+  assertEqual(invalidPolicyIdentifiers(pathMatch.policy, pathMatch.params), []);
+
+  const refundMatch = resolvePolicy("POST", "/refunds/issue");
+  assertEqual(invalidPolicyIdentifiers(refundMatch.policy, {}, { paymentId: id }), []);
+});
+
+test("payment target accepts only a UUID or the explicit platform literal", () => {
+  const match = resolvePolicy("POST", "/payments/intent");
+  assertEqual(invalidPolicyIdentifiers(match.policy, {}, { postId: "admin" }), []);
+  assertEqual(invalidPolicyIdentifiers(match.policy, {}, { postId: "other" }), ["body.postId"]);
+});
+
+suite("Access control — forced temporary-password boundary");
+
+test("only password-bootstrap session routes are available before the forced change", () => {
+  const allowed = [
+    ["GET", "/auth/me"],
+    ["POST", "/auth/logout"],
+    ["POST", "/auth/reauth"],
+    ["POST", "/auth/security-questions"],
+    ["POST", "/auth/change-password"],
+  ];
+  for (const [method, path] of allowed) {
+    assert(allowedDuringForcedPasswordChange(method, path), `${method} ${path} should be allowed`);
+  }
+  assert(!allowedDuringForcedPasswordChange("GET", "/admin/users"));
+  assert(!allowedDuringForcedPasswordChange("POST", "/posts"));
+});
 
 suite("Access control — the public surface is small and deliberate [2.1.1]");
 

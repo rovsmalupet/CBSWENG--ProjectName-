@@ -81,6 +81,12 @@ export const setUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
+/** Registered inside BrowserRouter so API status codes reach custom pages. */
+let onErrorStatus = null;
+export const setErrorStatusHandler = (handler) => {
+  onErrorStatus = handler;
+};
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * REQUESTS
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -90,11 +96,24 @@ export const setUnauthorizedHandler = (handler) => {
  * @param {object} [options]
  * @param {boolean} [options.withReauth] attach the re-authentication token
  * @param {boolean} [options.raw] body is FormData; do not set Content-Type
+ * @param {"json"|"blob"} [options.responseType] successful response format
  */
 export const apiFetch = async (url, options = {}) => {
-  const { withReauth = false, raw = false, headers: extraHeaders, ...rest } = options;
+  const {
+    withReauth = false,
+    raw = false,
+    responseType = "json",
+    headers: extraHeaders,
+    ...rest
+  } = options;
 
   const token = getToken();
+  let requestPath = "";
+  try {
+    requestPath = new URL(url, API_BASE_URL).pathname;
+  } catch {
+    // An invalid URL becomes the same generic network failure below.
+  }
   const headers = {
     ...(raw ? {} : { "Content-Type": "application/json" }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -118,7 +137,9 @@ export const apiFetch = async (url, options = {}) => {
 
   let payload = null;
   try {
-    payload = await response.json();
+    payload = response.ok && responseType === "blob"
+      ? await response.blob()
+      : await response.json();
   } catch {
     payload = null;
   }
@@ -131,7 +152,13 @@ export const apiFetch = async (url, options = {}) => {
     if (response.status === 401) {
       clearSession();
       onUnauthorized?.();
+      // A failed public login has no session to expire and stays on its form.
+      if (token && requestPath !== "/login") onErrorStatus?.(401);
     }
+
+    // REAUTH_REQUIRED is handled in-place by the password confirmation modal.
+    if (response.status === 403 && envelope.code !== "REAUTH_REQUIRED") onErrorStatus?.(403);
+    if (response.status >= 500) onErrorStatus?.(response.status);
 
     // A single-use proof was rejected; never reuse it.
     if (envelope.code === "REAUTH_REQUIRED") clearReauthToken();
@@ -168,6 +195,10 @@ export const apiDelete = (path, options) =>
 /** Multipart. Content-Type is left unset so the browser adds the boundary. */
 export const apiUpload = (path, formData, options) =>
   apiFetch(getApiUrl(path), { method: "POST", body: formData, raw: true, ...options });
+
+/** Authenticated attachment download with the same global error handling. */
+export const apiDownload = (path, options) =>
+  apiFetch(getApiUrl(path), { method: "GET", responseType: "blob", ...options });
 
 /** Build a query string from defined values only. */
 export const queryString = (params) => {

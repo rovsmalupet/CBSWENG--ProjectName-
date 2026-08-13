@@ -24,10 +24,6 @@ const newVolRow = () => ({
   id: Date.now() + Math.random(),
   count: "",
   donorName: "",
-  startDate: "",
-  endDate: "",
-  startTime: "",
-  endTime: "",
 });
 
 // ── calculate transaction fees ──────────────────────────────────────────────
@@ -227,7 +223,6 @@ export default function AddContribution() {
   const userFirstName = localStorage.getItem("userFirstName") || "";
   const userLastName = localStorage.getItem("userLastName") || "";
   const userAffiliation = localStorage.getItem("userAffiliation") || "";
-  const userId = localStorage.getItem("userId") || "";
   const isDonor = userRole === "donor";
 
   const donorDisplayName =
@@ -277,7 +272,6 @@ export default function AddContribution() {
         });
         setInKindRows(init);
       } catch (err) {
-        console.error("Failed to load project:", err);
         setError(err.message || "Failed to load project. Please try again.");
       } finally {
         setLoading(false);
@@ -337,41 +331,25 @@ export default function AddContribution() {
         .map((r) => ({
           donorName: resolveDonorName(r),
           count: parseInt(r.count),
-          startDate: r.startDate,
-          endDate: r.endDate,
-          startTime: r.startTime,
-          endTime: r.endTime,
         }));
 
-      const { getApiUrl } = await import("../config/api");
-      const token = localStorage.getItem("token");
+      const { getApiUrl, apiFetch } = await import("../config/api");
 
       const formData = new FormData();
       formData.append("monetary", JSON.stringify(monetary));
       formData.append("inKind", JSON.stringify(inKind));
       formData.append("volunteer", JSON.stringify(volunteer));
-      formData.append("paymentIntentId", paymentIntentId);
-
-      if (isDonor && userId) {
-        formData.append("donorId", userId);
-      }
+      if (paymentIntentId) formData.append("paymentIntentId", paymentIntentId);
 
       if (proofFile) {
         formData.append("proofFile", proofFile);
       }
 
-      const response = await fetch(getApiUrl(`/posts/${id}/contribute`), {
+      const updated = await apiFetch(getApiUrl(`/posts/${id}/contribute`), {
         method: "PATCH",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: formData,
+        raw: true,
       });
-
-      const updated = await response.json();
-      if (!response.ok) {
-        throw new Error(updated?.error?.message || "Failed to save contribution.");
-      }
 
       setProject(updated.post);
       setMonetaryRows([newMonetaryRow()]);
@@ -385,14 +363,13 @@ export default function AddContribution() {
       setShowPaymentModal(false);
 
       setSuccessMsg(
-        "Payment processed and contribution saved successfully! Thank you for your generous support!",
+        paymentIntentId
+          ? "Payment processed and contribution saved successfully! Thank you for your generous support!"
+          : "Contribution saved successfully! Thank you for your generous support!",
       );
       setTimeout(() => setSuccessMsg(""), 5000);
     } catch (err) {
-      console.error(err);
-      alert(
-        "Failed to save after payment: " + (err.message ?? "Unknown error"),
-      );
+      alert("Failed to save contribution: " + (err.message ?? "Unknown error"));
     } finally {
       setSaving(false);
     }
@@ -403,7 +380,7 @@ export default function AddContribution() {
       // Validate that at least one contribution is entered
       const monetary = monetaryRows.filter((r) => parseFloat(r.amount) > 0);
 
-      const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
+      const inKind = Object.values(inKindRows).flatMap((rows) =>
         rows.filter((r) => parseFloat(r.quantity) > 0),
       );
 
@@ -441,6 +418,21 @@ export default function AddContribution() {
           .map((row) => ({ itemId, quantity: parseFloat(row.quantity) })),
       );
 
+      const inKindValue = inKindEntries.reduce((total, entry) => {
+        const item = project.supportTypes?.inKind?.find(
+          (candidate) => candidate.id === entry.itemId,
+        );
+        return total + Number(item?.pricePerUnit ?? 0) * entry.quantity;
+      }, 0);
+
+      // Unpriced wish-list goods carry no transaction fee. Submit that
+      // in-kind-only contribution directly; the backend repeats this pricing
+      // decision from its own project data before accepting it.
+      if (totalMonetary === 0 && totalVolunteers === 0 && inKindValue === 0) {
+        await handlePaymentSuccess();
+        return;
+      }
+
       setPaymentBreakdown({
         ...(totalMonetary > 0 ? { monetaryAmount: totalMonetary } : {}),
         ...(totalVolunteers > 0 ? { volunteerCount: totalVolunteers } : {}),
@@ -448,106 +440,8 @@ export default function AddContribution() {
       });
 
       setShowPaymentModal(true);
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Could not prepare your payment. Please try again.");
-    }
-  };
-
-  // ── old save (keeping as backup, not used directly anymore) ──
-  const handleSave = async () => {
-    // This is now triggered via payment flow
-    // For non-monetary contributions, we can still use direct save
-    setSaving(true);
-    try {
-      const resolveDonorName = (row) =>
-        isDonor ? donorDisplayName : row.donorName || "Anonymous";
-
-      const monetary = monetaryRows
-        .filter((r) => parseFloat(r.amount) > 0)
-        .map((r) => ({
-          donorName: resolveDonorName(r),
-          amount: parseFloat(r.amount),
-        }));
-
-      const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
-        rows
-          .filter((r) => parseFloat(r.quantity) > 0)
-          .map((r) => ({
-            donorName: resolveDonorName(r),
-            itemId,
-            quantity: parseFloat(r.quantity),
-          })),
-      );
-
-      const volunteer = volRows
-        .filter((r) => parseInt(r.count) > 0)
-        .map((r) => ({
-          donorName: resolveDonorName(r),
-          count: parseInt(r.count),
-          startDate: r.startDate,
-          endDate: r.endDate,
-          startTime: r.startTime,
-          endTime: r.endTime,
-        }));
-
-      if (
-        monetary.length === 0 &&
-        inKind.length === 0 &&
-        volunteer.length === 0
-      ) {
-        alert("Please enter at least one contribution before saving.");
-        setSaving(false);
-        return;
-      }
-
-      const { getApiUrl } = await import("../config/api");
-      const token = localStorage.getItem("token");
-
-      const formData = new FormData();
-      formData.append("monetary", JSON.stringify(monetary));
-      formData.append("inKind", JSON.stringify(inKind));
-      formData.append("volunteer", JSON.stringify(volunteer));
-
-      if (isDonor && userId) {
-        formData.append("donorId", userId);
-      }
-
-      if (proofFile) {
-        formData.append("proofFile", proofFile);
-      }
-
-      const response = await fetch(getApiUrl(`/posts/${id}/contribute`), {
-        method: "PATCH",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-
-      const updated = await response.json();
-      if (!response.ok) {
-        throw new Error(updated?.error?.message || "Failed to save contribution.");
-      }
-
-      setProject(updated.post);
-
-      setMonetaryRows([newMonetaryRow()]);
-      const resetInKind = {};
-      (updated.post.supportTypes?.inKind ?? []).forEach((item) => {
-        resetInKind[item.id] = [newInKindRow()];
-      });
-      setInKindRows(resetInKind);
-      setVolRows([newVolRow()]);
-      setProofFile(null);
-
-      setSuccessMsg("Contributions saved successfully!");
-      setTimeout(() => setSuccessMsg(""), 3500);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save: " + (err.message ?? "Unknown error"));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -848,42 +742,6 @@ export default function AddContribution() {
                     </>
                   )}
 
-                  <span className="ac-lbl">On</span>
-                  <input
-                    className="ac-input ac-input-date"
-                    type="date"
-                    value={row.startDate}
-                    onChange={(e) =>
-                      updateVol(row.id, "startDate", e.target.value)
-                    }
-                  />
-                  <span className="ac-lbl">to</span>
-                  <input
-                    className="ac-input ac-input-date"
-                    type="date"
-                    value={row.endDate}
-                    onChange={(e) =>
-                      updateVol(row.id, "endDate", e.target.value)
-                    }
-                  />
-                  <span className="ac-lbl">At</span>
-                  <input
-                    className="ac-input ac-input-time"
-                    type="time"
-                    value={row.startTime}
-                    onChange={(e) =>
-                      updateVol(row.id, "startTime", e.target.value)
-                    }
-                  />
-                  <span className="ac-lbl">to</span>
-                  <input
-                    className="ac-input ac-input-time"
-                    type="time"
-                    value={row.endTime}
-                    onChange={(e) =>
-                      updateVol(row.id, "endTime", e.target.value)
-                    }
-                  />
                   {volRows.length > 1 && (
                     <RemoveBtn
                       onClick={() =>

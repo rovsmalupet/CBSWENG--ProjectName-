@@ -1,21 +1,14 @@
-import express from "express";
-import mongoose from "mongoose";
-import postRoutes from "./backend/routes/postRoutes.js";
+/**
+ * Compatibility entry point.
+ *
+ * The application has exactly one server configuration: backend/server.js.
+ * Keeping a second Express app here previously bypassed the site-wide access
+ * control middleware and referenced an obsolete MongoDB stack. Delegating
+ * avoids an accidentally insecure alternate launch path.
+ */
 
-const app = express();
-const port = 3000;
-
-// MongoDB connection (Mongoose v7+)
-mongoose.connect('mongodb://127.0.0.1:27017/CBSWENG1')
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Routes
-app.use('/posts', postRoutes);
-
-// Start server
-app.listen(port, () => console.log(`Server running on port ${port}`));
+import("./backend/server.js").catch((error) => {
+  console.error("BayaniHub could not start. Check the backend configuration.");
+  if (process.env.NODE_ENV !== "production") console.error(error);
+  process.exitCode = 1;
+});

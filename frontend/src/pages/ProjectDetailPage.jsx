@@ -3,6 +3,13 @@ import { useState, useEffect } from "react";
 import PaymentStatusWidget from "../components/PaymentStatusWidget";
 import "../css/ProjectDetailPage.css";
 import { apiFetch, getApiUrl } from "../config/api.js";
+import { useAuth } from "../context/authContext.js";
+import {
+  addBookmark,
+  hasBookmark,
+  loadBookmarks,
+  removeBookmark,
+} from "../utils/bookmarks.js";
 
 const CAUSE_STYLES = {
   noPoverty: { label: "Poverty", bg: "#E5243B", color: "#fff" },
@@ -44,7 +51,7 @@ const CAUSE_STYLES = {
 const normalizeCauseKey = (raw) => {
   if (!raw) return "others";
   if (CAUSE_STYLES[raw]) return raw;
-  const normalized = raw.toLowerCase().replace(/[\s_\-]+/g, "");
+  const normalized = raw.toLowerCase().replace(/[\s_-]+/g, "");
   const match = Object.keys(CAUSE_STYLES).find(
     (key) => key.toLowerCase() === normalized,
   );
@@ -76,34 +83,43 @@ const percent = (current, target) => {
 export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const userRole = localStorage.getItem("userRole");
-  const userId = localStorage.getItem("userId");
-  const bookmarkKey = `bookmarkedProjects_${userId}`;
+  const { role } = useAuth();
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [bookmarkedProjects, setBookmarkedProjects] = useState(() => {
-    const saved = localStorage.getItem(bookmarkKey);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [bookmarks, setBookmarks] = useState([]);
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const [bookmarkError, setBookmarkError] = useState("");
 
-  const toggleBookmark = () => {
-    setBookmarkedProjects((prev) => {
-      const isBookmarked = prev.includes(id);
-      const updated = isBookmarked
-        ? prev.filter((pid) => pid !== id)
-        : [...prev, id];
-      localStorage.setItem(bookmarkKey, JSON.stringify(updated));
-      return updated;
-    });
+  const toggleBookmark = async () => {
+    if (bookmarkBusy) return;
+    setBookmarkBusy(true);
+    setBookmarkError("");
+
+    try {
+      const existing = bookmarks.find((entry) => entry.projectId === id);
+      if (existing) {
+        await removeBookmark(existing.id);
+        setBookmarks((previous) =>
+          previous.filter((entry) => entry.id !== existing.id),
+        );
+      } else {
+        const created = await addBookmark(id);
+        setBookmarks((previous) => [created, ...previous]);
+      }
+    } catch (err) {
+      setBookmarkError(err.message || "Could not update this bookmark.");
+    } finally {
+      setBookmarkBusy(false);
+    }
   };
 
-  const isBookmarked = bookmarkedProjects.includes(id);
+  const isBookmarked = hasBookmark(bookmarks, id);
 
   const getBackRoute = () => {
-    if (userRole === "ngo") return "/dashboard";
-    if (userRole === "admin") return "/admin";
+    if (role === "ngo") return "/dashboard";
+    if (role === "admin") return "/admin";
     return "/donor";
   };
 
@@ -120,6 +136,28 @@ export default function ProjectDetailPage() {
     };
     fetchProject();
   }, [id]);
+
+  useEffect(() => {
+    if (role !== "donor") {
+      setBookmarks([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    loadBookmarks()
+      .then((data) => {
+        if (!cancelled) setBookmarks(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setBookmarkError(err.message || "Could not load your bookmarks.");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
 
   if (loading) {
     return (
@@ -192,10 +230,12 @@ export default function ProjectDetailPage() {
                 {project.priority.toLowerCase()} priority
               </span>
             )}
-            {userRole === "donor" && (
+            {role === "donor" && (
               <button
                 className={`apd-save-btn ${isBookmarked ? "saved" : ""}`}
                 onClick={toggleBookmark}
+                disabled={bookmarkBusy}
+                aria-busy={bookmarkBusy}
               >
                 <svg
                   width="15"
@@ -207,14 +247,19 @@ export default function ProjectDetailPage() {
                 >
                   <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
                 </svg>
-                {isBookmarked ? "Saved" : "Save"}
+                {bookmarkBusy ? "Saving…" : isBookmarked ? "Saved" : "Save"}
               </button>
+            )}
+            {bookmarkError && (
+              <span className="apd-bookmark-error" role="alert">
+                {bookmarkError}
+              </span>
             )}
           </div>
 
           {/* Row 3: action buttons */}
           <div className="apd-action-btns">
-            {userRole === "donor" && (
+            {role === "donor" && (
               <button
                 className="apd-support-btn"
                 onClick={() => navigate(`/add-contribution/${id}`)}

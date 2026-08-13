@@ -15,12 +15,14 @@
  * branded page rather than a component stack. [2.4.1]
  */
 
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { NotFound, Forbidden, Unauthorized, ServerError } from "./pages/errors/ErrorPages.jsx";
+import { setErrorStatusHandler } from "./config/api.js";
 
 import Login from "./pages/Login.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
@@ -67,11 +69,29 @@ const DONOR = ["donor"];
 const ADMIN = ["admin"];
 const ANY = ["donor", "ngo", "admin"];
 
+/** Translate server status codes into the project's custom error pages. */
+function ApiErrorNavigation() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setErrorStatusHandler((status) => {
+      if (status === 401) navigate("/session-expired", { replace: true });
+      else if (status === 403) navigate("/forbidden", { replace: true });
+      else if (status >= 500) navigate("/error", { replace: true });
+    });
+
+    return () => setErrorStatusHandler(null);
+  }, [navigate]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
+          <ApiErrorNavigation />
           <Routes>
             {/* ── Public ─────────────────────────────────────────────────────
                 This list mirrors the `public: true` entries in the backend's

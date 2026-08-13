@@ -25,6 +25,7 @@ import crypto from "crypto";
 
 import { AppError } from "../errors/AppError.js";
 import { logSecurityEvent, EVENTS, OUTCOME, SEVERITY } from "../security/securityLog.js";
+import { removeUploadedFile } from "./uploadMiddleware.js";
 
 /**
  * Prisma error codes mapped to safe messages.
@@ -39,6 +40,102 @@ const PRISMA_ERRORS = {
   P2014: { status: 409, message: "That change would break a required relationship." },
 };
 
+const UPLOAD_VALIDATION_CODES = new Set([
+  "UNSUPPORTED_FILE_TYPE",
+  "UNSAFE_FILENAME",
+  "EXTENSION_MISMATCH",
+  "FILE_CONTENT_MISMATCH",
+  "UPLOAD_REJECTED",
+]);
+
+const requestPath = (req) => req?.originalUrl?.split("?")[0] ?? req?.path ?? "(unknown route)";
+const isLoginRequest = (req) => req?.method === "POST" && requestPath(req) === "/login";
+
+/** Return only the safe, intentional fields that may cross the HTTP boundary. */
+export const classifyError = (err, req = {}) => {
+  const malformedBodyFailure =
+    err?.type === "entity.parse.failed" ||
+    (err instanceof SyntaxError && err?.status === 400 && Object.hasOwn(err, "body"));
+  const parserFailure =
+    err?.type === "entity.too.large" ||
+    malformedBodyFailure;
+  const uploadValidationFailure =
+    err instanceof AppError && UPLOAD_VALIDATION_CODES.has(err.code);
+
+  if (parserFailure && isLoginRequest(req)) {
+    return {
+      statusCode: 401,
+      message: "Invalid username and/or password.",
+      code: "UNAUTHORIZED",
+      details: undefined,
+      eventType: EVENTS.LOGIN_FAILURE,
+      validationFailure: true,
+      unexpected: false,
+    };
+  }
+
+  if (err instanceof AppError) {
+    return {
+      statusCode: err.statusCode,
+      message: err.message,
+      code: err.code,
+      details: err.statusCode < 500 ? err.details : undefined,
+      eventType: uploadValidationFailure
+        ? EVENTS.INPUT_VALIDATION_FAILURE
+        : EVENTS.UNHANDLED_ERROR,
+      validationFailure: uploadValidationFailure,
+      unexpected: err.statusCode >= 500,
+    };
+  }
+
+  if (err?.code && PRISMA_ERRORS[err.code]) {
+    const mapped = PRISMA_ERRORS[err.code];
+    return {
+      statusCode: mapped.status,
+      message: mapped.message,
+      code: "DATABASE_CONSTRAINT",
+      details: undefined,
+      eventType: EVENTS.UNHANDLED_ERROR,
+      validationFailure: false,
+      unexpected: false,
+    };
+  }
+
+  if (err?.type === "entity.too.large") {
+    return {
+      statusCode: 413,
+      message: "That request was too large.",
+      code: "PAYLOAD_TOO_LARGE",
+      details: undefined,
+      eventType: EVENTS.INPUT_VALIDATION_FAILURE,
+      validationFailure: true,
+      unexpected: false,
+    };
+  }
+
+  if (malformedBodyFailure) {
+    return {
+      statusCode: 400,
+      message: "We could not read that request.",
+      code: "MALFORMED_REQUEST",
+      details: undefined,
+      eventType: EVENTS.INPUT_VALIDATION_FAILURE,
+      validationFailure: true,
+      unexpected: false,
+    };
+  }
+
+  return {
+    statusCode: 500,
+    message: "Something went wrong on our end. Please try again.",
+    code: "INTERNAL_ERROR",
+    details: undefined,
+    eventType: EVENTS.UNHANDLED_ERROR,
+    validationFailure: false,
+    unexpected: true,
+  };
+};
+
 export const errorHandler = async (err, req, res, next) => {
   // Delegate to Express's default handler if the response has already begun —
   // trying to write a second set of headers throws and masks the real error.
@@ -46,55 +143,38 @@ export const errorHandler = async (err, req, res, next) => {
 
   const errorId = crypto.randomUUID();
 
-  let statusCode;
-  let message;
-  let code;
-  let details;
+  const classification = classifyError(err, req);
+  const { statusCode, message, code, details, eventType, validationFailure, unexpected } =
+    classification;
 
-  if (err instanceof AppError) {
-    statusCode = err.statusCode;
-    message = err.message;
-    code = err.code;
-    details = err.details;
-  } else if (err?.code && PRISMA_ERRORS[err.code]) {
-    const mapped = PRISMA_ERRORS[err.code];
-    statusCode = mapped.status;
-    message = mapped.message;
-    code = "DATABASE_CONSTRAINT";
-  } else if (err?.type === "entity.too.large") {
-    statusCode = 413;
-    message = "That request was too large.";
-    code = "PAYLOAD_TOO_LARGE";
-  } else if (err?.type === "entity.parse.failed" || err instanceof SyntaxError) {
-    statusCode = 400;
-    message = "We could not read that request.";
-    code = "MALFORMED_REQUEST";
-  } else {
-    // Anything unrecognised. One sentence, always the same, regardless of what
-    // actually went wrong.
-    statusCode = 500;
-    message = "Something went wrong on our end. Please try again.";
-    code = "INTERNAL_ERROR";
-  }
-
-  const unexpected = statusCode >= 500;
+  // A file has no durable owner until its controller finishes successfully.
+  // Any downstream validation, authorization, or persistence error removes it.
+  await removeUploadedFile(req.file);
 
   // FULL detail — server side only.
-  await logSecurityEvent(req, {
-    eventType: EVENTS.UNHANDLED_ERROR,
-    outcome: OUTCOME.FAILURE,
-    severity: unexpected ? SEVERITY.CRITICAL : SEVERITY.WARN,
-    message: `[${errorId}] ${err?.name ?? "Error"}: ${err?.message ?? "unknown"}`,
-    metadata: {
-      errorId,
-      statusCode,
-      name: err?.name,
-      prismaCode: err?.code,
-      // The stack lives here, in a table only administrators can read, and
-      // never in the response body.
-      stack: typeof err?.stack === "string" ? err.stack.split("\n").slice(0, 12).join("\n") : null,
-    },
-  });
+  if (!err?.validationLogged) {
+    await logSecurityEvent(req, {
+      eventType,
+      outcome: OUTCOME.FAILURE,
+      severity: unexpected ? SEVERITY.CRITICAL : SEVERITY.WARN,
+      message: validationFailure
+        ? `Input rejected for ${req.method} ${requestPath(req)} (${code}).`
+        : `[${errorId}] ${err?.name ?? "Error"}: ${err?.message ?? "unknown"}`,
+      metadata: validationFailure
+        ? { errorId, statusCode, code }
+        : {
+            errorId,
+            statusCode,
+            name: err?.name,
+            prismaCode: err?.code,
+            // The stack stays in the administrator-only audit log.
+            stack:
+              typeof err?.stack === "string"
+                ? err.stack.split("\n").slice(0, 12).join("\n")
+                : null,
+          },
+    });
+  }
 
   if (unexpected) {
     // Also to the server console, so an operator watching logs sees it live.
@@ -109,7 +189,7 @@ export const errorHandler = async (err, req, res, next) => {
       // Quotable by the user, findable by an administrator. Reveals nothing on
       // its own: it is a random identifier, not an internal reference.
       errorId,
-      ...(details ? { details } : {}),
+      ...(details !== undefined ? { details } : {}),
     },
   });
 };

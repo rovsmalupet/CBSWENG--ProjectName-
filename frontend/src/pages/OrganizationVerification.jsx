@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiFetch, getApiUrl } from "../config/api.js";
+import { apiDownload, apiFetch, getApiUrl } from "../config/api.js";
 import "../css/OrganizationVerification.css";
 
 const formatDate = (value) => {
@@ -46,7 +46,6 @@ export default function OrganizationVerification() {
         );
         setProfile(data);
       } catch (err) {
-        console.error("Failed to load organization verification profile:", err);
         setError(err.message || "Failed to load verification profile.");
       } finally {
         setLoading(false);
@@ -71,21 +70,7 @@ export default function OrganizationVerification() {
 
   const downloadDocument = async (documentId, fallbackName) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        getApiUrl(`/documents/download/${documentId}`),
-        {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to download file (${response.status})`);
-      }
-
-      const blob = await response.blob();
+      const blob = await apiDownload(`/documents/download/${documentId}`);
       const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = blobUrl;
@@ -95,7 +80,6 @@ export default function OrganizationVerification() {
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      console.error("Document download failed:", err);
       alert(err.message || "Failed to download document.");
     }
   };

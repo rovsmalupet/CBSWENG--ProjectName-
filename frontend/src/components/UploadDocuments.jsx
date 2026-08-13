@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getApiUrl } from "../config/api.js";
+import { apiUpload } from "../config/api.js";
 import "../css/UploadDocuments.css";
 
 export default function UploadDocuments({ postId, onUploadSuccess }) {
@@ -15,9 +15,9 @@ export default function UploadDocuments({ postId, onUploadSuccess }) {
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const maxSize = 50 * 1024 * 1024;
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
-        setError("File size exceeds 50MB limit.");
+        setError("File size exceeds the 10 MB limit.");
         setSelectedFile(null);
         return;
       }
@@ -49,22 +49,8 @@ export default function UploadDocuments({ postId, onUploadSuccess }) {
       formData.append("postId", postId);
       formData.append("fileType", fileType);
       formData.append("description", description);
-      formData.append("uploadedBy", localStorage.getItem("userFirstName") || "User");
 
-      const response = await fetch(getApiUrl("/documents/upload"), {
-        method: "POST",
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // The API error envelope is { error: { message, code } }.
-        throw new Error(data?.error?.message || "Upload failed.");
-      }
+      await apiUpload("/documents/upload", formData);
 
       setSuccess("Document uploaded successfully!");
       setSelectedFile(null);
@@ -117,7 +103,7 @@ export default function UploadDocuments({ postId, onUploadSuccess }) {
               {selectedFile ? selectedFile.name : "No file selected"}
             </span>
           </div>
-          <p className="file-hint">Max file size: 50MB. Supported: images, PDFs, documents</p>
+          <p className="file-hint">Max file size: 10 MB. Supported: images, PDFs, documents</p>
         </div>
 
         <div className="form-group">

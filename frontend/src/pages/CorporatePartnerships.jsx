@@ -16,7 +16,7 @@ export default function CorporatePartnerships() {
         const data = await apiFetch(getApiUrl("/posts/partnerships/me"));
         setPartnerships(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("Failed to load partnerships:", err);
+        if (import.meta.env.DEV) console.error("Failed to load partnerships:", err);
         setError(err.message || "Failed to load partnerships.");
       } finally {
         setLoading(false);

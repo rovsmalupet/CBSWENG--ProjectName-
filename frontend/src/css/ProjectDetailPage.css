@@ -401,3 +401,7 @@
     justify-content: center;
   }
 }
+.apd-bookmark-error {
+  color: #b91c1c;
+  font-size: 0.8rem;
+}

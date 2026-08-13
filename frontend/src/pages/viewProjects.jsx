@@ -19,7 +19,7 @@ export default function ViewProjects() {
         const data = await apiFetch(getApiUrl("/posts/admin/all"));
         setProjects(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("Failed to fetch projects:", err);
+        if (import.meta.env.DEV) console.error("Failed to fetch projects:", err);
         setError(err.message || "Failed to load projects.");
       } finally {
         setLoading(false);

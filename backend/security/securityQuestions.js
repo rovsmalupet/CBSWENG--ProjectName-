@@ -17,6 +17,7 @@
  */
 
 import prisma from "../prisma/client.js";
+import config from "./env.js";
 import { hashPassword, verifyPassword, wasteTime } from "./passwordPolicy.js";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -217,15 +218,25 @@ export const validateAnswerSet = (pairs, requiredCount) => {
  * PERSISTENCE
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-/** Replace an account's security answers wholesale. Validate before calling. */
-export const setSecurityAnswers = async (accountId, pairs) => {
-  const hashed = await Promise.all(
+/**
+ * Hash a validated answer set before opening a database transaction. Keeping
+ * the comparatively expensive password hashing outside the transaction lets a
+ * caller persist the resulting rows atomically with other account records.
+ */
+export const prepareSecurityAnswers = async (pairs) =>
+  Promise.all(
     pairs.map(async (pair) => ({
-      accountId,
       questionKey: pair.questionKey,
       answerHash: await hashPassword(normalizeAnswer(pair.answer)),
     })),
   );
+
+/** Replace an account's security answers wholesale. Validate before calling. */
+export const setSecurityAnswers = async (accountId, pairs) => {
+  const hashed = (await prepareSecurityAnswers(pairs)).map((record) => ({
+    accountId,
+    ...record,
+  }));
 
   await prisma.$transaction(async (tx) => {
     await tx.securityAnswer.deleteMany({ where: { accountId } });
@@ -251,8 +262,20 @@ export const getQuestionsForAccount = async (accountId) => {
     .map((row) => ({ key: row.questionKey, text: getQuestionText(row.questionKey) }));
 };
 
+/**
+ * A partial answer set cannot recover an account, so it must not count as
+ * configured. Keeping the count check separate also makes this rule testable
+ * without a database.
+ */
+export const hasRequiredSecurityQuestionCount = (
+  count,
+  required = config.securityQuestionCount,
+) => Number.isInteger(count) && Number.isInteger(required) && required > 0 && count >= required;
+
 export const hasSecurityQuestions = async (accountId) =>
-  (await prisma.securityAnswer.count({ where: { accountId } })) > 0;
+  hasRequiredSecurityQuestionCount(
+    await prisma.securityAnswer.count({ where: { accountId } }),
+  );
 
 /**
  * Verify submitted answers against the stored hashes.
@@ -304,8 +327,10 @@ export default {
   normalizeAnswer,
   validateAnswer,
   validateAnswerSet,
+  prepareSecurityAnswers,
   setSecurityAnswers,
   getQuestionsForAccount,
+  hasRequiredSecurityQuestionCount,
   hasSecurityQuestions,
   verifySecurityAnswers,
 };

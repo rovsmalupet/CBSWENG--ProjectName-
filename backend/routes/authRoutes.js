@@ -37,6 +37,7 @@ import {
   resetPasswordSchema,
   setSecurityQuestionsSchema,
 } from "../schemas/auth.schema.js";
+import { emptyRequestSchema } from "../schemas/common.js";
 
 const router = express.Router();
 
@@ -57,12 +58,12 @@ router.post(
 );
 router.post("/reset-password", resetLimiter, validate(resetPasswordSchema), resetUserPassword);
 
-router.get("/auth/me", me);
-router.post("/auth/logout", logout);
+router.get("/auth/me", validate(emptyRequestSchema), me);
+router.post("/auth/logout", validate(emptyRequestSchema), logout);
 router.post("/auth/reauth", authLimiter, validate(reauthSchema), reauth);
 router.post("/auth/change-password", validate(changePasswordSchema), changeOwnPassword);
 
-router.get("/auth/security-questions", listSecurityQuestions);
+router.get("/auth/security-questions", validate(emptyRequestSchema), listSecurityQuestions);
 router.post("/auth/security-questions", validate(setSecurityQuestionsSchema), setSecurityQuestions);
 
 export default router;

@@ -99,8 +99,9 @@ export default function SecurityQuestionsFields({ answers, onChange, disabled = 
       })}
 
       <p className="security-questions-note">
-        Answers are not case-sensitive and extra spaces are ignored. They are stored encrypted and
-        can never be read back — not even by an administrator.
+        Answers are not case-sensitive, and repeated spaces inside an answer are treated as one.
+        Spaces at the beginning or end are rejected. Answers are stored as one-way hashes and can
+        never be read back — not even by an administrator.
       </p>
     </fieldset>
   );

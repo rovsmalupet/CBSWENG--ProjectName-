@@ -114,8 +114,8 @@ export function ServerError() {
       }
     >
       <p>
-        This is our fault, not yours. The problem has been recorded and nothing you were working on
-        has been lost.
+        The server could not complete that request. The problem was recorded; please try again, or
+        contact an administrator if it continues.
       </p>
     </ErrorShell>
   );

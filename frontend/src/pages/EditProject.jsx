@@ -86,7 +86,7 @@ export default function EditProject() {
             : [newRow()],
         );
       } catch (err) {
-        setErrorMsg("Network error. Please try again.");
+        setErrorMsg(err.message || "Could not load the project. Please try again.");
         setStatus("error");
       }
     };

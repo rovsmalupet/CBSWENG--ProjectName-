@@ -122,7 +122,7 @@ export default function NgoPaymentHistory() {
           totalReceived: totalReceivedAmount,
         });
       } catch (err) {
-        console.error("Failed to load donations:", err);
+        if (import.meta.env.DEV) console.error("Failed to load donations:", err);
         setError(err.message || "Failed to load donation history");
       } finally {
         setLoading(false);

@@ -27,6 +27,7 @@ import {
   computeFees,
   computeInKindValue,
   assertPostAcceptsContributions,
+  assertContributionAllowed,
   assertPaymentIntentBelongsTo,
   paymentTotal,
 } from "../security/businessRules.js";
@@ -77,6 +78,26 @@ export const createPaymentIntent = async (req, res) => {
 
     // Fees cannot be quoted for a project that is not accepting contributions.
     assertPostAcceptsContributions(post);
+    // Defence in depth for the centralized owner policy: an organization may
+    // only record a walk-in contribution for its own project.
+    if (req.user.role === "ngo" && post.orgId !== req.user.id) throw notFound();
+
+    // Quote only support that this project actually offers and that is still
+    // open. Otherwise a card could be charged before the contribution endpoint
+    // later rejects the same request.
+    if (monetaryAmount > 0) {
+      assertContributionAllowed(post, { type: "Monetary", amount: monetaryAmount });
+    }
+    if (volunteerCount > 0) {
+      assertContributionAllowed(post, { type: "Volunteer", count: volunteerCount });
+    }
+    for (const entry of inKindEntries) {
+      assertContributionAllowed(post, {
+        type: "InKind",
+        itemId: entry.itemId,
+        quantity: entry.quantity,
+      });
+    }
     projectName = post.projectName;
 
     breakdown = computeFees({
@@ -162,7 +183,17 @@ export const confirmPayment = async (req, res) => {
   // paymentIntentId is the backstop.
   const existing = await prisma.payment.findUnique({ where: { paymentIntentId } });
   if (existing) {
-    return res.json({ success: true, message: "Payment already recorded.", payment: existing });
+    // A processing intent may later become succeeded. Refresh its verified
+    // Stripe status on an idempotent retry so it can authorize the contribution
+    // only after settlement completes.
+    const refreshed =
+      existing.status === paymentIntent.status
+        ? existing
+        : await prisma.payment.update({
+            where: { paymentIntentId },
+            data: { status: paymentIntent.status },
+          });
+    return res.json({ success: true, message: "Payment already recorded.", payment: refreshed });
   }
 
   const payment = await prisma.payment.create({

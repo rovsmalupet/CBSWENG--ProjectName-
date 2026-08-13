@@ -94,7 +94,9 @@ export default function AdminPaymentsDonations() {
           })
             .then((paymentData) => ({ post, paymentData }))
             .catch((err) => {
-              console.error(`Failed to fetch payments for project ${post.id}:`, err);
+              if (import.meta.env.DEV) {
+                console.error(`Failed to fetch payments for project ${post.id}:`, err);
+              }
               return { post, paymentData: null };
             })
         );
@@ -139,7 +141,7 @@ export default function AdminPaymentsDonations() {
           averageAmount: avgAmount,
         });
       } catch (err) {
-        console.error("Failed to load payments:", err);
+        if (import.meta.env.DEV) console.error("Failed to load payments:", err);
         setError(err.message || "Failed to load payment data");
       } finally {
         setLoading(false);

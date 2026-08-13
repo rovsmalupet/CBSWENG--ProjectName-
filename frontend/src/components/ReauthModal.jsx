@@ -14,10 +14,17 @@
 
 import { useState } from "react";
 import { useAuth } from "../context/authContext.js";
+import LastAccessBanner from "./LastAccessBanner.jsx";
 import PasswordField from "./PasswordField.jsx";
 import "../css/ReauthModal.css";
 
-export default function ReauthModal({ title, description, onConfirmed, onCancel }) {
+export default function ReauthModal({
+  title,
+  description,
+  onConfirmed,
+  onCancel,
+  showAccountActivity = false,
+}) {
   const { reauthenticate } = useAuth();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -42,6 +49,7 @@ export default function ReauthModal({ title, description, onConfirmed, onCancel 
   return (
     <div className="reauth-overlay" role="dialog" aria-modal="true" aria-labelledby="reauth-title">
       <div className="reauth-modal">
+        {showAccountActivity && <LastAccessBanner />}
         <h2 id="reauth-title">{title ?? "Confirm your password"}</h2>
         <p className="reauth-description">
           {description ??

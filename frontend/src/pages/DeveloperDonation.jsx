@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { StripePaymentModal } from "../components/StripePayment";
+import { useAuth } from "../context/authContext.js";
 import "../css/DeveloperDonation.css";
 
 const fmtPHP = (n) =>
@@ -8,12 +9,8 @@ const fmtPHP = (n) =>
 
 export default function DeveloperDonation() {
   const navigate = useNavigate();
-  const userRole = localStorage.getItem("userRole");
-  const userName =
-    localStorage.getItem("userFirstName") ||
-    (userRole === "ngo" ? "Generous Organization" : "Generous Donor");
-  const userId = localStorage.getItem("userId");
-  const isNgo = userRole === "ngo";
+  const { role } = useAuth();
+  const isNgo = role === "ngo";
 
   const [donationAmount, setDonationAmount] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -38,13 +35,13 @@ export default function DeveloperDonation() {
     setShowPaymentModal(true);
   };
 
-  const handlePaymentSuccess = async (paymentIntentId) => {
+  const handlePaymentSuccess = async () => {
     // Payment is already confirmed and saved by the modal
     // Just show success and navigate
     alert(
       "Thank you for your generous donation! Your contribution helps us improve BayaniHub for everyone.",
     );
-    navigate("/payment-history");
+    navigate(isNgo ? "/ngo/donations" : "/payment-history");
   };
 
   return (

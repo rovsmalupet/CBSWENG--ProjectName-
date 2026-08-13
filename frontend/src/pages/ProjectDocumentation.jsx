@@ -3,11 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import UploadDocuments from "../components/UploadDocuments.jsx";
 import DocumentsList from "../components/DocumentsList.jsx";
 import { getApiUrl, apiFetch } from "../config/api.js";
+import { useAuth } from "../context/authContext.js";
 import "../css/ProjectDocumentation.css";
 
 export default function ProjectDocumentation() {
   const { id: postId } = useParams();
   const navigate = useNavigate();
+  const { user, role } = useAuth();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -66,8 +68,8 @@ export default function ProjectDocumentation() {
     );
   }
 
-  const userRole = localStorage.getItem("userRole");
-  const isOrgOwner = userRole === "ngo";
+  const isOrgOwner = role === "ngo" && project.orgId === user?.id;
+  const canManageDocuments = role === "admin" || isOrgOwner;
 
   return (
     <div className="project-documentation-page">
@@ -93,7 +95,7 @@ export default function ProjectDocumentation() {
             </p>
           </div>
 
-          {isOrgOwner && (
+          {canManageDocuments && (
             <div className="upload-section">
               <UploadDocuments
                 postId={postId}
@@ -106,7 +108,7 @@ export default function ProjectDocumentation() {
             <DocumentsList
               key={refreshDocuments}
               postId={postId}
-              canDelete={isOrgOwner}
+              canDelete={canManageDocuments}
             />
           </div>
         </div>

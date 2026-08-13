@@ -9,7 +9,7 @@
  */
 
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/authContext.js";
 import PasswordField from "../components/PasswordField.jsx";
@@ -23,7 +23,6 @@ const LANDING_BY_ROLE = {
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -46,9 +45,11 @@ export default function Login() {
         return;
       }
 
-      // Return them to wherever they were headed before being asked to sign in.
-      const intended = location.state?.from;
-      navigate(intended ?? LANDING_BY_ROLE[user.role] ?? "/", { replace: true });
+      // Every role landing page renders LastAccessBanner. Always going there
+      // first guarantees the required previous-use report cannot be skipped by
+      // a deep link; the user can navigate to their original destination after
+      // seeing or dismissing it.
+      navigate(LANDING_BY_ROLE[user.role] ?? "/", { replace: true });
     } catch (submitError) {
       setError(submitError.message);
       // Clear the password on any failure so a retry starts clean and the value

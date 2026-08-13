@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getApiUrl } from "../config/api.js";
+import { apiDelete, apiDownload, apiGet } from "../config/api.js";
 import "../css/DocumentsList.css";
 
 export default function DocumentsList({ postId, canDelete }) {
@@ -8,49 +8,33 @@ export default function DocumentsList({ postId, canDelete }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchDocuments();
-  }, [postId]);
+    let active = true;
 
-  const fetchDocuments = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(getApiUrl(`/documents/${postId}`), {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // The API error envelope is { error: { message, code } } — `error` is an
-        // object, not a string, so it must be read through `.message`.
-        throw new Error(data?.error?.message || "Failed to fetch documents.");
+    const fetchDocuments = async () => {
+      try {
+        setIsLoading(true);
+        const data = await apiGet(`/documents/${postId}`);
+        if (!active) return;
+        setDocuments(data.documents);
+        setError("");
+      } catch (err) {
+        if (!active) return;
+        setError(err.message || "Failed to load documents.");
+        setDocuments([]);
+      } finally {
+        if (active) setIsLoading(false);
       }
+    };
 
-      setDocuments(data.documents);
-      setError("");
-    } catch (err) {
-      setError(err.message || "Failed to load documents.");
-      setDocuments([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    fetchDocuments();
+    return () => {
+      active = false;
+    };
+  }, [postId]);
 
   const handleDownload = async (documentId, fileName) => {
     try {
-      const response = await fetch(getApiUrl(`/documents/download/${documentId}`), {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Download failed.");
-      }
-
-      const blob = await response.blob();
+      const blob = await apiDownload(`/documents/download/${documentId}`);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -70,16 +54,7 @@ export default function DocumentsList({ postId, canDelete }) {
     }
 
     try {
-      const response = await fetch(getApiUrl(`/documents/${documentId}`), {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Delete failed.");
-      }
+      await apiDelete(`/documents/${documentId}`);
 
       setDocuments(documents.filter((doc) => doc.id !== documentId));
     } catch (err) {

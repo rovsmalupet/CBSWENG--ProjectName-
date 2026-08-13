@@ -50,7 +50,7 @@ export default function UnapprovedProjects() {
         );
         setProjects(unapprovedProjects);
       } catch (err) {
-        console.error("Failed to fetch projects:", err);
+        if (import.meta.env.DEV) console.error("Failed to fetch projects:", err);
       } finally {
         setLoading(false);
       }

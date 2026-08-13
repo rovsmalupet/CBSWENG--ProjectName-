@@ -102,12 +102,19 @@ export const listUsers = async (req, res) => {
       lastLoginAt: account.lastLoginAt,
       createdAt: account.createdAt,
       displayName:
-        account.organization?.orgName ??
-        [account.admin?.firstName ?? account.donor?.firstName, account.admin?.lastName ?? account.donor?.lastName]
-          .filter(Boolean)
-          .join(" ") ??
-        account.email,
-      profileId: account.admin?.id ?? account.donor?.id ?? account.organization?.id ?? null,
+        account.role === "ngo"
+          ? (account.organization?.orgName ?? account.email)
+          : account.role === "admin"
+            ? ([account.admin?.firstName, account.admin?.lastName].filter(Boolean).join(" ") ||
+              account.email)
+            : ([account.donor?.firstName, account.donor?.lastName].filter(Boolean).join(" ") ||
+              account.email),
+      profileId:
+        account.role === "admin"
+          ? (account.admin?.id ?? null)
+          : account.role === "ngo"
+            ? (account.organization?.id ?? null)
+            : (account.donor?.id ?? null),
     })),
   });
 };
@@ -185,38 +192,94 @@ export const changeUserRole = async (req, res) => {
 
   assertAssignableRole(role);
 
-  if (target.role === role) {
-    throw conflict("That account already has this role.");
-  }
-  // A donor's role cannot be changed: donor and organization profiles hold
-  // different columns, and the profile row would have to be rebuilt.
-  if (target.role === "donor") {
-    throw new AppError(
-      "Donor accounts cannot be converted to another role.",
-      409,
-      "ROLE_NOT_CONVERTIBLE",
-    );
-  }
-  if (role !== "admin") {
-    assertNotLastAdmin(await countActiveAdmins(), target.role === "admin");
-  }
+  const previousRole = await prisma.$transaction(async (tx) => {
+    const current = await tx.userAccount.findUnique({
+      where: { id: target.id },
+      include: { admin: true, organization: true },
+    });
+    if (!current) throw notFound();
+    if (current.role !== target.role) {
+      throw conflict("That account changed while you were reviewing it. Please try again.");
+    }
+    if (current.role === role) {
+      throw conflict("That account already has this role.");
+    }
 
-  await prisma.userAccount.update({
-    where: { id: target.id },
-    // The version bump signs the account out everywhere at once, so a user who
-    // has just lost administrator rights cannot keep using a token that still
-    // claims them.
-    data: { role, tokenVersion: { increment: 1 } },
+    // Donor profiles have contribution and payment relationships that cannot
+    // be represented by an administrator or organization profile.
+    if (current.role === "donor") {
+      throw new AppError(
+        "Donor accounts cannot be converted to another role.",
+        409,
+        "ROLE_NOT_CONVERTIBLE",
+      );
+    }
+
+    if (role !== "admin") {
+      const activeAdmins = await tx.userAccount.count({
+        where: { role: "admin", status: "Active" },
+      });
+      assertNotLastAdmin(activeAdmins, current.role === "admin");
+    }
+
+    // Claim the state transition before creating a profile. A concurrent role
+    // change then gets a clean conflict instead of racing a unique constraint.
+    const changed = await tx.userAccount.updateMany({
+      where: { id: current.id, role: current.role },
+      // The version bump signs the account out everywhere at once, so a user
+      // who has just lost administrator rights cannot keep using an old token.
+      data: { role, tokenVersion: { increment: 1 } },
+    });
+    if (changed.count !== 1) {
+      throw conflict("That account changed while you were reviewing it. Please try again.");
+    }
+
+    // Keep the old profile row and its posts/audit records. If this account has
+    // held the destination role before, reuse that profile; otherwise create
+    // the minimum complete profile the destination role needs.
+    if (role === "admin" && !current.admin) {
+      if (!current.organization) {
+        throw conflict("This account cannot change roles because its profile is incomplete.");
+      }
+      await tx.admin.create({
+        data: {
+          accountId: current.id,
+          firstName: current.organization.firstName,
+          lastName: current.organization.surname,
+          email: current.email,
+        },
+      });
+    }
+
+    if (role === "ngo" && !current.organization) {
+      if (!current.admin) {
+        throw conflict("This account cannot change roles because its profile is incomplete.");
+      }
+      await tx.organization.create({
+        data: {
+          accountId: current.id,
+          orgName: `${current.admin.firstName} ${current.admin.lastName}`.trim(),
+          firstName: current.admin.firstName,
+          surname: current.admin.lastName,
+          email: current.email,
+          country: "Philippines",
+          isVerified: true,
+          status: "Approved",
+        },
+      });
+    }
+
+    return current.role;
   });
 
   await logSecurityEvent(req, {
     eventType: EVENTS.USER_ROLE_CHANGED,
     outcome: OUTCOME.SUCCESS,
     severity: SEVERITY.CRITICAL,
-    message: `Role for ${target.email} changed from ${target.role} to ${role}.`,
+    message: `Role for ${target.email} changed from ${previousRole} to ${role}.`,
     targetType: "UserAccount",
     targetId: target.id,
-    metadata: { from: target.role, to: role, email: target.email },
+    metadata: { from: previousRole, to: role, email: target.email },
   });
 
   res.json({ message: "Role updated. The user has been signed out of all sessions." });

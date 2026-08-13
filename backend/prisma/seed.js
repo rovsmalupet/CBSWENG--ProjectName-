@@ -124,10 +124,22 @@ const profileIdFor = async (account) => {
 async function main() {
   console.log("\n  Seeding CSSECDV demo data…\n");
 
-  // Idempotent: wipe and rebuild. Deleting UserAccount cascades to the profile
-  // tables, which cascade to posts, contributions, payments and refunds.
-  await prisma.securityLog.deleteMany({});
-  await prisma.userAccount.deleteMany({});
+  // Idempotent, demo-only wipe. Delete dependency roots in a transaction before
+  // accounts: Post.orgId intentionally uses ON DELETE RESTRICT, platform
+  // payments have no Post, and old reset tokens may have no account. Relying on
+  // UserAccount cascade alone therefore fails on a fully migrated database and
+  // can leave orphaned demo data.
+  await prisma.$transaction([
+    prisma.securityLog.deleteMany({}),
+    prisma.passwordResetToken.deleteMany({}),
+    // Payment cascades to Refund, including platform payments with no post.
+    prisma.payment.deleteMany({}),
+    // Post cascades to contributions, documentation, support rows, and audits.
+    prisma.post.deleteMany({}),
+    prisma.donorOrganizationPartner.deleteMany({}),
+    // Profiles and authentication child rows cascade from UserAccount.
+    prisma.userAccount.deleteMany({}),
+  ]);
   console.log("  · cleared existing accounts and their data");
 
   /* ── 1.1.1  Website Administrator ─────────────────────────────────────── */

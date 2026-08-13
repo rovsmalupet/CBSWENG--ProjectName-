@@ -43,8 +43,8 @@ export default class ErrorBoundary extends Component {
         <div className="error-card">
           <h1>Something went wrong</h1>
           <p>
-            We hit an unexpected problem while displaying this page. Nothing you were working on
-            has been lost.
+            We hit an unexpected problem while displaying this page. Reload the page, or return to
+            the home page and try again.
           </p>
           <p className="error-reference">
             Reference: <code>{this.state.reference}</code>

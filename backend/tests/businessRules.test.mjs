@@ -6,14 +6,19 @@ import { suite, test, assert, assertEqual, assertIncludes } from "./_harness.mjs
 import {
   POST_TRANSITIONS,
   assertPostTransition,
+  assertPermanentDeleteAllowed,
   assertPostAcceptsContributions,
   assertContributionAllowed,
   assertContributionTransition,
+  assertProjectStructureChangeAllowed,
   computeFees,
   computeInKindValue,
   assertPaymentIntentBelongsTo,
+  assertRecordedPaymentMatches,
+  assertPaymentIntentUnused,
   assertRefundable,
   paymentTotal,
+  refundIdempotencyKey,
   assertNotLastAdmin,
   assertAssignableRole,
   FEE_RULES,
@@ -101,6 +106,66 @@ test("either party may delete", () => {
 test("an unknown status is rejected rather than written through", () => {
   throws(() => assertPostTransition("Pending", "Published", "admin"), "INVALID_STATE_TRANSITION");
   throws(() => assertPostTransition("Nonsense", "Approved", "admin"), "INVALID_STATE_TRANSITION");
+});
+
+test("permanent deletion requires the soft-delete step first", () => {
+  assertPermanentDeleteAllowed({ overallStatus: "Deleted" });
+  throws(
+    () => assertPermanentDeleteAllowed({ overallStatus: "Approved" }),
+    "PROJECT_NOT_DELETED",
+  );
+  throws(
+    () => assertPermanentDeleteAllowed({ overallStatus: "Pending" }),
+    "PROJECT_NOT_DELETED",
+  );
+});
+
+suite("Project structure history [2.2.3]");
+
+const projectWithHistory = {
+  _count: { contributions: 1 },
+  supportOptions: [
+    { id: "m1", type: "Monetary", targetAmount: 10000, targetCount: null, currentAmount: 250 },
+  ],
+  inKindItems: [
+    {
+      id: "i1",
+      itemName: "Rice",
+      targetQuantity: 100,
+      currentQuantity: 5,
+      unit: "kg",
+      pricePerUnit: 50,
+    },
+  ],
+};
+
+const unchangedStructure = {
+  supportOptions: [{ type: "Monetary", targetAmount: 10000 }],
+  inKindItems: [
+    { itemName: "Rice", targetQuantity: 100, unit: "kg", pricePerUnit: 50 },
+  ],
+};
+
+test("descriptive edits may preserve support rows after contributions exist", () => {
+  assertProjectStructureChangeAllowed(projectWithHistory, unchangedStructure);
+});
+
+test("support targets cannot be replaced after contributions exist", () => {
+  throws(
+    () =>
+      assertProjectStructureChangeAllowed(projectWithHistory, {
+        ...unchangedStructure,
+        supportOptions: [{ type: "Monetary", targetAmount: 20000 }],
+      }),
+    "PROJECT_STRUCTURE_LOCKED",
+  );
+});
+
+test("a project without contribution history may change its support structure", () => {
+  assertProjectStructureChangeAllowed(
+    { ...projectWithHistory, _count: { contributions: 0 } },
+    { supportOptions: [], inKindItems: [] },
+  );
 });
 
 suite("Contribution eligibility [2.2.3]");
@@ -320,6 +385,87 @@ test("an unpaid intent cannot be recorded as a payment", () => {
   );
 });
 
+suite("Contribution payment linkage [2.2.3]");
+
+const recordedPayment = {
+  paymentIntentId: "pi_valid",
+  userId: "donor-1",
+  userRole: "donor",
+  postId: "p1",
+  status: "succeeded",
+  refundIntentId: null,
+  monetaryContribution: 1000,
+  monetaryTransactionFee: 30,
+  volunteerTransactionFee: 0,
+  inKindTransactionFee: 0,
+};
+const expectedPaymentBreakdown = computeFees({ monetaryAmount: 1000 });
+
+test("a recorded payment may fund only its matching contribution", () => {
+  assertRecordedPaymentMatches(recordedPayment, {
+    user,
+    postId: "p1",
+    breakdown: expectedPaymentBreakdown,
+  });
+});
+
+test("a missing or other user's payment cannot fund a contribution", () => {
+  throws(
+    () =>
+      assertRecordedPaymentMatches(null, {
+        user,
+        postId: "p1",
+        breakdown: expectedPaymentBreakdown,
+      }),
+    "PAYMENT_NOT_RECORDED",
+  );
+  throws(
+    () =>
+      assertRecordedPaymentMatches(
+        { ...recordedPayment, userId: "donor-2" },
+        { user, postId: "p1", breakdown: expectedPaymentBreakdown },
+      ),
+    "PAYMENT_NOT_YOURS",
+  );
+});
+
+test("a payment cannot be moved to another project or amount", () => {
+  throws(
+    () =>
+      assertRecordedPaymentMatches(recordedPayment, {
+        user,
+        postId: "p2",
+        breakdown: expectedPaymentBreakdown,
+      }),
+    "PAYMENT_PROJECT_MISMATCH",
+  );
+  throws(
+    () =>
+      assertRecordedPaymentMatches(recordedPayment, {
+        user,
+        postId: "p1",
+        breakdown: computeFees({ monetaryAmount: 500 }),
+      }),
+    "PAYMENT_AMOUNT_MISMATCH",
+  );
+});
+
+test("a payment reference cannot create a second contribution batch", () => {
+  assertPaymentIntentUnused(null);
+  throws(() => assertPaymentIntentUnused({ id: "existing-row" }), "PAYMENT_ALREADY_USED");
+});
+
+test("a processing payment cannot authorize a contribution yet", () => {
+  throws(
+    () =>
+      assertRecordedPaymentMatches(
+        { ...recordedPayment, status: "processing" },
+        { user, postId: "p1", breakdown: expectedPaymentBreakdown },
+      ),
+    "PAYMENT_INCOMPLETE",
+  );
+});
+
 suite("Refunds [2.2.3]");
 
 const succeededPayment = {
@@ -352,6 +498,11 @@ test("a payment that never succeeded cannot be refunded", () => {
 
 test("the refund amount is recomputed from the stored breakdown", () => {
   assertEqual(paymentTotal(succeededPayment), 1030);
+});
+
+test("refund retries use one stable processor idempotency key per payment", () => {
+  assertEqual(refundIdempotencyKey("payment-1"), refundIdempotencyKey("payment-1"));
+  assert(refundIdempotencyKey("payment-1") !== refundIdempotencyKey("payment-2"));
 });
 
 suite("Administrator safety interlocks [2.2.3]");

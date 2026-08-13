@@ -8,7 +8,14 @@
  */
 
 import { suite, test, assert, assertEqual, assertIncludes } from "./_harness.mjs";
-import { EVENTS, OUTCOME, SEVERITY, redact, clientIp } from "../security/securityLog.js";
+import {
+  EVENTS,
+  OUTCOME,
+  SEVERITY,
+  redact,
+  sanitizeLogMessage,
+  clientIp,
+} from "../security/securityLog.js";
 
 suite("Security log — redaction never lets a secret through [2.4.5]");
 
@@ -100,6 +107,24 @@ test("a realistic failed-login payload leaks nothing", () => {
   assert(!JSON.stringify(result).includes("TheActualPassword"), "the password survived redaction");
 });
 
+test("free-text messages redact bearer, JWT, and named credential values", () => {
+  const jwt = `${"a".repeat(12)}.${"b".repeat(12)}.${"c".repeat(12)}`;
+  const result = sanitizeLogMessage(
+    `Authorization: Bearer super.secret.value password=ActualSecret123! token=${jwt}`,
+  );
+  assert(!result.includes("ActualSecret123"));
+  assert(!result.includes(jwt));
+  assert(!result.includes("super.secret.value"));
+});
+
+test("free-text strings nested in metadata receive credential redaction", () => {
+  const result = redact({
+    stack: "Error: provider failed with password=ActualSecret123!",
+  });
+  assert(!result.stack.includes("ActualSecret123"));
+  assertIncludes(result.stack, "password=[REDACTED]");
+});
+
 suite("Security log — bounded output");
 
 test("long strings are truncated so one request cannot bloat the table", () => {
@@ -180,6 +205,7 @@ test("access-control failures are covered, with a distinct reason each [2.4.7]",
 
 test("input validation failures are covered [2.4.5]", () => {
   assert(EVENTS.INPUT_VALIDATION_FAILURE);
+  assert(EVENTS.RATE_LIMITED);
 });
 
 test("reading the log is itself a logged event [2.4.4]", () => {

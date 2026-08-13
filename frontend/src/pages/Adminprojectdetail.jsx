@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "../css/Adminprojectdetail.css";
 import { apiFetch, getApiUrl } from "../config/api.js";
+import ReauthModal from "../components/ReauthModal.jsx";
 
 const CAUSE_STYLES = {
   noPoverty: { label: "Poverty", bg: "#E5243B", color: "#fff" },
@@ -47,7 +48,7 @@ const CAUSE_STYLES = {
 const normalizeCauseKey = (raw) => {
   if (!raw) return "others";
   if (CAUSE_STYLES[raw]) return raw;
-  const normalized = raw.toLowerCase().replace(/[\s_\-]+/g, "");
+  const normalized = raw.toLowerCase().replace(/[\s_-]+/g, "");
   const match = Object.keys(CAUSE_STYLES).find(
     (key) => key.toLowerCase() === normalized,
   );
@@ -92,6 +93,7 @@ export default function AdminProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteReauth, setShowDeleteReauth] = useState(false);
 
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
@@ -118,7 +120,7 @@ export default function AdminProjectDetail() {
         const logs = await apiFetch(getApiUrl(`/posts/${id}/audit`));
         setAuditLogs(logs);
       } catch (err) {
-        console.error("Failed to load audit log:", err);
+        if (import.meta.env.DEV) console.error("Failed to load audit log:", err);
       } finally {
         setAuditLoading(false);
       }
@@ -143,21 +145,33 @@ export default function AdminProjectDetail() {
     }
   };
 
-  const permanentlyDelete = async () => {
-    if (
-      !window.confirm(
-        "This will remove all data related to this project. Do you want to proceed?",
-      )
-    )
-      return;
+  const executePermanentDelete = async () => {
     setUpdating(true);
+    setError("");
     try {
-      await apiFetch(getApiUrl(`/posts/${id}/permanent`), { method: "DELETE" });
+      await apiFetch(getApiUrl(`/posts/${id}/permanent`), {
+        method: "DELETE",
+        withReauth: true,
+      });
       navigate(-1);
     } catch (err) {
+      if (err.code === "REAUTH_REQUIRED") {
+        setShowDeleteReauth(true);
+        return;
+      }
       setError(err.message || "Failed to permanently delete project.");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const permanentlyDelete = () => {
+    if (
+      window.confirm(
+        "This will remove all data related to this project. Do you want to proceed?",
+      )
+    ) {
+      executePermanentDelete();
     }
   };
 
@@ -187,6 +201,17 @@ export default function AdminProjectDetail() {
 
   return (
     <div className="apd-page">
+      {showDeleteReauth && (
+        <ReauthModal
+          title="Confirm permanent deletion"
+          description="Re-enter your password to permanently remove this project and all related records. This cannot be undone."
+          onCancel={() => setShowDeleteReauth(false)}
+          onConfirmed={() => {
+            setShowDeleteReauth(false);
+            executePermanentDelete();
+          }}
+        />
+      )}
       <button onClick={() => navigate(-1)} className="apd-back-btn">
         <svg
           width="16"

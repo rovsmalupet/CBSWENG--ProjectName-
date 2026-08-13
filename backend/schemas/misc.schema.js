@@ -12,6 +12,10 @@ import {
   contributionAmount,
   volunteerCount,
   quantity,
+  calendarDate,
+  pageNumber,
+  pageSize,
+  noSurroundingWhitespace,
 } from "./common.js";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -70,15 +74,15 @@ export const confirmPaymentSchema = request({
 });
 
 export const paymentIdSchema = request({
-  params: z.object({ paymentId: uuid }).passthrough(),
+  params: z.object({ paymentId: uuid }).strict(),
 });
 
 export const donorIdSchema = request({
-  params: z.object({ donorId: uuid }).passthrough(),
+  params: z.object({ donorId: uuid }).strict(),
 });
 
 export const projectIdSchema = request({
-  params: z.object({ projectId: uuid }).passthrough(),
+  params: z.object({ projectId: uuid }).strict(),
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -90,13 +94,12 @@ export const issueRefundSchema = request({
     .object({
       paymentId: uuid,
       reason: shortText(500, "Reason").optional(),
-      contributionId: uuid.optional(),
     })
     .strict(),
 });
 
 export const refundIdSchema = request({
-  params: z.object({ refundId: uuid }).passthrough(),
+  params: z.object({ refundId: uuid }).strict(),
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -117,7 +120,7 @@ export const uploadDocumentSchema = request({
 });
 
 export const documentIdSchema = request({
-  params: z.object({ documentId: uuid }).passthrough(),
+  params: z.object({ documentId: uuid }).strict(),
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -125,7 +128,7 @@ export const documentIdSchema = request({
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 export const organizationIdSchema = request({
-  params: z.object({ id: uuid }).passthrough(),
+  params: z.object({ id: uuid }).strict(),
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -139,17 +142,19 @@ export const organizationIdSchema = request({
 export const securityLogQuerySchema = request({
   query: z
     .object({
-      from: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
-      to: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+      from: calendarDate.optional(),
+      to: calendarDate.optional(),
       eventType: z.string().regex(/^[A-Z_]{3,60}$/, "Not a valid event type.").optional(),
       outcome: z.enum(["SUCCESS", "FAILURE"]).optional(),
       severity: z.enum(["INFO", "WARN", "CRITICAL"]).optional(),
-      actorEmail: z.string().trim().max(254).toLowerCase().optional(),
-      ipAddress: z.string().trim().max(45).optional(),
-      targetId: z.string().trim().max(100).optional(),
+      actorEmail: noSurroundingWhitespace(z.string().max(254), "Actor email")
+        .transform((value) => value.toLowerCase())
+        .optional(),
+      ipAddress: noSurroundingWhitespace(z.string().max(45), "IP address").optional(),
+      targetId: noSurroundingWhitespace(z.string().max(100), "Target id").optional(),
       q: shortText(200, "Search").optional(),
-      page: z.string().regex(/^\d{1,6}$/, "Page must be a number.").optional(),
-      limit: z.string().regex(/^\d{1,3}$/, "Page size must be a number.").optional(),
+      page: pageNumber.optional(),
+      limit: pageSize.optional(),
     })
     .strict()
     .refine((data) => !data.from || !data.to || new Date(data.from) <= new Date(data.to), {

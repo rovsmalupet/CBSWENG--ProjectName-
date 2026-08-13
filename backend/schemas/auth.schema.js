@@ -14,12 +14,16 @@ import {
   uuid,
   email,
   password,
+  passwordConfirmation,
   anyPassword,
   personName,
   orgName,
   bio,
   country,
   shortText,
+  noSurroundingWhitespace,
+  pageNumber,
+  pageSize,
 } from "./common.js";
 import { SECURITY_QUESTIONS } from "../security/securityQuestions.js";
 import config from "../security/env.js";
@@ -29,11 +33,13 @@ const questionKeys = SECURITY_QUESTIONS.map((question) => question.key);
 const securityAnswer = z
   .object({
     questionKey: z.enum(questionKeys, { message: "Not a recognised security question." }),
-    answer: z
-      .string()
-      .trim()
-      .min(4, "Answers must be at least 4 characters.")
-      .max(100, "Answers must be 100 characters or fewer."),
+    answer: noSurroundingWhitespace(
+      z
+        .string()
+        .min(4, "Answers must be at least 4 characters.")
+        .max(100, "Answers must be 100 characters or fewer."),
+      "Answer",
+    ),
   })
   .strict();
 
@@ -52,11 +58,13 @@ export const registerDonorSchema = request({
       surname: personName,
       email,
       password,
-      affiliation: z
-        .string()
-        .trim()
-        .min(2, "Affiliation is required.")
-        .max(200, "Affiliation must be 200 characters or fewer."),
+      affiliation: noSurroundingWhitespace(
+        z
+          .string()
+          .min(2, "Affiliation is required.")
+          .max(200, "Affiliation must be 200 characters or fewer."),
+        "Affiliation",
+      ),
       country: country.optional(),
       bio: bio.optional(),
       securityAnswers,
@@ -92,7 +100,12 @@ export const registerOrganizationSchema = request({
 export const loginSchema = request({
   body: z
     .object({
-      email: z.string().trim().min(1).max(254).toLowerCase(),
+      email: z
+        .string()
+        .min(1)
+        .max(254)
+        .refine((value) => value === value.trim())
+        .transform((value) => value.toLowerCase()),
       password: z.string().min(1).max(200),
     })
     .strict(),
@@ -106,7 +119,7 @@ export const changePasswordSchema = request({
   body: z
     .object({
       newPassword: password,
-      confirmPassword: z.string().min(1),
+      confirmPassword: passwordConfirmation,
     })
     .strict()
     .refine((data) => data.newPassword === data.confirmPassword, {
@@ -142,7 +155,7 @@ export const resetPasswordSchema = request({
     .object({
       resetToken: z.string().regex(/^[a-f0-9]{64}$/, "Not a valid reset link."),
       newPassword: password,
-      confirmPassword: z.string().min(1),
+      confirmPassword: passwordConfirmation,
     })
     .strict()
     .refine((data) => data.newPassword === data.confirmPassword, {
@@ -179,12 +192,12 @@ export const createUserSchema = request({
 });
 
 export const changeRoleSchema = request({
-  params: z.object({ id: uuid }).passthrough(),
+  params: z.object({ id: uuid }).strict(),
   body: z.object({ role: z.enum(["admin", "ngo"]) }).strict(),
 });
 
 export const accountIdSchema = request({
-  params: z.object({ id: uuid }).passthrough(),
+  params: z.object({ id: uuid }).strict(),
 });
 
 export const listUsersSchema = request({
@@ -193,8 +206,8 @@ export const listUsersSchema = request({
       role: z.enum(["admin", "ngo", "donor"]).optional(),
       status: z.enum(["Active", "Pending", "Disabled", "Rejected"]).optional(),
       search: shortText(254, "Search").optional(),
-      page: z.string().regex(/^\d{1,6}$/).optional(),
-      limit: z.string().regex(/^\d{1,3}$/).optional(),
+      page: pageNumber.optional(),
+      limit: pageSize.optional(),
     })
     .strict(),
 });

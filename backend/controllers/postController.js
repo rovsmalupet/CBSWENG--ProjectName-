@@ -14,12 +14,18 @@
  */
 
 import prisma from "../prisma/client.js";
-import { notFound, badRequest } from "../errors/AppError.js";
+import { notFound, badRequest, conflict } from "../errors/AppError.js";
 import {
   assertPostTransition,
+  assertPermanentDeleteAllowed,
   assertPostAcceptsContributions,
   assertContributionAllowed,
   assertContributionTransition,
+  assertProjectStructureChangeAllowed,
+  computeFees,
+  computeInKindValue,
+  assertRecordedPaymentMatches,
+  assertPaymentIntentUnused,
 } from "../security/businessRules.js";
 import { logSecurityEvent, EVENTS, OUTCOME, SEVERITY } from "../security/securityLog.js";
 
@@ -226,6 +232,16 @@ export const createPost = async (req, res) => {
     include: POST_INCLUDE,
   });
 
+  await logSecurityEvent(req, {
+    eventType: EVENTS.POST_STATUS_CHANGED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `Project "${post.projectName}" was created and submitted for review.`,
+    targetType: "Post",
+    targetId: post.id,
+    metadata: { from: null, to: "Pending" },
+  });
+
   res.status(201).json({ message: "Project submitted for review.", post: formatPost(post) });
 };
 
@@ -237,22 +253,57 @@ export const createPost = async (req, res) => {
  * any other NGO's project.
  */
 export const updatePost = async (req, res) => {
-  const current = req.resource; // loaded by the ownership resolver
   const { postFields, inKindItems, supportOptionsData } = buildPostData(req.body);
+
+  // Reload the support rows and contribution count used by the business rule.
+  // The ownership resolver deliberately selects only authorization fields.
+  const current = await prisma.post.findUnique({
+    where: { id: req.params.postId },
+    include: {
+      inKindItems: true,
+      supportOptions: true,
+      _count: { select: { contributions: true } },
+    },
+  });
+  if (!current) throw notFound();
 
   // An edit returns the project to review. The state machine rejects editing a
   // deleted project rather than silently resurrecting it.
   assertPostTransition(current.overallStatus, "Edited", req.user.role === "admin" ? "admin" : "owner");
+  assertProjectStructureChangeAllowed(current, {
+    inKindItems,
+    supportOptions: supportOptionsData,
+  });
+
+  // Recreating child rows is safe only before any contribution references
+  // them. When history exists, the rule above guarantees the structure is
+  // unchanged and we update descriptive fields without touching IDs or totals.
+  const supportData =
+    current._count.contributions === 0
+      ? {
+          inKindItems: { deleteMany: {}, create: inKindItems },
+          supportOptions: { deleteMany: {}, create: supportOptionsData },
+        }
+      : {};
 
   const updated = await prisma.post.update({
     where: { id: req.params.postId },
     data: {
       ...postFields,
       overallStatus: "Edited",
-      inKindItems: { deleteMany: {}, create: inKindItems },
-      supportOptions: { deleteMany: {}, create: supportOptionsData },
+      ...supportData,
     },
     include: POST_INCLUDE,
+  });
+
+  await logSecurityEvent(req, {
+    eventType: EVENTS.POST_STATUS_CHANGED,
+    outcome: OUTCOME.SUCCESS,
+    severity: SEVERITY.INFO,
+    message: `Project "${updated.projectName}" was updated and returned for review.`,
+    targetType: "Post",
+    targetId: updated.id,
+    metadata: { from: current.overallStatus, to: "Edited" },
   });
 
   res.json({ message: "Project updated and resubmitted for review.", post: formatPost(updated) });
@@ -294,9 +345,10 @@ export const deletePost = async (req, res) => {
 export const permanentDeletePost = async (req, res) => {
   const post = await prisma.post.findUnique({
     where: { id: req.params.postId },
-    select: { id: true, projectName: true, orgId: true },
+    select: { id: true, projectName: true, orgId: true, overallStatus: true },
   });
   if (!post) throw notFound();
+  assertPermanentDeleteAllowed(post);
 
   await prisma.post.delete({ where: { id: req.params.postId } });
 
@@ -367,7 +419,7 @@ export const updatePostStatus = async (req, res) => {
  */
 export const addContribution = async (req, res) => {
   const { postId } = req.params;
-  const { monetary = [], inKind = [], volunteer = [] } = req.body;
+  const { monetary = [], inKind = [], volunteer = [], paymentIntentId } = req.body;
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -399,7 +451,41 @@ export const addContribution = async (req, res) => {
     assertContributionAllowed(post, { type: "Volunteer", count: entry.count });
   }
 
-  // Identity comes from the session. `donorId` in the request body is ignored.
+  // Donor contributions that incur a charge must reference the Payment row
+  // recorded from Stripe, and its project/owner/server-computed breakdown must
+  // match this exact contribution. NGO walk-in records remain payment-optional.
+  let expectedPaymentBreakdown = null;
+  let contributionPaymentIntentId = null;
+  if (req.user.role === "donor" || paymentIntentId) {
+    try {
+      expectedPaymentBreakdown = computeFees({
+        monetaryAmount: monetary.reduce((sum, entry) => sum + Number(entry.amount), 0),
+        volunteerCount: volunteer.reduce((sum, entry) => sum + Number(entry.count), 0),
+        inKindValue: computeInKindValue(post, inKind),
+      });
+    } catch (error) {
+      // A wish-list item without a price has no transaction fee. Such an
+      // in-kind-only contribution legitimately needs no Stripe payment.
+      if (error.code !== "EMPTY_PAYMENT") throw error;
+    }
+
+    if (expectedPaymentBreakdown) {
+      const payment = paymentIntentId
+        ? await prisma.payment.findUnique({ where: { paymentIntentId } })
+        : null;
+      assertRecordedPaymentMatches(payment, {
+        user: req.user,
+        postId,
+        breakdown: expectedPaymentBreakdown,
+      });
+      contributionPaymentIntentId = paymentIntentId;
+    } else if (paymentIntentId) {
+      throw badRequest("No payment is required for this contribution.");
+    }
+  }
+
+  // Identity comes from the session. The strict schema rejects a caller-supplied
+  // donorId; donorName is used only for NGO-recorded offline contributions.
   let partnershipId = null;
   let sessionDonorName = "Anonymous";
 
@@ -438,6 +524,7 @@ export const addContribution = async (req, res) => {
       donorName: req.user.role === "donor" ? sessionDonorName : entry.donorName,
       partnershipId,
       postId,
+      paymentIntentId: contributionPaymentIntentId,
       type: "Monetary",
       amount: entry.amount,
       status,
@@ -448,6 +535,7 @@ export const addContribution = async (req, res) => {
       donorName: req.user.role === "donor" ? sessionDonorName : entry.donorName,
       partnershipId,
       postId,
+      paymentIntentId: contributionPaymentIntentId,
       type: "InKind",
       inKindItemId: entry.itemId,
       quantity: entry.quantity,
@@ -459,6 +547,7 @@ export const addContribution = async (req, res) => {
       donorName: req.user.role === "donor" ? sessionDonorName : entry.donorName,
       partnershipId,
       postId,
+      paymentIntentId: contributionPaymentIntentId,
       type: "Volunteer",
       volunteerCount: entry.count,
       status,
@@ -468,6 +557,26 @@ export const addContribution = async (req, res) => {
   ];
 
   await prisma.$transaction(async (tx) => {
+    if (contributionPaymentIntentId) {
+      // Updating the payment row takes a row lock. Concurrent attempts using
+      // the same intent therefore serialize before checking for an existing
+      // batch, while every row in one legitimate batch may share the ID.
+      const lockedPayment = await tx.payment.update({
+        where: { paymentIntentId: contributionPaymentIntentId },
+        data: { updatedAt: new Date() },
+      });
+      assertRecordedPaymentMatches(lockedPayment, {
+        user: req.user,
+        postId,
+        breakdown: expectedPaymentBreakdown,
+      });
+      const alreadyUsed = await tx.contribution.findFirst({
+        where: { paymentIntentId: contributionPaymentIntentId },
+        select: { id: true },
+      });
+      assertPaymentIntentUnused(alreadyUsed);
+    }
+
     for (const row of rows) {
       const created = await tx.contribution.create({ data: row });
       if (status === "Confirmed") await applyContributionToTotals(tx, created);
@@ -481,7 +590,7 @@ export const addContribution = async (req, res) => {
     message: `${rows.length} contribution(s) recorded as ${status.toLowerCase()}.`,
     targetType: "Post",
     targetId: postId,
-    metadata: { count: rows.length, status },
+    metadata: { count: rows.length, status, paymentIntentId: paymentIntentId ?? null },
   });
 
   const finalPost = await prisma.post.findUnique({
@@ -536,11 +645,14 @@ export const decideContribution = async (req, res) => {
   assertContributionTransition(contribution.status, status);
 
   await prisma.$transaction(async (tx) => {
-    const updated = await tx.contribution.update({
-      where: { id: contribution.id },
+    const claimed = await tx.contribution.updateMany({
+      where: { id: contribution.id, status: "Pending" },
       data: { status, statusChangedAt: new Date(), statusChangedBy: req.user.id },
     });
-    if (status === "Confirmed") await applyContributionToTotals(tx, updated);
+    if (claimed.count !== 1) {
+      throw conflict("This contribution has already been confirmed or declined.");
+    }
+    if (status === "Confirmed") await applyContributionToTotals(tx, contribution);
   });
 
   await logSecurityEvent(req, {
@@ -600,11 +712,15 @@ export const getMyDonorPartnerships = async (req, res) => {
     const seen = new Set();
 
     for (const contribution of partnership.contributions) {
-      if (contribution.type === "Monetary" && contribution.postId) {
-        monetaryCountByPost[contribution.postId] = (monetaryCountByPost[contribution.postId] ?? 0) + 1;
-      }
       const post = contribution.post;
-      if (!post || seen.has(post.id)) continue;
+      // A donor's prior relationship does not grant access to drafts, rejected
+      // projects, or projects returned to review.
+      if (!post || post.overallStatus !== "Approved") continue;
+      if (contribution.type === "Monetary" && contribution.postId) {
+        monetaryCountByPost[contribution.postId] =
+          (monetaryCountByPost[contribution.postId] ?? 0) + 1;
+      }
+      if (seen.has(post.id)) continue;
       seen.add(post.id);
       const formatted = formatPost(post);
       postsById[formatted.id] = formatted;

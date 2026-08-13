@@ -13,6 +13,7 @@ import {
   normalizeAnswer,
   validateAnswer,
   validateAnswerSet,
+  hasRequiredSecurityQuestionCount,
   MIN_ANSWER_LENGTH,
 } from "../security/securityQuestions.js";
 
@@ -169,4 +170,19 @@ test("malformed input is rejected rather than crashing", () => {
   assert(!validateAnswerSet(null, 2).valid);
   assert(!validateAnswerSet("nope", 2).valid);
   assert(!validateAnswerSet([null, undefined], 2).valid);
+});
+
+suite("Security-question setup state");
+
+test("only a complete answer set counts as configured", () => {
+  assert(!hasRequiredSecurityQuestionCount(0, 2));
+  assert(!hasRequiredSecurityQuestionCount(1, 2));
+  assert(hasRequiredSecurityQuestionCount(2, 2));
+  assert(hasRequiredSecurityQuestionCount(3, 2));
+});
+
+test("invalid counts fail closed", () => {
+  assert(!hasRequiredSecurityQuestionCount(undefined, 2));
+  assert(!hasRequiredSecurityQuestionCount(2, 0));
+  assert(!hasRequiredSecurityQuestionCount(2.5, 2));
 });

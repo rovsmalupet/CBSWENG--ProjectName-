@@ -28,7 +28,7 @@ const CAUSE_STYLES = {
 const normalizeCauseKey = (raw) => {
   if (!raw) return "others";
   if (CAUSE_STYLES[raw]) return raw;
-  const normalized = raw.toLowerCase().replace(/[\s_\-]+/g, "");
+  const normalized = raw.toLowerCase().replace(/[\s_-]+/g, "");
   const match = Object.keys(CAUSE_STYLES).find(
     (key) => key.toLowerCase() === normalized
   );

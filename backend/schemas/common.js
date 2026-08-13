@@ -33,11 +33,13 @@ export const uuid = z.string().uuid({ message: "Not a valid identifier." });
 
 export const email = z
   .string()
-  .trim()
   .min(5, "Email address is too short.")
   .max(254, "Email address is too long.") // RFC 5321 maximum
   .email("Please enter a valid email address.")
-  .toLowerCase();
+  .refine((value) => value === value.trim(), {
+    message: "Email address must not begin or end with whitespace.",
+  })
+  .transform((value) => value.toLowerCase());
 
 export const password = z
   .string()
@@ -47,29 +49,53 @@ export const password = z
 /** For the *current* password on a re-auth: no policy applied, only a bound. */
 export const anyPassword = z.string().min(1, "Password is required.").max(200);
 
-export const personName = z
+/** A confirmation is bounded like the password it repeats, but policy errors
+ * are reported against the primary password field. */
+export const passwordConfirmation = z
   .string()
-  .trim()
-  .min(1, "This field is required.")
-  .max(100, "Must be 100 characters or fewer.");
+  .min(1, "Please confirm the password.")
+  .max(MAX_PASSWORD_LENGTH, `Password must be no more than ${MAX_PASSWORD_LENGTH} characters.`);
 
-export const orgName = z
-  .string()
-  .trim()
-  .min(2, "Organization name is too short.")
-  .max(200, "Organization name must be 200 characters or fewer.");
+/**
+ * Reject surrounding whitespace instead of silently removing it. Identity
+ * fields (email and account/profile names) are deliberately canonicalised,
+ * but content such as descriptions, labels, and search text must be stored
+ * exactly as submitted or refused. [2.3.1]
+ */
+export const noSurroundingWhitespace = (schema, label = "This field") =>
+  schema.refine((value) => value === value.trim(), {
+    message: `${label} must not begin or end with whitespace.`,
+  });
+
+export const personName = noSurroundingWhitespace(
+  z.string().min(1, "This field is required.").max(100, "Must be 100 characters or fewer."),
+  "Name",
+);
+
+export const orgName = noSurroundingWhitespace(
+  z
+    .string()
+    .min(2, "Organization name is too short.")
+    .max(200, "Organization name must be 200 characters or fewer."),
+  "Organization name",
+);
 
 export const shortText = (max, label = "This field") =>
-  z.string().trim().max(max, `${label} must be ${max} characters or fewer.`);
+  noSurroundingWhitespace(
+    z.string().max(max, `${label} must be ${max} characters or fewer.`),
+    label,
+  );
 
 export const bio = shortText(1000, "Bio");
 export const description = shortText(5000, "Description");
 export const location = shortText(200, "Location");
 export const projectName = z
   .string()
-  .trim()
   .min(3, "Project name is too short.")
-  .max(200, "Project name must be 200 characters or fewer.");
+  .max(200, "Project name must be 200 characters or fewer.")
+  .refine((value) => value === value.trim(), {
+    message: "Project name must not begin or end with whitespace.",
+  });
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * NUMBERS — range bounds [2.3.2]
@@ -157,11 +183,32 @@ export const causes = z
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
-/** ISO 8601, and within a window that rules out typos like the year 20256. */
-export const isoDate = z
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_PREFIX = /^(\d{4})-(\d{2})-(\d{2})(?:T|$)/;
+const dateTimeWithOffset = z.string().datetime({ offset: true });
+
+const isRealCalendarDate = (value) => {
+  const match = DATE_PREFIX.exec(value);
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1) return false;
+
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (day > daysInMonth) return false;
+
+  return DATE_ONLY.test(value) || dateTimeWithOffset.safeParse(value).success;
+};
+
+/** A real ISO calendar date/date-time, without a project-specific time window. */
+export const calendarDate = z
   .string()
-  .datetime({ offset: true, message: "Not a valid date." })
-  .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Not a valid date."))
+  .refine(isRealCalendarDate, { message: "Not a valid date." });
+
+/** ISO 8601, and within a window that rules out typos like the year 20256. */
+export const isoDate = calendarDate
   .refine(
     (value) => {
       const time = new Date(value).getTime();
@@ -209,10 +256,13 @@ export const empty = z.object({}).strict();
 export const request = ({ body, params, query } = {}) =>
   z
     .object({
-      body: body ?? z.object({}).passthrough(), // GET/DELETE bodies are ignored, not policed
-      params: params ?? z.object({}).passthrough(),
-      query: query ?? z.object({}).strict(),
+      body: body ?? empty,
+      params: params ?? empty,
+      query: query ?? empty,
     })
     .strict();
+
+/** Reusable schema for endpoints that accept no caller-controlled input. */
+export const emptyRequestSchema = request();
 
 export { z };

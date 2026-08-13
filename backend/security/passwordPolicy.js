@@ -359,11 +359,16 @@ export const checkPasswordAge = (account) => {
  *                                    password change actually evicts an attacker
  *                                    who already holds a token
  */
-export const applyNewPassword = async (accountId, plaintext) => {
-  const passwordHash = await hashPassword(plaintext);
-  const now = new Date();
-
-  return prisma.$transaction(async (tx) => {
+/**
+ * Apply an already-hashed password using the caller's transaction. This lets
+ * password-reset token consumption and the password write commit as one unit.
+ */
+export const applyPreparedPassword = async (
+  tx,
+  accountId,
+  passwordHash,
+  now = new Date(),
+) => {
     const updated = await tx.userAccount.update({
       where: { id: accountId },
       data: {
@@ -392,7 +397,15 @@ export const applyNewPassword = async (accountId, plaintext) => {
     }
 
     return updated;
-  });
+};
+
+export const applyNewPassword = async (accountId, plaintext) => {
+  const passwordHash = await hashPassword(plaintext);
+  const now = new Date();
+
+  return prisma.$transaction((tx) =>
+    applyPreparedPassword(tx, accountId, passwordHash, now),
+  );
 };
 
 export default {
@@ -407,5 +420,6 @@ export default {
   rehashIfNeeded,
   isPasswordReused,
   checkPasswordAge,
+  applyPreparedPassword,
   applyNewPassword,
 };
