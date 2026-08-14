@@ -48,25 +48,83 @@
   margin-top: 0.4rem;
 }
 
-.donor-register-card input {
+.donor-register-card input,
+.donor-register-card select,
+.donor-register-card textarea {
+  width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 0.72rem 0.85rem;
   font-size: 0.95rem;
+  background: #fff;
+  color: #0f172a;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.donor-register-card input:focus {
+.donor-register-card select {
+  appearance: none;
+  padding-right: 2.35rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #64748b 50%),
+    linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.donor-register-card textarea {
+  min-height: 6rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.donor-register-card input:focus,
+.donor-register-card select:focus,
+.donor-register-card textarea:focus {
   outline: none;
   border-color: #22c55e;
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
 }
 
-.field-error {
+.donor-register-card .optional-section {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+  padding: 1rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.donor-register-card .optional-label {
+  margin: 0 !important;
+  color: #64748b !important;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.donor-register-card .field-hint {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.donor-register-card .server-message-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.donor-register-card .field-error {
   color: #b91c1c;
   font-size: 0.82rem;
 }
 
-.submit-btn {
+.donor-register-card .submit-btn {
   margin-top: 0.8rem;
   border: none;
   border-radius: 8px;
@@ -77,12 +135,16 @@
   cursor: pointer;
 }
 
-.submit-btn:disabled {
+.donor-register-card .submit-btn:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
 
-.server-message {
+.donor-register-card .submit-btn:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.donor-register-card .server-message {
   margin-top: 1rem;
   border-radius: 8px;
   background: #f0fdf4;

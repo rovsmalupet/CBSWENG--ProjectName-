@@ -60,6 +60,10 @@ export default function Navbar({ hiddenItems = [] }) {
         {/* Available to every role — the specification lists "Change password"
             under all three. [CSSECDV 2.1.13] */}
         <button className="navbar-account-btn" onClick={() => navigate("/change-password")}>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <rect x="5" y="10" width="14" height="10" rx="2" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+          </svg>
           CHANGE PASSWORD
         </button>
 

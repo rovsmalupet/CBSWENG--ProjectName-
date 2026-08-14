@@ -288,11 +288,11 @@ function StripePaymentForm({ clientSecret, totalAmount, onSuccess, onCancel }) {
         </div>
       )}
 
-      <div className="sp-actions">
-        <button type="button" className="sp-cancel-btn" onClick={onCancel} disabled={loading}>
+      <div className="sp-form-buttons">
+        <button type="button" className="sp-btn sp-btn-cancel" onClick={onCancel} disabled={loading}>
           Cancel
         </button>
-        <button type="submit" className="sp-pay-btn" disabled={loading || !stripe}>
+        <button type="submit" className="sp-btn sp-btn-pay" disabled={loading || !stripe}>
           {loading ? "Processing…" : `Pay ${fmtPHP(totalAmount)}`}
         </button>
       </div>

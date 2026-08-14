@@ -306,6 +306,13 @@
   font-weight: 500;
 }
 
+.campaign-meta .meta-label {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .bookmark-note-editor {
   display: flex;
   flex-direction: column;

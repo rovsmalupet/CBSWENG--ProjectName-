@@ -86,6 +86,10 @@
 /* Secondary action, quieter than Logout — same treatment as the navbar's
    equivalent button so the two stay visually consistent app-wide. */
 .admin-change-password-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
   padding: 0.75rem 1rem;
   background: #ffffff;
   color: #4b5563;
@@ -99,13 +103,38 @@
   letter-spacing: 0.3px;
 }
 
+.admin-change-password-btn svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+}
+
 .admin-change-password-btn:hover {
   background: #f3f4f6;
   border-color: #9ca3af;
   color: #1f2937;
 }
 
+.admin-change-password-btn:focus-visible,
+.admin-logout-btn:focus-visible,
+.admin-search-btn:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
+}
+
 @media (max-width: 768px) {
+  .admin-top-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-top-right {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .admin-search-form {
     flex-direction: column;
     align-items: stretch;

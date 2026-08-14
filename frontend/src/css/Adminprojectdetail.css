@@ -214,3 +214,81 @@
   color: #ef4444;
   font-weight: 600;
 }
+
+/* Administrator-only project audit history. */
+.apd-audit-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.apd-audit-toggle:hover {
+  background: #dbeafe;
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+}
+
+.apd-audit-toggle:focus-visible,
+.apd-btn:focus-visible,
+.apd-back-btn:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
+}
+
+.apd-audit-log {
+  margin-top: 0.85rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.apd-audit-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.apd-audit-item {
+  padding: 0.7rem 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.apd-audit-item:last-child {
+  border-bottom: 0;
+}
+
+.apd-audit-action {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.apd-audit-admin {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.apd-audit-date {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.apd-audit-empty {
+  margin: 0;
+  padding: 0.5rem;
+  color: #64748b;
+  text-align: center;
+}

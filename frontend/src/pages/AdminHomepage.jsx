@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext.js";
 import LastAccessBanner from "../components/LastAccessBanner.jsx";
+import "../css/Dashboard.css";
 import "../css/adminHome.css";
 
 const adminCards = [
@@ -160,6 +161,10 @@ export default function AdminHomepage() {
           </button>
           <div className="admin-top-right">
             <button className="admin-change-password-btn" onClick={() => navigate("/change-password")}>
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <rect x="5" y="10" width="14" height="10" rx="2" />
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+              </svg>
               CHANGE PASSWORD
             </button>
             <button className="admin-logout-btn" onClick={handleLogout}>

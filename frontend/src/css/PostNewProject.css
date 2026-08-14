@@ -137,6 +137,19 @@
   cursor: pointer;
 }
 
+.postProjectCheckboxLabel input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.postProjectCheckboxLabel input[type="checkbox"]:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline-offset: 2px;
+}
+
 /* In-kind section */
 .postProjectInKindHeader {
   display: grid;

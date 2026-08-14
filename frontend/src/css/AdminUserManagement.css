@@ -102,11 +102,39 @@
 
 .admin-users-toolbar select,
 .admin-users-toolbar input {
+  min-height: 40px;
   padding: 0.5rem 0.7rem;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   font-size: 0.9rem;
   background: #fff;
+  color: #0f172a;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-users-toolbar select,
+.create-grid select {
+  appearance: none;
+  padding-right: 2.15rem;
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #64748b 50%),
+    linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 9px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.admin-users-toolbar select:focus,
+.admin-users-toolbar input:focus,
+.create-grid select:focus,
+.create-grid input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 .admin-users-toolbar input {
@@ -124,6 +152,14 @@
   font-weight: 600;
   cursor: pointer;
   font-size: 0.9rem;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.admin-users-toolbar .primary:hover,
+.admin-users-create .primary:hover {
+  background: #245c40;
+  box-shadow: 0 4px 10px rgba(47, 111, 79, 0.18);
+  transform: translateY(-1px);
 }
 
 /* ── Create form ─────────────────────────────────────────────────────────── */
@@ -262,6 +298,7 @@
   cursor: pointer;
   color: #334155;
   white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .cell-actions button:hover { background: #f1f5f9; }
@@ -272,6 +309,13 @@
 }
 
 .cell-actions button.danger:hover { background: #fef2f2; }
+
+.admin-users-page button:focus-visible,
+.admin-users-page select:focus-visible,
+.admin-users-page input:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.22);
+  outline-offset: 2px;
+}
 
 .self-note {
   font-size: 0.78rem;

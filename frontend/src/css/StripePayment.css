@@ -118,6 +118,14 @@
   color: #15803d;
 }
 
+.sp-breakdown-total {
+  margin-top: 0.6rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #86efac;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 /* ── Form ── */
 .sp-form {
   display: flex;
@@ -132,6 +140,12 @@
 }
 
 .sp-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.sp-card-label {
   font-size: 0.9rem;
   font-weight: 600;
   color: #111827;
@@ -159,6 +173,30 @@
   border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+.sp-loading {
+  margin: 0;
+  padding: 1rem;
+  color: #475569;
+  text-align: center;
+}
+
+.sp-close-btn {
+  display: block;
+  margin: 0.75rem 0 0 auto;
+  padding: 0.55rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #334155;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sp-close-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
 }
 
 /* ── Amount Display ── */
@@ -243,6 +281,13 @@
 .sp-btn-pay:hover:not(:disabled) {
   background: #1f4c34;
   box-shadow: 0 4px 6px -1px rgba(47, 108, 79, 0.3);
+}
+
+.sp-btn:focus-visible,
+.sp-close-btn:focus-visible,
+.sp-modal-close:focus-visible {
+  outline: 3px solid rgba(47, 108, 79, 0.2);
+  outline-offset: 2px;
 }
 
 /* ── Test Notice ── */
