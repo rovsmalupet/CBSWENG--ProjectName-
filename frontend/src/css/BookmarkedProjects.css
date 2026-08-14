@@ -17,7 +17,7 @@
   position: relative;
 }
 
-.back-btn {
+.bookmarked-page .back-btn {
   background: none;
   border: 1px solid #2563eb;
   color: #2563eb;
@@ -36,12 +36,12 @@
   margin: 0;
 }
 
-.back-btn:hover {
+.bookmarked-page .back-btn:hover {
   color: #ffffff;
   background: #2563eb;
 }
 
-.page-title {
+.bookmarked-page .page-title {
   font-size: 1.75rem;
   font-weight: 600;
   color: #2563eb;
@@ -63,7 +63,7 @@
 }
 
 /* empty state */
-.empty-state {
+.bookmarked-page .empty-state {
   text-align: center;
   padding: 4rem 2rem;
   max-width: 500px;
@@ -76,14 +76,14 @@
   margin-bottom: 1rem;
 }
 
-.empty-state h3 {
+.bookmarked-page .empty-state h3 {
   font-size: 1.5rem;
   font-weight: 600;
   color: #1a1a1a;
   margin: 0 0 0.5rem 0;
 }
 
-.empty-state p {
+.bookmarked-page .empty-state p {
   font-size: 1rem;
   color: #6b7280;
   margin: 0 0 2rem 0;
@@ -123,7 +123,7 @@
   margin: 0;
 }
 
-.sort-select {
+.bookmarked-page .sort-select {
   padding: 0.75rem 1rem;
   border: 1.5px solid #d1d5db;
   border-radius: 8px;
@@ -137,24 +137,24 @@
   margin: 0;
 }
 
-.sort-select:hover {
+.bookmarked-page .sort-select:hover {
   border-color: #9ca3af;
 }
 
-.sort-select:focus {
+.bookmarked-page .sort-select:focus {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 /* reuse campaign card styles */
-.campaigns-grid {
+.bookmarked-page .campaigns-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
 }
 
-.campaign-card {
+.bookmarked-page .campaign-card {
   background: #ffffff;
   border: 1.5px solid #d1d5db;
   border-radius: 12px;
@@ -169,13 +169,13 @@
     transform 0.15s;
 }
 
-.campaign-card:hover {
+.bookmarked-page .campaign-card:hover {
   border-color: #2563eb;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
   transform: translateY(-2px);
 }
 
-.card-header {
+.bookmarked-page .card-header {
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
@@ -183,14 +183,14 @@
   justify-content: space-between;
 }
 
-.card-badges {
+.bookmarked-page .card-badges {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
   flex: 1;
 }
 
-.category-badge {
+.bookmarked-page .category-badge {
   display: inline-block;
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
@@ -201,7 +201,7 @@
   letter-spacing: 0.5px;
 }
 
-.priority-badge {
+.bookmarked-page .priority-badge {
   display: inline-block;
   padding: 3px 12px;
   border-radius: 999px;
@@ -213,22 +213,22 @@
   width: fit-content;
 }
 
-.priority-high {
+.bookmarked-page .priority-high {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.priority-medium {
+.bookmarked-page .priority-medium {
   background: #fef3c7;
   color: #92400e;
 }
 
-.priority-low {
+.bookmarked-page .priority-low {
   background: #e0e7ff;
   color: #3730a3;
 }
 
-.bookmark-btn {
+.bookmarked-page .bookmark-btn {
   background: none;
   border: 1px solid #d1d5db;
   color: #9ca3af;
@@ -243,42 +243,42 @@
   margin: 0;
 }
 
-.bookmark-btn:hover {
+.bookmarked-page .bookmark-btn:hover {
   color: #f59e0b;
   transform: scale(1.1);
 }
 
-.bookmark-btn:active {
+.bookmarked-page .bookmark-btn:active {
   color: #f59e0b;
   transform: scale(0.98);
 }
 
-.bookmark-btn.bookmarked {
+.bookmarked-page .bookmark-btn.bookmarked {
   color: #f59e0b;
 }
 
-.campaign-title {
+.bookmarked-page .campaign-title {
   font-size: 1.1rem;
   font-weight: 600;
   color: #1a1a1a;
   margin: 0;
 }
 
-.campaign-description {
+.bookmarked-page .campaign-description {
   font-size: 0.95rem;
   color: #6b7280;
   margin: 0;
   line-height: 1.4;
 }
 
-.campaign-meta {
+.bookmarked-page .campaign-meta {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-top: 0.5rem;
 }
 
-.meta-item {
+.bookmarked-page .meta-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -286,18 +286,18 @@
   color: #6b7280;
 }
 
-.meta-icon {
+.bookmarked-page .meta-icon {
   font-size: 1rem;
 }
 
-.support-types {
+.bookmarked-page .support-types {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
   margin-top: 0.5rem;
 }
 
-.support-badge {
+.bookmarked-page .support-badge {
   padding: 0.3rem 0.6rem;
   background: #f3f4f6;
   color: #4b5563;
@@ -306,7 +306,7 @@
   font-weight: 500;
 }
 
-.campaign-meta .meta-label {
+.bookmarked-page .campaign-meta .meta-label {
   color: #64748b;
   font-size: 0.78rem;
   font-weight: 700;
@@ -378,32 +378,32 @@
   font-size: 0.9rem;
 }
 
-.resource-needs {
+.bookmarked-page .resource-needs {
   margin-top: 0.75rem;
   border-top: 1px solid #e5e7eb;
   padding-top: 0.75rem;
 }
 
-.resource-section {
+.bookmarked-page .resource-section {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.resource-header {
+.bookmarked-page .resource-header {
   font-size: 0.85rem;
   font-weight: 600;
   color: #4b5563;
   text-transform: lowercase;
 }
 
-.resource-amount {
+.bookmarked-page .resource-amount {
   font-size: 1.25rem;
   font-weight: 700;
   color: #2563eb;
 }
 
-.resource-unit {
+.bookmarked-page .resource-unit {
   font-size: 0.85rem;
   font-weight: 500;
   color: #6b7280;
@@ -412,13 +412,13 @@
 
 /* responsive */
 @media (max-width: 1024px) {
-  .campaigns-grid {
+  .bookmarked-page .campaigns-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .campaigns-grid {
+  .bookmarked-page .campaigns-grid {
     grid-template-columns: 1fr;
   }
 
@@ -432,7 +432,7 @@
     gap: 1rem;
   }
 
-  .sort-select {
+  .bookmarked-page .sort-select {
     width: 100%;
   }
 }

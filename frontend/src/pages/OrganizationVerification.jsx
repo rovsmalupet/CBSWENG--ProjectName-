@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiDownload, apiFetch, getApiUrl } from "../config/api.js";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import "../css/OrganizationVerification.css";
 
 const formatDate = (value) => {
@@ -35,6 +36,7 @@ export default function OrganizationVerification() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState(null);
+  const [dialog, setDialog] = useState(null);
 
   useEffect(() => {
     const loadVerification = async () => {
@@ -80,14 +82,29 @@ export default function OrganizationVerification() {
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      alert(err.message || "Failed to download document.");
+      setDialog({
+        title: "Download failed",
+        message: err.message || "Failed to download document.",
+        tone: "danger",
+      });
     }
   };
 
   return (
     <div className="orgv-page">
+      <ConfirmDialog
+        open={Boolean(dialog)}
+        title={dialog?.title}
+        message={dialog?.message}
+        tone={dialog?.tone}
+        showCancel={false}
+        confirmLabel="OK"
+        onCancel={() => setDialog(null)}
+        onConfirm={() => setDialog(null)}
+      />
+
       <main className="orgv-main">
-        <button className="orgv-back" onClick={() => navigate(-1)}>
+        <button type="button" className="orgv-back" onClick={() => navigate(-1)}>
           Back
         </button>
 

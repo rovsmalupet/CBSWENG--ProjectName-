@@ -85,12 +85,12 @@
   border-radius: 4px;
 }
 
-.document-actions {
+.documents-list-container .document-actions {
   display: flex;
   gap: 8px;
 }
 
-.action-btn {
+.documents-list-container .action-btn {
   flex: 1;
   padding: 8px 12px;
   border: 1px solid #d1d5db;
@@ -102,21 +102,21 @@
   background-color: white;
 }
 
-.download-btn {
+.documents-list-container .download-btn {
   color: #2563eb;
   border-color: #2563eb;
 }
 
-.download-btn:hover {
+.documents-list-container .download-btn:hover {
   background-color: #eff6ff;
 }
 
-.delete-btn {
+.documents-list-container .delete-btn {
   color: #dc2626;
   border-color: #dc2626;
 }
 
-.delete-btn:hover {
+.documents-list-container .delete-btn:hover {
   background-color: #fee2e2;
 }
 

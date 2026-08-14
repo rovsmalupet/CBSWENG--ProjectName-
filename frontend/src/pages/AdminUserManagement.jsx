@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 
 import { apiGet, apiPost, apiPatch, apiDelete, queryString } from "../config/api.js";
 import { useAuth } from "../context/authContext.js";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import ReauthModal from "../components/ReauthModal.jsx";
 import "../css/AdminUserManagement.css";
 
@@ -41,6 +42,7 @@ export default function AdminUserManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
 
   /** The action waiting on a successful re-authentication. */
   const [pendingAction, setPendingAction] = useState(null);
@@ -113,11 +115,25 @@ export default function AdminUserManagement() {
   };
 
   const confirmThen = (message, action) => {
-    if (window.confirm(message)) run(action);
+    setConfirmation({ message, action });
   };
 
   return (
     <div className="admin-users-page">
+      <ConfirmDialog
+        open={Boolean(confirmation)}
+        title="Confirm account change"
+        message={confirmation?.message}
+        confirmLabel="Continue"
+        tone="warning"
+        onCancel={() => setConfirmation(null)}
+        onConfirm={() => {
+          const action = confirmation?.action;
+          setConfirmation(null);
+          if (action) run(action);
+        }}
+      />
+
       {pendingAction && (
         <ReauthModal
           title="Confirm your password"

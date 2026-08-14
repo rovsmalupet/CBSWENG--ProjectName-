@@ -1,5 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import Navbar from "../components/Navbar.jsx";
 import "../css/ActiveProjects.css";
 
@@ -79,6 +80,8 @@ export default function ActiveProjects() {
   const [searchText, setSearchText] = useState(initialSearch);
   const [searchQuery, setSearchQuery] = useState(initialSearch.toLowerCase());
   const [loading, setLoading] = useState(true);
+  const [dialog, setDialog] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -138,10 +141,18 @@ export default function ActiveProjects() {
     }
   };
 
-  const handleDelete = async (projectId) => {
-    if (!window.confirm("Are you sure you want to delete this project?"))
-      return;
+  const handleDelete = (projectId) => {
+    setDialog({
+      kind: "confirm-delete",
+      projectId,
+      title: "Delete this project?",
+      message: "The project will be removed from your active projects.",
+      tone: "danger",
+    });
+  };
 
+  const confirmDelete = async (projectId) => {
+    setDeletingId(projectId);
     try {
       /**
        * Uses the organization's own delete route.
@@ -156,13 +167,40 @@ export default function ActiveProjects() {
       const { getApiUrl, apiFetch } = await import("../config/api");
       await apiFetch(getApiUrl(`/posts/${projectId}`), { method: "DELETE" });
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      setDialog(null);
     } catch (err) {
-      alert(err.message || "Failed to delete project.");
+      setDialog({
+        kind: "status",
+        title: "Delete failed",
+        message: err.message || "Failed to delete project.",
+        tone: "danger",
+      });
+    } finally {
+      setDeletingId(null);
     }
   };
 
   return (
     <div className="ledger-page">
+      <ConfirmDialog
+        open={Boolean(dialog)}
+        title={dialog?.title}
+        message={dialog?.message}
+        tone={dialog?.tone}
+        showCancel={dialog?.kind === "confirm-delete"}
+        confirmLabel={dialog?.kind === "confirm-delete" ? "Delete project" : "OK"}
+        busyLabel="Deleting…"
+        busy={Boolean(deletingId) && dialog?.kind === "confirm-delete"}
+        onCancel={() => setDialog(null)}
+        onConfirm={() => {
+          if (dialog?.kind === "confirm-delete") {
+            confirmDelete(dialog.projectId);
+          } else {
+            setDialog(null);
+          }
+        }}
+      />
+
       <Navbar />
       <main className="ledger-main">
         <button className="back-link" onClick={() => navigate(-1)}>
@@ -333,11 +371,13 @@ export default function ActiveProjects() {
                       Add Contribution
                     </button>
                     <button
+                      type="button"
                       className="delete-btn"
                       onClick={() => handleDelete(project.id)}
                       title="Delete project"
+                      disabled={Boolean(deletingId)}
                     >
-                      Delete
+                      {deletingId === project.id ? "Deleting…" : "Delete"}
                     </button>
                   </div>
                 </div>

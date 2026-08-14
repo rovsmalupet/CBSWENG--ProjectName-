@@ -13,7 +13,7 @@
   margin-bottom: 32px;
 }
 
-.back-btn {
+.project-documentation-page .back-btn {
   background: none;
   border: 1px solid #2563eb;
   color: #2563eb;
@@ -27,7 +27,7 @@
   font-family: inherit;
 }
 
-.back-btn:hover {
+.project-documentation-page .back-btn:hover {
   background: #2563eb;
   color: #ffffff;
   border-color: #2563eb;

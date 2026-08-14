@@ -63,6 +63,7 @@
   font-weight: 600;
   cursor: pointer;
   border: none;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .reauth-cancel {
@@ -74,6 +75,23 @@
 .reauth-confirm {
   background: #2f6f4f;
   color: #fff;
+}
+
+.reauth-cancel:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8 !important;
+  transform: translateY(-1px);
+}
+
+.reauth-confirm:hover:not(:disabled) {
+  background: #245c40;
+  box-shadow: 0 4px 10px rgba(47, 111, 79, 0.2);
+  transform: translateY(-1px);
+}
+
+.reauth-actions button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
 }
 
 .reauth-confirm:disabled,

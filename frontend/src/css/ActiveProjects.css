@@ -13,7 +13,7 @@
 }
 
 /* ── Back link ── */
-.back-link {
+.ledger-page .back-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -29,7 +29,7 @@
   margin-bottom: 1.5rem;
 }
 
-.back-link:hover {
+.ledger-page .back-link:hover {
   background: #2563eb;
   color: #ffffff;
 }
@@ -177,7 +177,7 @@
 }
 
 /* ── Delete button ── */
-.delete-btn {
+.ledger-page .delete-btn {
   background: #fee2e2;
   color: #dc2626;
   border: 1px solid #fecaca;
@@ -192,7 +192,7 @@
   margin-top: auto;
 }
 
-.delete-btn:hover {
+.ledger-page .delete-btn:hover {
   background: #fecaca;
   border-color: #dc2626;
   transform: translateY(-1px);
@@ -241,10 +241,10 @@
 }
 
 /* ── Edit and Delete buttons ── */
-.edit-btn,
-.documentation-btn,
-.contribution-btn,
-.delete-btn {
+.ledger-page .edit-btn,
+.ledger-page .documentation-btn,
+.ledger-page .contribution-btn,
+.ledger-page .delete-btn {
   font-size: 0.72rem;
   font-weight: 600;
   padding: 4px 10px;
@@ -258,52 +258,52 @@
 }
 
 /* Edit button styling (yellow) */
-.edit-btn {
+.ledger-page .edit-btn {
   background: #f7eaa6;
   color: #b45309;
   border: 1px solid #f59e0b;
 }
 
-.edit-btn:hover {
+.ledger-page .edit-btn:hover {
   background: #fde047;
   border-color: #f59e0b;
   transform: translateY(-1px);
 }
 
 /* Contribution button styling (blue) */
-.contribution-btn {
+.ledger-page .contribution-btn {
   background: #bfdbfe;
   color: #1d4ed8;
   border: 1px solid #60a5fa;
 }
 
-.contribution-btn:hover {
+.ledger-page .contribution-btn:hover {
   background: #93c5fd;
   border-color: #1d4ed8;
   transform: translateY(-1px);
 }
 
 /* Documentation button styling (teal) */
-.documentation-btn {
+.ledger-page .documentation-btn {
   background: #ccfbf1;
   color: #0f766e;
   border: 1px solid #5eead4;
 }
 
-.documentation-btn:hover {
+.ledger-page .documentation-btn:hover {
   background: #99f6e4;
   border-color: #14b8a6;
   transform: translateY(-1px);
 }
 
 /* Delete button styling (red) */
-.delete-btn {
+.ledger-page .delete-btn {
   background: #fee2e2;
   color: #dc2626;
   border: 1px solid #fecaca;
 }
 
-.delete-btn:hover {
+.ledger-page .delete-btn:hover {
   background: #fecaca;
   border-color: #dc2626;
   transform: translateY(-1px);
@@ -341,7 +341,7 @@
     grid-template-columns: 1fr;
   }
 
-  .delete-btn {
+  .ledger-page .delete-btn {
     padding: 4px 8px;
     font-size: 0.65rem;
   }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { StripePaymentModal } from "../components/StripePayment";
 import "../css/AddContribution.css";
 
@@ -236,6 +237,7 @@ export default function AddContribution() {
   const [proofFile, setProofFile] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentBreakdown, setPaymentBreakdown] = useState(null);
+  const [dialog, setDialog] = useState(null);
 
   // Entry state
   const [monetaryRows, setMonetaryRows] = useState([newMonetaryRow()]);
@@ -369,7 +371,11 @@ export default function AddContribution() {
       );
       setTimeout(() => setSuccessMsg(""), 5000);
     } catch (err) {
-      alert("Failed to save contribution: " + (err.message ?? "Unknown error"));
+      setDialog({
+        title: "Contribution could not be saved",
+        message: "Failed to save contribution: " + (err.message ?? "Unknown error"),
+        tone: "danger",
+      });
     } finally {
       setSaving(false);
     }
@@ -391,7 +397,11 @@ export default function AddContribution() {
         inKind.length === 0 &&
         volunteer.length === 0
       ) {
-        alert("Please enter at least one contribution before paying.");
+        setDialog({
+          title: "Contribution required",
+          message: "Please enter at least one contribution before paying.",
+          tone: "warning",
+        });
         return;
       }
 
@@ -441,7 +451,11 @@ export default function AddContribution() {
 
       setShowPaymentModal(true);
     } catch {
-      alert("Could not prepare your payment. Please try again.");
+      setDialog({
+        title: "Payment could not be prepared",
+        message: "Could not prepare your payment. Please try again.",
+        tone: "danger",
+      });
     }
   };
 
@@ -500,6 +514,17 @@ export default function AddContribution() {
 
   return (
     <div className="ac-page">
+      <ConfirmDialog
+        open={Boolean(dialog)}
+        title={dialog?.title}
+        message={dialog?.message}
+        tone={dialog?.tone}
+        showCancel={false}
+        confirmLabel="OK"
+        onCancel={() => setDialog(null)}
+        onConfirm={() => setDialog(null)}
+      />
+
       <main className="ac-main">
         <button
           className="ac-back-btn"

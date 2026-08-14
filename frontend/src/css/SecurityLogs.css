@@ -19,6 +19,25 @@
   font-size: 0.9rem;
 }
 
+.security-logs-header .admin-back-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0.45rem 0.8rem;
+  background: #fff;
+  border: 1px solid #93c5fd;
+  border-radius: 7px;
+  color: #1d4ed8;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.security-logs-header .admin-back-btn:hover {
+  background: #eff6ff;
+  border-color: #60a5fa;
+  color: #1e40af;
+  transform: translateY(-1px);
+}
+
 .security-logs-header h1 {
   margin: 0 0 0.35rem;
   font-size: 1.6rem;
@@ -88,6 +107,14 @@
   font-size: 0.85rem;
   cursor: pointer;
   color: #334155;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.security-logs-quick-filters .quick:hover:not(.active) {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  transform: translateY(-1px);
 }
 
 .security-logs-quick-filters .quick.active {
@@ -186,6 +213,22 @@
   cursor: not-allowed;
 }
 
+.filter-actions .filter-clear-btn {
+  background: #fff;
+  color: #475569;
+}
+
+.filter-actions .filter-export-btn {
+  border-color: #2f6f4f;
+  background: #2f6f4f;
+  color: #fff;
+}
+
+.filter-actions .filter-export-btn:hover:not(:disabled) {
+  border-color: #245c40;
+  background: #245c40;
+}
+
 .security-logs-error {
   background: #fef2f2;
   border: 1px solid #fecaca;
@@ -241,6 +284,11 @@
 
 .security-logs-table tbody tr:not(.detail-row):hover {
   background: #f8fafc;
+}
+
+.security-logs-table tbody tr:not(.detail-row):focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: -3px;
 }
 
 .security-logs-table tr.severity-critical {
@@ -348,6 +396,17 @@
   cursor: pointer;
   font-weight: 600;
   color: #334155;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.security-logs-pagination .pagination-btn:hover:not(:disabled) {
+  color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.security-logs-page button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
 }
 
 .security-logs-pagination button:disabled {

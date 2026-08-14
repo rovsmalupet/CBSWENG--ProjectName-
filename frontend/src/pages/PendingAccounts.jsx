@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiFetch, getApiUrl } from "../config/api.js";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import "../css/PendingAccounts.css";
 
 export default function PendingAccounts() {
@@ -11,6 +12,9 @@ export default function PendingAccounts() {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dialog, setDialog] = useState(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [activeAccountId, setActiveAccountId] = useState(null);
 
   useEffect(() => {
     fetchPendingAccounts();
@@ -35,6 +39,8 @@ export default function PendingAccounts() {
   };
 
   const handleApprove = async (accountId) => {
+    setActionBusy(true);
+    setActiveAccountId(accountId);
     try {
       await apiFetch(getApiUrl(`/organizations/${accountId}/approve`), {
         method: "PATCH",
@@ -42,20 +48,39 @@ export default function PendingAccounts() {
 
       // Remove the approved account from the list
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
-      alert("Account approved successfully!");
+      setDialog({
+        kind: "status",
+        title: "Account approved",
+        message: "The organization account was approved successfully.",
+        tone: "success",
+      });
     } catch (err) {
       if (import.meta.env.DEV) console.error("Error approving account:", err);
-      alert("Failed to approve account. Please try again.");
+      setDialog({
+        kind: "status",
+        title: "Approval failed",
+        message: "Failed to approve account. Please try again.",
+        tone: "danger",
+      });
+    } finally {
+      setActionBusy(false);
+      setActiveAccountId(null);
     }
   };
 
-  const handleReject = async (accountId) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to reject this account? This action cannot be undone.",
-    );
+  const handleReject = (accountId) => {
+    setDialog({
+      kind: "confirm-reject",
+      accountId,
+      title: "Reject organization account?",
+      message: "This action cannot be undone. The organization will not be able to use this account.",
+      tone: "danger",
+    });
+  };
 
-    if (!confirmed) return;
-
+  const confirmReject = async (accountId) => {
+    setActionBusy(true);
+    setActiveAccountId(accountId);
     try {
       await apiFetch(getApiUrl(`/organizations/${accountId}/reject`), {
         method: "PATCH",
@@ -63,10 +88,23 @@ export default function PendingAccounts() {
 
       // Remove the rejected account from the list
       setPendingAccounts((prev) => prev.filter((acc) => acc.id !== accountId));
-      alert("Account rejected successfully.");
+      setDialog({
+        kind: "status",
+        title: "Account rejected",
+        message: "The organization account was rejected successfully.",
+        tone: "success",
+      });
     } catch (err) {
       if (import.meta.env.DEV) console.error("Error rejecting account:", err);
-      alert("Failed to reject account. Please try again.");
+      setDialog({
+        kind: "status",
+        title: "Rejection failed",
+        message: "Failed to reject account. Please try again.",
+        tone: "danger",
+      });
+    } finally {
+      setActionBusy(false);
+      setActiveAccountId(null);
     }
   };
 
@@ -111,7 +149,26 @@ export default function PendingAccounts() {
 
   return (
     <div className="pending-accounts-page">
-      <button className="back-link" onClick={() => navigate(-1)}>
+      <ConfirmDialog
+        open={Boolean(dialog)}
+        title={dialog?.title}
+        message={dialog?.message}
+        tone={dialog?.tone}
+        showCancel={dialog?.kind === "confirm-reject"}
+        confirmLabel={dialog?.kind === "confirm-reject" ? "Reject account" : "OK"}
+        busyLabel="Rejecting…"
+        busy={actionBusy && dialog?.kind === "confirm-reject"}
+        onCancel={() => setDialog(null)}
+        onConfirm={() => {
+          if (dialog?.kind === "confirm-reject") {
+            confirmReject(dialog.accountId);
+          } else {
+            setDialog(null);
+          }
+        }}
+      />
+
+      <button type="button" className="back-link" onClick={() => navigate(-1)}>
         <svg
           width="16"
           height="16"
@@ -177,14 +234,18 @@ export default function PendingAccounts() {
                   <td>{new Date(account.createdAt).toLocaleDateString()}</td>
                   <td className="actions-cell">
                     <button
+                      type="button"
                       className="approve-btn"
                       onClick={() => handleApprove(account.id)}
+                      disabled={actionBusy}
                     >
-                      Approve
+                      {actionBusy && activeAccountId === account.id ? "Approving…" : "Approve"}
                     </button>
                     <button
+                      type="button"
                       className="reject-btn"
                       onClick={() => handleReject(account.id)}
+                      disabled={actionBusy}
                     >
                       Reject
                     </button>

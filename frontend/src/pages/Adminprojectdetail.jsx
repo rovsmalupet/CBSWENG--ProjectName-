@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "../css/Adminprojectdetail.css";
 import { apiFetch, getApiUrl } from "../config/api.js";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import ReauthModal from "../components/ReauthModal.jsx";
 
 const CAUSE_STYLES = {
@@ -93,6 +94,7 @@ export default function AdminProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteReauth, setShowDeleteReauth] = useState(false);
 
   const [auditLogs, setAuditLogs] = useState([]);
@@ -166,24 +168,18 @@ export default function AdminProjectDetail() {
   };
 
   const permanentlyDelete = () => {
-    if (
-      window.confirm(
-        "This will remove all data related to this project. Do you want to proceed?",
-      )
-    ) {
-      executePermanentDelete();
-    }
+    setShowDeleteConfirm(true);
   };
 
   if (loading)
     return (
-      <div className="apd-page">
+      <div className="apd-page apd-admin-page">
         <p>Loading...</p>
       </div>
     );
   if (error)
     return (
-      <div className="apd-page">
+      <div className="apd-page apd-admin-page">
         <p style={{ color: "red" }}>{error}</p>
       </div>
     );
@@ -200,7 +196,20 @@ export default function AdminProjectDetail() {
   const volunteer = project.supportTypes?.volunteer;
 
   return (
-    <div className="apd-page">
+    <div className="apd-page apd-admin-page">
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Permanently delete this project?"
+        message="This will remove all data related to this project. This action cannot be undone."
+        confirmLabel="Permanently delete"
+        tone="danger"
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          executePermanentDelete();
+        }}
+      />
+
       {showDeleteReauth && (
         <ReauthModal
           title="Confirm permanent deletion"
@@ -409,7 +418,7 @@ export default function AdminProjectDetail() {
           )}
           {isApproved && (
             <button
-              className="apd-btn apd-btn-reject"
+              className="apd-btn apd-btn-undo"
               disabled={updating}
               onClick={() => updateStatus("Pending")}
             >

@@ -1,27 +1,35 @@
-.apd-page {
+.apd-page.apd-admin-page {
   padding: 24px;
   font-family: sans-serif;
   background: #f0f4ff;
   min-height: 100vh;
 }
 
-.apd-back-btn {
-  background: none;
-  border: none;
-  color: #2563eb;
+.apd-admin-page .apd-back-btn {
+  min-height: 38px;
+  padding: 0.45rem 0.8rem;
+  background: #fff;
+  border: 1px solid #93c5fd;
+  border-radius: 7px;
+  color: #1d4ed8;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 600;
   margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
 }
 
-.apd-back-btn:hover {
-  text-decoration: underline;
+.apd-admin-page .apd-back-btn:hover {
+  background: #eff6ff;
+  border-color: #60a5fa;
+  color: #1e40af;
+  transform: translateY(-1px);
 }
 
-.apd-card {
+.apd-admin-page .apd-card {
   background: #fff;
   border-radius: 12px;
   padding: 28px;
@@ -30,20 +38,20 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
 }
 
-.apd-title-row {
+.apd-admin-page .apd-title-row {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.apd-title {
+.apd-admin-page .apd-title {
   font-size: 24px;
   font-weight: 800;
   margin: 0;
 }
 
-.apd-priority {
+.apd-admin-page .apd-priority {
   display: inline-block;
   border-radius: 999px;
   padding: 3px 12px;
@@ -56,32 +64,32 @@
   width: fit-content;
 }
 
-.apd-priority-high {
+.apd-admin-page .apd-priority-high {
   background: #f1d8d8;
   border-color: #ff3131;
   color: #ff3131;
 }
 
-.apd-priority-medium {
+.apd-admin-page .apd-priority-medium {
   background: #f1e5d8;
   border-color: #ff751f;
   color: #ff751f;
 }
 
-.apd-priority-low {
+.apd-admin-page .apd-priority-low {
   background: #feffba;
   border-color: #cf9d24;
   color: #cf9d24;
 }
 
-.apd-org-name {
+.apd-admin-page .apd-org-name {
   margin: 6px 0 2px;
   font-size: 16px;
   font-weight: 700;
   color: #1f2937;
 }
 
-.apd-org-contact {
+.apd-admin-page .apd-org-contact {
   margin: 0;
   padding-top: 8px;
   border-top: 1px solid #e5e7eb;
@@ -93,7 +101,7 @@
   align-items: center;
 }
 
-.apd-meta-row {
+.apd-admin-page .apd-meta-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -101,7 +109,7 @@
   flex-wrap: wrap;
 }
 
-.apd-location {
+.apd-admin-page .apd-location {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -109,56 +117,56 @@
   font-weight: 700;
 }
 
-.apd-cause-badge {
+.apd-admin-page .apd-cause-badge {
   padding: 3px 12px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
 }
 
-.apd-datetime {
+.apd-admin-page .apd-datetime {
   margin-top: 8px;
   font-size: 14px;
   color: #4b5563;
 }
 
-.apd-description {
+.apd-admin-page .apd-description {
   margin-top: 12px;
   font-size: 14px;
   color: #374151;
   line-height: 1.6;
 }
 
-.apd-divider {
+.apd-admin-page .apd-divider {
   border: none;
   border-top: 1.5px solid #1f2937;
   margin: 14px 0;
 }
 
-.apd-section-title {
+.apd-admin-page .apd-section-title {
   font-size: 18px;
   font-weight: 800;
   margin: 0 0 6px;
 }
 
-.apd-monetary-row {
+.apd-admin-page .apd-monetary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.apd-monetary-amount {
+.apd-admin-page .apd-monetary-amount {
   font-size: 22px;
   font-weight: 800;
 }
 
-.apd-monetary-unit {
+.apd-admin-page .apd-monetary-unit {
   font-size: 16px;
   color: #6b7280;
   font-weight: 400;
 }
 
-.apd-inkind-item {
+.apd-admin-page .apd-inkind-item {
   display: flex;
   margin: 4px 0;
   font-size: 14px;
@@ -166,19 +174,19 @@
   padding-bottom: 4px;
 }
 
-.apd-inkind-price {
+.apd-admin-page .apd-inkind-price {
   font-size: 12px;
   color: #6b7280;
   font-weight: 500;
   margin-left: 8px;
 }
 
-.apd-volunteer-text {
+.apd-admin-page .apd-volunteer-text {
   font-size: 14px;
   margin: 4px 0;
 }
 
-.apd-actions {
+.apd-admin-page .apd-actions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -186,7 +194,7 @@
   margin-top: 8px;
 }
 
-.apd-btn {
+.apd-admin-page .apd-btn {
   color: #fff;
   border: none;
   border-radius: 999px;
@@ -194,29 +202,61 @@
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
-.apd-btn:disabled {
+.apd-admin-page .apd-btn:hover:not(:disabled) {
+  box-shadow: 0 5px 12px rgba(15, 23, 42, 0.18);
+  transform: translateY(-1px);
+}
+
+.apd-admin-page .apd-btn:active:not(:disabled) {
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12);
+  transform: translateY(0);
+}
+
+.apd-admin-page .apd-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.apd-btn-approve {
+.apd-admin-page .apd-btn-approve {
   background: #16a34a;
 }
 
-.apd-btn-reject {
+.apd-admin-page .apd-btn-approve:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.apd-admin-page .apd-btn-reject {
   background: #ef4444;
 }
 
-.apd-rejected-label {
+.apd-admin-page .apd-btn-reject:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.apd-admin-page .apd-btn-undo {
+  border: 1px solid #f59e0b;
+  background: #fff7ed;
+  color: #9a3412;
+  box-shadow: none;
+}
+
+.apd-admin-page .apd-btn-undo:hover:not(:disabled) {
+  background: #ffedd5;
+  border-color: #ea580c;
+}
+
+.apd-admin-page .apd-rejected-label {
   font-size: 14px;
   color: #ef4444;
   font-weight: 600;
 }
 
 /* Administrator-only project audit history. */
-.apd-audit-toggle {
+.apd-admin-page .apd-audit-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -232,20 +272,20 @@
   transition: background 0.2s, border-color 0.2s, transform 0.2s;
 }
 
-.apd-audit-toggle:hover {
+.apd-admin-page .apd-audit-toggle:hover {
   background: #dbeafe;
   border-color: #60a5fa;
   transform: translateY(-1px);
 }
 
-.apd-audit-toggle:focus-visible,
-.apd-btn:focus-visible,
-.apd-back-btn:focus-visible {
+.apd-admin-page .apd-audit-toggle:focus-visible,
+.apd-admin-page .apd-btn:focus-visible,
+.apd-admin-page .apd-back-btn:focus-visible {
   outline: 3px solid rgba(37, 99, 235, 0.24);
   outline-offset: 2px;
 }
 
-.apd-audit-log {
+.apd-admin-page .apd-audit-log {
   margin-top: 0.85rem;
   padding: 0.9rem 1rem;
   border: 1px solid #dbe3ee;
@@ -253,13 +293,13 @@
   background: #f8fafc;
 }
 
-.apd-audit-list {
+.apd-admin-page .apd-audit-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.apd-audit-item {
+.apd-admin-page .apd-audit-item {
   padding: 0.7rem 0;
   color: #475569;
   font-size: 0.9rem;
@@ -267,26 +307,26 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
-.apd-audit-item:last-child {
+.apd-admin-page .apd-audit-item:last-child {
   border-bottom: 0;
 }
 
-.apd-audit-action {
+.apd-admin-page .apd-audit-action {
   color: #0f172a;
   font-weight: 700;
 }
 
-.apd-audit-admin {
+.apd-admin-page .apd-audit-admin {
   color: #1d4ed8;
   font-weight: 600;
 }
 
-.apd-audit-date {
+.apd-admin-page .apd-audit-date {
   color: #64748b;
   font-size: 0.82rem;
 }
 
-.apd-audit-empty {
+.apd-admin-page .apd-audit-empty {
   margin: 0;
   padding: 0.5rem;
   color: #64748b;

@@ -13,7 +13,7 @@
   padding: 2rem 2rem 4rem;
 }
 
-.back-link {
+.dashboard-page .back-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -29,7 +29,7 @@
   transition: all 0.2s;
 }
 
-.back-link:hover {
+.dashboard-page .back-link:hover {
   background: #2563eb;
   color: #ffffff;
 }

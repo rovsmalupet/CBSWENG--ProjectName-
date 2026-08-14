@@ -9,7 +9,7 @@
     sans-serif;
 }
 
-.back-link {
+.pending-accounts-page .back-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -25,13 +25,13 @@
   margin-bottom: 1.5rem;
 }
 
-.back-link:hover {
+.pending-accounts-page .back-link:hover {
   background: #2563eb;
   color: #ffffff;
   border-color: #2563eb;
 }
 
-.page-title {
+.pending-accounts-page .page-title {
   font-size: 2rem;
   font-weight: 600;
   color: #111827;
@@ -63,15 +63,15 @@
 }
 
 .loading-message,
-.error-message,
-.empty-state {
+.pending-accounts-page .error-message,
+.pending-accounts-page .empty-state {
   text-align: center;
   padding: 3rem 1rem;
   color: #6b7280;
   font-size: 1rem;
 }
 
-.error-message {
+.pending-accounts-page .error-message {
   color: #dc2626;
 }
 
@@ -157,11 +157,17 @@
   background-color: #dc2626;
 }
 
-.empty-state {
+.approve-btn:disabled,
+.reject-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.pending-accounts-page .empty-state {
   padding: 4rem 2rem;
 }
 
-.empty-state p {
+.pending-accounts-page .empty-state p {
   font-size: 1.125rem;
   color: #9ca3af;
 }

@@ -16,7 +16,7 @@
   justify-content: space-between;
 }
 
-.back-btn {
+.asean-selection-page .back-btn {
   background: #2563eb;
   border: none;
   color: white;
@@ -29,7 +29,7 @@
   font-family: inherit;
 }
 
-.back-btn:hover {
+.asean-selection-page .back-btn:hover {
   background: #1d4ed8;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
@@ -141,7 +141,7 @@
     font-size: 0.9rem;
   }
 
-  .back-btn {
+  .asean-selection-page .back-btn {
     padding: 0.6rem 1.2rem;
     font-size: 0.85rem;
   }
@@ -162,7 +162,7 @@
     display: none;
   }
 
-  .back-btn {
+  .asean-selection-page .back-btn {
     width: 100%;
   }
 

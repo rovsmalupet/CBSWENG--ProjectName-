@@ -350,6 +350,12 @@
   color: #111827;
 }
 
+.ph-modal-close:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
+  border-radius: 5px;
+}
+
 .ph-modal-body {
   padding: 1.5rem;
 }

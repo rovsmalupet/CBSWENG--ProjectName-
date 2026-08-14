@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { apiDelete, apiDownload, apiGet } from "../config/api.js";
+import ConfirmDialog from "./ConfirmDialog.jsx";
 import "../css/DocumentsList.css";
 
 export default function DocumentsList({ postId, canDelete }) {
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [dialog, setDialog] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -44,21 +47,40 @@ export default function DocumentsList({ postId, canDelete }) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err) {
-      alert("Failed to download document: " + err.message);
+      setDialog({
+        kind: "status",
+        title: "Download failed",
+        message: "Failed to download document: " + err.message,
+        tone: "danger",
+      });
     }
   };
 
-  const handleDelete = async (documentId) => {
-    if (!confirm("Are you sure you want to delete this document?")) {
-      return;
-    }
+  const handleDelete = (documentId) => {
+    setDialog({
+      kind: "confirm-delete",
+      documentId,
+      title: "Delete this document?",
+      message: "This document will be permanently removed from the project.",
+      tone: "danger",
+    });
+  };
 
+  const confirmDelete = async (documentId) => {
+    setDeletingId(documentId);
     try {
       await apiDelete(`/documents/${documentId}`);
-
-      setDocuments(documents.filter((doc) => doc.id !== documentId));
+      setDocuments((current) => current.filter((doc) => doc.id !== documentId));
+      setDialog(null);
     } catch (err) {
-      alert("Failed to delete document: " + err.message);
+      setDialog({
+        kind: "status",
+        title: "Delete failed",
+        message: "Failed to delete document: " + err.message,
+        tone: "danger",
+      });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -76,6 +98,25 @@ export default function DocumentsList({ postId, canDelete }) {
 
   return (
     <div className="documents-list-container">
+      <ConfirmDialog
+        open={Boolean(dialog)}
+        title={dialog?.title}
+        message={dialog?.message}
+        tone={dialog?.tone}
+        showCancel={dialog?.kind === "confirm-delete"}
+        confirmLabel={dialog?.kind === "confirm-delete" ? "Delete document" : "OK"}
+        busyLabel="Deleting…"
+        busy={Boolean(deletingId) && dialog?.kind === "confirm-delete"}
+        onCancel={() => setDialog(null)}
+        onConfirm={() => {
+          if (dialog?.kind === "confirm-delete") {
+            confirmDelete(dialog.documentId);
+          } else {
+            setDialog(null);
+          }
+        }}
+      />
+
       <h3>Uploaded Documentation</h3>
       <div className="documents-grid">
         {documents.map((doc) => (
@@ -99,6 +140,7 @@ export default function DocumentsList({ postId, canDelete }) {
 
             <div className="document-actions">
               <button
+                type="button"
                 className="action-btn download-btn"
                 onClick={() => handleDownload(doc.id, doc.fileName)}
               >
@@ -106,10 +148,12 @@ export default function DocumentsList({ postId, canDelete }) {
               </button>
               {canDelete && (
                 <button
+                  type="button"
                   className="action-btn delete-btn"
                   onClick={() => handleDelete(doc.id)}
+                  disabled={Boolean(deletingId)}
                 >
-                  Delete
+                  {deletingId === doc.id ? "Deleting…" : "Delete"}
                 </button>
               )}
             </div>

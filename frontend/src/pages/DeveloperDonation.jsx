@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { StripePaymentModal } from "../components/StripePayment";
 import { useAuth } from "../context/authContext.js";
 import "../css/DeveloperDonation.css";
@@ -15,15 +16,18 @@ export default function DeveloperDonation() {
   const [donationAmount, setDonationAmount] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
+  const [dialog, setDialog] = useState(null);
 
   // Donation amount
   const amount = parseFloat(donationAmount) || 0;
 
   const handleDonate = async () => {
     if (amount < 25) {
-      alert(
-        "Minimum donation is ₱25.00 (Stripe payment processor requirement)",
-      );
+      setDialog({
+        title: "Donation amount is too low",
+        message: "Minimum donation is ₱25.00 (Stripe payment processor requirement).",
+        tone: "warning",
+      });
       return;
     }
 
@@ -37,18 +41,39 @@ export default function DeveloperDonation() {
 
   const handlePaymentSuccess = async () => {
     // Payment is already confirmed and saved by the modal
-    // Just show success and navigate
-    alert(
-      "Thank you for your generous donation! Your contribution helps us improve BayaniHub for everyone.",
-    );
-    navigate(isNgo ? "/ngo/donations" : "/payment-history");
+    // Show a styled acknowledgement, then keep the original destination.
+    setShowPaymentModal(false);
+    setPaymentData(null);
+    setDialog({
+      title: "Thank you for your donation!",
+      message: "Your contribution helps us improve BayaniHub for everyone.",
+      tone: "success",
+      navigateTo: isNgo ? "/ngo/donations" : "/payment-history",
+    });
+  };
+
+  const acknowledgeDialog = () => {
+    const destination = dialog?.navigateTo;
+    setDialog(null);
+    if (destination) navigate(destination);
   };
 
   return (
     <div className="dd-page">
+      <ConfirmDialog
+        open={Boolean(dialog)}
+        title={dialog?.title}
+        message={dialog?.message}
+        tone={dialog?.tone}
+        showCancel={false}
+        confirmLabel="OK"
+        onCancel={acknowledgeDialog}
+        onConfirm={acknowledgeDialog}
+      />
+
       <main className="dd-main">
         <div className="dd-header">
-          <button className="dd-back-btn" onClick={() => navigate(-1)}>
+          <button type="button" className="dd-back-btn" onClick={() => navigate(-1)}>
             ← Back
           </button>
           <h1 className="dd-title">Support BayaniHub Development</h1>
@@ -103,6 +128,7 @@ export default function DeveloperDonation() {
 
               {/* Action Button */}
               <button
+                type="button"
                 onClick={handleDonate}
                 disabled={amount <= 0 || showPaymentModal}
                 className="dd-submit-btn"

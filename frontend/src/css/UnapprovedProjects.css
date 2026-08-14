@@ -13,7 +13,7 @@
 }
 
 /* ── Back link ── */
-.back-link {
+.unapproved-page .back-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -29,7 +29,7 @@
   margin-bottom: 1.5rem;
 }
 
-.back-link:hover {
+.unapproved-page .back-link:hover {
   background: #2563eb;
   color: #ffffff;
 }
@@ -232,8 +232,8 @@
 }
 
 /* ── Edit and Delete buttons ── */
-.edit-btn,
-.delete-btn {
+.unapproved-page .edit-btn,
+.unapproved-page .delete-btn {
   font-size: 0.72rem;
   font-weight: 600;
   padding: 4px 10px;
@@ -247,26 +247,26 @@
 }
 
 /* Edit button styling (yellow) */
-.edit-btn {
+.unapproved-page .edit-btn {
   background: #f7eaa6;
   color: #b45309;
   border: 1px solid #f59e0b;
 }
 
-.edit-btn:hover {
+.unapproved-page .edit-btn:hover {
   background: #fde047;
   border-color: #f59e0b;
   transform: translateY(-1px);
 }
 
 /* Delete button styling (red) */
-.delete-btn {
+.unapproved-page .delete-btn {
   background: #fee2e2;
   color: #dc2626;
   border: 1px solid #fecaca;
 }
 
-.delete-btn:hover {
+.unapproved-page .delete-btn:hover {
   background: #fecaca;
   border-color: #dc2626;
   transform: translateY(-1px);
@@ -300,8 +300,8 @@
     grid-template-columns: 1fr;
   }
 
-  .delete-btn,
-  .edit-btn {
+  .unapproved-page .delete-btn,
+  .unapproved-page .edit-btn {
     padding: 4px 8px;
     font-size: 0.65rem;
   }

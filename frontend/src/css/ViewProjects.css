@@ -5,7 +5,7 @@
   min-height: 100vh;
 }
 
-.back-link {
+.view-projects-page .back-link {
   background: none;
   border: 1px solid #2563eb;
   color: #2563eb;
@@ -22,13 +22,13 @@
   font-family: inherit;
 }
 
-.back-link:hover {
+.view-projects-page .back-link:hover {
   background: #2563eb;
   color: #ffffff;
   border-color: #2563eb;
 }
 
-.page-title {
+.view-projects-page .page-title {
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 16px;
@@ -106,7 +106,7 @@
   background: #eef2f9;
 }
 
-.status-badge {
+.view-projects-page .status-badge {
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;
