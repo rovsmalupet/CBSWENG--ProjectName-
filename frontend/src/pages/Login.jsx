@@ -41,7 +41,10 @@ export default function Login() {
       // An account on a temporary password must set its own before anything
       // else. ProtectedRoute enforces this too.
       if (user.mustChangePassword) {
-        navigate("/change-password", { replace: true, state: { forced: true } });
+        navigate("/change-password", {
+          replace: true,
+          state: { forced: true },
+        });
         return;
       }
 
@@ -113,7 +116,7 @@ export default function Login() {
         </p>
 
         <div className="signup-section">
-          <p className="signup-title">New user? Sign up now</p>
+          <p className="signup-title">New user? Sign up now!</p>
           <div className="signup-actions">
             <button
               type="button"
