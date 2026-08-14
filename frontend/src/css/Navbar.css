@@ -90,6 +90,29 @@
   border-color: #60a5fa;
 }
 
+/* Secondary action — deliberately quieter than Logout so the two don't
+   compete for attention. Same shape/weight as the logout button (same
+   button "family"), neutral gray instead of blue. */
+.navbar-account-btn {
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+
+.navbar-account-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
 .navbar-right-actions {
   margin-left: auto;
   display: flex;

@@ -108,6 +108,15 @@
   margin-bottom: 14px;
 }
 
+/* A quiet secondary hint, not a full paragraph — without this it inherits
+   .login-box p's 16px/24px sizing and reads as heavy as the intro subtitle. */
+.login-lockout-note {
+  color: #9ca3af;
+  font-size: 0.78rem;
+  text-align: center;
+  margin: 0.6rem 0 0;
+}
+
 .signup-section {
   border-top: 1px solid #e5e7eb;
   padding-top: 14px;
