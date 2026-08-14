@@ -65,22 +65,37 @@
 }
 
 .admin-logout-btn {
-  padding: 0.75rem 1rem;
+  min-height: 42px;
+  padding: 0.7rem 1rem;
   background: #ffffff;
-  color: #1e3a8a;
-  border: 1px solid #93c5fd;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
   font-family: inherit;
   letter-spacing: 0.3px;
 }
 
+.admin-dashboard-card {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+}
+
+.admin-dashboard-card:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 3px;
+}
+
 .admin-logout-btn:hover {
-  background: #eff6ff;
-  border-color: #60a5fa;
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #991b1b;
+  transform: translateY(-1px);
 }
 
 /* Secondary action, quieter than Logout — same treatment as the navbar's
@@ -90,15 +105,17 @@
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  padding: 0.75rem 1rem;
-  background: #ffffff;
-  color: #4b5563;
-  border: 1px solid #d1d5db;
+  min-height: 42px;
+  padding: 0.7rem 1rem;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  border: 1px solid #1d4ed8;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.22);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
   font-family: inherit;
   letter-spacing: 0.3px;
 }
@@ -112,9 +129,16 @@
 }
 
 .admin-change-password-btn:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-  color: #1f2937;
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  border-color: #1e40af;
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+
+.admin-change-password-btn:active,
+.admin-logout-btn:active {
+  transform: translateY(0);
 }
 
 .admin-change-password-btn:focus-visible,

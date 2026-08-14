@@ -132,7 +132,7 @@ export default function AdminUserManagement() {
       )}
 
       <div className="admin-users-header">
-        <button type="button" className="back-link" onClick={() => navigate("/admin")}>
+        <button type="button" className="back-link admin-back-btn" onClick={() => navigate("/admin")}>
           ← Admin dashboard
         </button>
         <h1>User accounts</h1>
@@ -151,7 +151,7 @@ export default function AdminUserManagement() {
               <p className="temp-password-detail">{notice.detail}</p>
             </>
           )}
-          <button type="button" onClick={() => setNotice(null)}>
+          <button type="button" className="admin-notice-dismiss" onClick={() => setNotice(null)}>
             Dismiss
           </button>
         </div>
@@ -307,6 +307,7 @@ export default function AdminUserManagement() {
                         {account.isLocked && (
                           <button
                             type="button"
+                            className="admin-row-action admin-row-action-success"
                             onClick={() =>
                               run(() =>
                                 apiPost(`/admin/users/${account.id}/unlock`, {}, { withReauth: true }),
@@ -320,6 +321,7 @@ export default function AdminUserManagement() {
                         {account.role !== "donor" && (
                           <button
                             type="button"
+                            className="admin-row-action admin-row-action-role"
                             onClick={() =>
                               confirmThen(
                                 `Change ${account.email} from ${account.role} to ${
@@ -340,6 +342,7 @@ export default function AdminUserManagement() {
 
                         <button
                           type="button"
+                          className="admin-row-action admin-row-action-reset"
                           onClick={() =>
                             confirmThen(
                               `Force a password reset for ${account.email}? They will be signed out everywhere.`,
@@ -358,7 +361,7 @@ export default function AdminUserManagement() {
                         {account.status !== "Disabled" && (
                           <button
                             type="button"
-                            className="danger"
+                            className="admin-row-action admin-row-action-danger"
                             onClick={() =>
                               confirmThen(
                                 `Disable ${account.email}? Their records are kept, but they will not be able to sign in.`,

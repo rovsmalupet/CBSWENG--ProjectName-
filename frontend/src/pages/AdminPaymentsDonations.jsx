@@ -356,7 +356,14 @@ export default function AdminPaymentsDonations() {
             <div className="ph-modal" onClick={(e) => e.stopPropagation()}>
               <div className="ph-modal-header">
                 <h2>Payment Details</h2>
-                <button className="ph-modal-close" onClick={() => setShowModal(false)}>×</button>
+                <button
+                  type="button"
+                  className="ph-modal-close"
+                  aria-label="Close payment details"
+                  onClick={() => setShowModal(false)}
+                >
+                  ×
+                </button>
               </div>
               <div className="ph-modal-body">
                 <div className="ph-modal-section">

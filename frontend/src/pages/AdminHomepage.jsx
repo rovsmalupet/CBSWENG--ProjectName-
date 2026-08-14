@@ -160,14 +160,18 @@ export default function AdminHomepage() {
             Back
           </button>
           <div className="admin-top-right">
-            <button className="admin-change-password-btn" onClick={() => navigate("/change-password")}>
+            <button
+              type="button"
+              className="admin-change-password-btn"
+              onClick={() => navigate("/change-password")}
+            >
               <svg aria-hidden="true" viewBox="0 0 24 24">
                 <rect x="5" y="10" width="14" height="10" rx="2" />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
               </svg>
               CHANGE PASSWORD
             </button>
-            <button className="admin-logout-btn" onClick={handleLogout}>
+            <button type="button" className="admin-logout-btn" onClick={handleLogout}>
               LOGOUT
             </button>
           </div>
@@ -198,14 +202,15 @@ export default function AdminHomepage() {
 
         <div className="dashboard-cards">
           {adminCards.map((card) => (
-            <div
+            <button
+              type="button"
               key={card.key}
-              className="card active"
+              className="card active admin-dashboard-card"
               onClick={() => navigate(card.route)}
             >
               <div className="card-icon">{card.icon}</div>
               <span className="card-label">{card.label}</span>
-            </div>
+            </button>
           ))}
         </div>
       </main>

@@ -111,7 +111,7 @@ export default function SecurityLogs() {
   return (
     <div className="security-logs-page">
       <div className="security-logs-header">
-        <button type="button" className="back-link" onClick={() => navigate("/admin")}>
+        <button type="button" className="back-link admin-back-btn" onClick={() => navigate("/admin")}>
           ← Admin dashboard
         </button>
         <h1>Security log</h1>
@@ -244,10 +244,15 @@ export default function SecurityLogs() {
         </label>
 
         <div className="filter-actions">
-          <button type="button" onClick={() => applyFilters({})}>
+          <button type="button" className="filter-clear-btn" onClick={() => applyFilters({})}>
             Clear
           </button>
-          <button type="button" onClick={exportCsv} disabled={!data?.entries?.length}>
+          <button
+            type="button"
+            className="filter-export-btn"
+            onClick={exportCsv}
+            disabled={!data?.entries?.length}
+          >
             Export CSV
           </button>
         </div>
@@ -283,7 +288,16 @@ export default function SecurityLogs() {
                   className={`severity-${entry.severity.toLowerCase()} ${
                     expanded === entry.id ? "expanded" : ""
                   }`}
-                  onClick={() => setExpanded(expanded === entry.id ? null : entry.id)}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={expanded === entry.id}
+                  onClick={() => setExpanded((current) => (current === entry.id ? null : entry.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setExpanded((current) => (current === entry.id ? null : entry.id));
+                    }
+                  }}
                 >
                   <td className="cell-time">{formatMoment(entry.createdAt)}</td>
                   <td>
@@ -342,7 +356,12 @@ export default function SecurityLogs() {
 
       {data && data.totalPages > 1 && (
         <div className="security-logs-pagination">
-          <button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+          <button
+            type="button"
+            className="pagination-btn"
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
+          >
             Previous
           </button>
           <span>
@@ -350,6 +369,7 @@ export default function SecurityLogs() {
           </span>
           <button
             type="button"
+            className="pagination-btn"
             disabled={page >= data.totalPages}
             onClick={() => setPage(page + 1)}
           >

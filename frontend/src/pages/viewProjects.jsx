@@ -62,7 +62,7 @@ export default function ViewProjects() {
 
   return (
     <div className="view-projects-page">
-      <button onClick={() => navigate(-1)} className="back-link">
+      <button type="button" onClick={() => navigate(-1)} className="back-link">
         <svg
           width="16"
           height="16"
@@ -80,6 +80,7 @@ export default function ViewProjects() {
 
       <input
         type="text"
+        className="projects-search-input"
         placeholder="Search by project ID, campaign name, organization, or status"
         value={searchQuery}
         onChange={(event) => {
@@ -90,16 +91,6 @@ export default function ViewProjects() {
           } else {
             setSearchParams({});
           }
-        }}
-        style={{
-          width: "100%",
-          maxWidth: "520px",
-          marginBottom: "16px",
-          padding: "10px 12px",
-          border: "1px solid #cbd5e1",
-          borderRadius: "8px",
-          fontSize: "14px",
-          background: "#fff",
         }}
       />
 
@@ -137,11 +128,19 @@ export default function ViewProjects() {
               {filteredProjects.map((project, index) => (
                 <tr
                   key={project.id}
+                  className="projects-clickable-row"
+                  role="button"
+                  tabIndex={0}
                   style={{
                     background: index % 2 === 0 ? "#fff" : "#eef2f9",
-                    cursor: "pointer",
                   }}
                   onClick={() => navigate(`/admin/project/${project.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      navigate(`/admin/project/${project.id}`);
+                    }
+                  }}
                 >
                   <td style={{ ...tdStyle, fontWeight: "700" }}>
                     #{project.id.slice(0, 8).toUpperCase()}

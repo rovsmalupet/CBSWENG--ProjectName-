@@ -212,7 +212,7 @@ export default function AdminProjectDetail() {
           }}
         />
       )}
-      <button onClick={() => navigate(-1)} className="apd-back-btn">
+      <button type="button" onClick={() => navigate(-1)} className="apd-back-btn">
         <svg
           width="16"
           height="16"
