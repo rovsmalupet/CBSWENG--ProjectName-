@@ -75,6 +75,19 @@
   box-shadow: 0 4px 12px rgba(47, 108, 79, 0.28);
 }
 
+.bookmarks-nav-btn.donor-change-password-btn {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+}
+
+.bookmarks-nav-btn.donor-change-password-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  box-shadow: none;
+  color: #1f2937;
+}
+
 .switch-account-btn {
   padding: 0.75rem 1rem;
   background: #ffffff;

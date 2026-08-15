@@ -27,20 +27,101 @@ const newVolRow = () => ({
   donorName: "",
 });
 
+const MAX_MONETARY_AMOUNT = 1_000_000;
+const MAX_IN_KIND_QUANTITY = 1_000_000;
+const MAX_VOLUNTEERS = 10_000;
+
+const getMonetaryError = (rawValue) => {
+  if (rawValue === "") return "";
+
+  const value = Number(rawValue);
+  if (!Number.isFinite(value)) return "Enter a valid amount.";
+  if (value <= 0) return "Amount must be greater than ₱0.";
+  if (value > MAX_MONETARY_AMOUNT) {
+    return "Amount must not exceed ₱1,000,000.";
+  }
+  if (value * 100 % 1 !== 0) {
+    return "Amount may have at most two decimal places.";
+  }
+  return "";
+};
+
+const getInKindError = (rawValue) => {
+  if (rawValue === "") return "";
+
+  const value = Number(rawValue);
+  if (!Number.isFinite(value)) return "Enter a valid quantity.";
+  if (value <= 0) return "Quantity must be greater than 0.";
+  if (value > MAX_IN_KIND_QUANTITY) {
+    return "Quantity must not exceed 1,000,000.";
+  }
+  return "";
+};
+
+const getVolunteerError = (rawValue) => {
+  if (rawValue === "") return "";
+
+  const value = Number(rawValue);
+  if (!Number.isFinite(value) || !Number.isInteger(value)) {
+    return "Volunteer count must be a whole number.";
+  }
+  if (value < 1) return "Volunteer count must be at least 1.";
+  if (value > MAX_VOLUNTEERS) {
+    return "Volunteer count must not exceed 10,000.";
+  }
+  return "";
+};
+
+const acceptedNumber = (rawValue, getError) =>
+  rawValue === "" || getError(rawValue) ? 0 : Number(rawValue);
+
+const getMonetaryTotal = (rows) =>
+  rows.reduce(
+    (totalCents, row) =>
+      totalCents +
+      Math.round(acceptedNumber(row.amount, getMonetaryError) * 100),
+    0,
+  ) / 100;
+
+const getVolunteerTotal = (rows) =>
+  rows.reduce(
+    (total, row) =>
+      total + acceptedNumber(row.count, getVolunteerError),
+    0,
+  );
+
+const getContributionValidationError = (
+  monetaryRows,
+  inKindRows,
+  volRows,
+) => {
+  const hasInvalidRow =
+    monetaryRows.some((row) => Boolean(getMonetaryError(row.amount))) ||
+    Object.values(inKindRows).some((rows) =>
+      rows.some((row) => Boolean(getInKindError(row.quantity))),
+    ) ||
+    volRows.some((row) => Boolean(getVolunteerError(row.count)));
+
+  if (hasInvalidRow) {
+    return "Correct the highlighted amounts or quantities before continuing.";
+  }
+  if (getMonetaryTotal(monetaryRows) > MAX_MONETARY_AMOUNT) {
+    return "The total monetary contribution must not exceed ₱1,000,000.";
+  }
+  if (getVolunteerTotal(volRows) > MAX_VOLUNTEERS) {
+    return "The total volunteer count must not exceed 10,000.";
+  }
+  return "";
+};
+
 // ── calculate transaction fees ──────────────────────────────────────────────
 const calculateFees = (monetaryRows, volRows, inKindRows, inKindItems) => {
   // 3% of total monetary donation
-  const totalMonetary = monetaryRows.reduce(
-    (sum, r) => sum + (parseFloat(r.amount) || 0),
-    0,
-  );
+  const totalMonetary = getMonetaryTotal(monetaryRows);
   const monetaryFee = totalMonetary * 0.03;
 
   // 50 PHP per volunteer (capped at 500 PHP)
-  const totalVolunteers = volRows.reduce(
-    (sum, r) => sum + (parseInt(r.count) || 0),
-    0,
-  );
+  const totalVolunteers = getVolunteerTotal(volRows);
   const volunteerFee = Math.min(totalVolunteers * 50, 500);
 
   // 3% of total in-kind donations
@@ -49,7 +130,9 @@ const calculateFees = (monetaryRows, volRows, inKindRows, inKindItems) => {
       const item = inKindItems.find((i) => i.id === itemId);
       const itemTotal = rows.reduce(
         (itemSum, r) =>
-          itemSum + (parseFloat(r.quantity) || 0) * (item?.pricePerUnit || 0),
+          itemSum +
+          acceptedNumber(r.quantity, getInKindError) *
+            Number(item?.pricePerUnit || 0),
         0,
       );
       return sum + itemTotal;
@@ -306,33 +389,48 @@ export default function AddContribution() {
 
   // ── save ──
   const handlePaymentSuccess = async (paymentIntentId) => {
+    const validationError = getContributionValidationError(
+      monetaryRows,
+      inKindRows,
+      volRows,
+    );
+    if (validationError) {
+      setShowPaymentModal(false);
+      setDialog({
+        title: "Check contribution values",
+        message: validationError,
+        tone: "warning",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const resolveDonorName = (row) =>
         isDonor ? donorDisplayName : row.donorName || "Anonymous";
 
       const monetary = monetaryRows
-        .filter((r) => parseFloat(r.amount) > 0)
+        .filter((r) => r.amount !== "")
         .map((r) => ({
           donorName: resolveDonorName(r),
-          amount: parseFloat(r.amount),
+          amount: Number(r.amount),
         }));
 
       const inKind = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
         rows
-          .filter((r) => parseFloat(r.quantity) > 0)
+          .filter((r) => r.quantity !== "")
           .map((r) => ({
             donorName: resolveDonorName(r),
             itemId,
-            quantity: parseFloat(r.quantity),
+            quantity: Number(r.quantity),
           })),
       );
 
       const volunteer = volRows
-        .filter((r) => parseInt(r.count) > 0)
+        .filter((r) => r.count !== "")
         .map((r) => ({
           donorName: resolveDonorName(r),
-          count: parseInt(r.count),
+          count: Number(r.count),
         }));
 
       const { getApiUrl, apiFetch } = await import("../config/api");
@@ -383,14 +481,28 @@ export default function AddContribution() {
 
   const handleInitiatePayment = async () => {
     try {
+      const validationError = getContributionValidationError(
+        monetaryRows,
+        inKindRows,
+        volRows,
+      );
+      if (validationError) {
+        setDialog({
+          title: "Check contribution values",
+          message: validationError,
+          tone: "warning",
+        });
+        return;
+      }
+
       // Validate that at least one contribution is entered
-      const monetary = monetaryRows.filter((r) => parseFloat(r.amount) > 0);
+      const monetary = monetaryRows.filter((r) => r.amount !== "");
 
       const inKind = Object.values(inKindRows).flatMap((rows) =>
-        rows.filter((r) => parseFloat(r.quantity) > 0),
+        rows.filter((r) => r.quantity !== ""),
       );
 
-      const volunteer = volRows.filter((r) => parseInt(r.count) > 0);
+      const volunteer = volRows.filter((r) => r.count !== "");
 
       if (
         monetary.length === 0 &&
@@ -413,19 +525,13 @@ export default function AddContribution() {
        * still used above to render the on-page invoice preview — that is
        * display only, and the modal shows the server's authoritative figures
        * before anything is charged. [CSSECDV 2.2.3]
-       */
-      const totalMonetary = monetaryRows.reduce(
-        (sum, row) => sum + (parseFloat(row.amount) || 0),
-        0,
-      );
-      const totalVolunteers = volRows.reduce(
-        (sum, row) => sum + (parseInt(row.count) || 0),
-        0,
-      );
+      */
+      const totalMonetary = getMonetaryTotal(monetary);
+      const totalVolunteers = getVolunteerTotal(volunteer);
       const inKindEntries = Object.entries(inKindRows).flatMap(([itemId, rows]) =>
         rows
-          .filter((row) => parseFloat(row.quantity) > 0)
-          .map((row) => ({ itemId, quantity: parseFloat(row.quantity) })),
+          .filter((row) => row.quantity !== "")
+          .map((row) => ({ itemId, quantity: Number(row.quantity) })),
       );
 
       const inKindValue = inKindEntries.reduce((total, entry) => {
@@ -511,6 +617,11 @@ export default function AddContribution() {
   const inKind = supportTypes?.inKind ?? [];
   const volunteer = supportTypes?.volunteer ?? {};
   const anySection = monetary.enabled || inKind.length > 0 || volunteer.enabled;
+  const contributionValidationError = getContributionValidationError(
+    monetaryRows,
+    inKindRows,
+    volRows,
+  );
 
   return (
     <div className="ac-page">
@@ -580,11 +691,16 @@ export default function AddContribution() {
                     }
                   />
                   <input
-                    className="ac-input ac-input-amount"
+                    className={`ac-input ac-input-amount${
+                      getMonetaryError(row.amount) ? " ac-input-invalid" : ""
+                    }`}
                     type="number"
-                    min="0"
+                    min="0.01"
+                    max={MAX_MONETARY_AMOUNT}
+                    step="0.01"
                     placeholder="Enter amount"
                     value={row.amount}
+                    aria-invalid={Boolean(getMonetaryError(row.amount))}
                     onChange={(e) =>
                       updateMonetary(row.id, "amount", e.target.value)
                     }
@@ -612,6 +728,12 @@ export default function AddContribution() {
                         setMonetaryRows((p) => p.filter((r) => r.id !== row.id))
                       }
                     />
+                  )}
+
+                  {getMonetaryError(row.amount) && (
+                    <span className="ac-input-error" role="alert">
+                      {getMonetaryError(row.amount)}
+                    </span>
                   )}
                 </div>
               ))}
@@ -663,11 +785,20 @@ export default function AddContribution() {
                           }
                         />
                         <input
-                          className="ac-input ac-input-pieces"
+                          className={`ac-input ac-input-pieces${
+                            getInKindError(row.quantity)
+                              ? " ac-input-invalid"
+                              : ""
+                          }`}
                           type="number"
                           min="0"
+                          max={MAX_IN_KIND_QUANTITY}
+                          step="any"
                           placeholder={`Enter ${unitLabel} donated`}
                           value={row.quantity}
+                          aria-invalid={Boolean(
+                            getInKindError(row.quantity),
+                          )}
                           onChange={(e) =>
                             updateInKind(
                               item.id,
@@ -713,6 +844,12 @@ export default function AddContribution() {
                             }
                           />
                         )}
+
+                        {getInKindError(row.quantity) && (
+                          <span className="ac-input-error" role="alert">
+                            {getInKindError(row.quantity)}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -744,11 +881,18 @@ export default function AddContribution() {
                     onClick={() => setVolRows((p) => [...p, newVolRow()])}
                   />
                   <input
-                    className="ac-input ac-input-volunteers"
+                    className={`ac-input ac-input-volunteers${
+                      getVolunteerError(row.count)
+                        ? " ac-input-invalid"
+                        : ""
+                    }`}
                     type="number"
-                    min="0"
+                    min="1"
+                    max={MAX_VOLUNTEERS}
+                    step="1"
                     placeholder="# of volunteers"
                     value={row.count}
+                    aria-invalid={Boolean(getVolunteerError(row.count))}
                     onChange={(e) => updateVol(row.id, "count", e.target.value)}
                   />
 
@@ -774,6 +918,12 @@ export default function AddContribution() {
                       }
                     />
                   )}
+
+                  {getVolunteerError(row.count) && (
+                    <span className="ac-input-error" role="alert">
+                      {getVolunteerError(row.count)}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -798,8 +948,14 @@ export default function AddContribution() {
           </div>
         )}
 
+        {contributionValidationError && (
+          <div className="ac-validation-summary" role="alert">
+            {contributionValidationError}
+          </div>
+        )}
+
         {/* ── INVOICE ────────────────────────────────────────────────── */}
-        {anySection && (
+        {anySection && !contributionValidationError && (
           <Invoice
             monetaryRows={monetaryRows}
             volRows={volRows}

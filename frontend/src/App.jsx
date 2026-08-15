@@ -62,7 +62,11 @@ import AdminUserManagement from "./pages/AdminUserManagement.jsx";
 import SecurityLogs from "./pages/SecurityLogs.jsx";
 
 /** Shorthand so each route reads as a single line. */
-const guard = (roles, element) => <ProtectedRoute allowedRoles={roles}>{element}</ProtectedRoute>;
+const guard = (roles, element, denialProbe) => (
+  <ProtectedRoute allowedRoles={roles} denialProbe={denialProbe}>
+    {element}
+  </ProtectedRoute>
+);
 
 const NGO = ["ngo"];
 const DONOR = ["donor"];
@@ -168,7 +172,10 @@ export default function App() {
             />
             {/* The two administrator-only surfaces added for this project. */}
             <Route path="/admin/user-management" element={guard(ADMIN, <AdminUserManagement />)} />
-            <Route path="/admin/security-logs" element={guard(ADMIN, <SecurityLogs />)} />
+            <Route
+              path="/admin/security-logs"
+              element={guard(ADMIN, <SecurityLogs />, "/security-logs")}
+            />
 
             {/* ── Catch-all [2.4.2] ──────────────────────────────────────── */}
             <Route path="*" element={<NotFound />} />

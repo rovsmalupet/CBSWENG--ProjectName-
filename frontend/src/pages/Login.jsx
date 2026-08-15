@@ -21,6 +21,8 @@ const LANDING_BY_ROLE = {
   admin: "/admin",
 };
 
+const LOGIN_FAILURE_LIMIT = 5;
+
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -28,7 +30,13 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [failedAttemptsByEmail, setFailedAttemptsByEmail] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const loginLimitReached =
+    normalizedEmail.length > 0 &&
+    (failedAttemptsByEmail[normalizedEmail] ?? 0) >= LOGIN_FAILURE_LIMIT;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -55,6 +63,21 @@ export default function Login() {
       navigate(LANDING_BY_ROLE[user.role] ?? "/", { replace: true });
     } catch (submitError) {
       setError(submitError.message);
+
+      // Keep the server's response identical for unknown, incorrect, inactive,
+      // and locked accounts. Counting the same generic 401 response in this
+      // browser gives the user a useful wait notice without confirming that an
+      // entered email address belongs to an account.
+      if (submitError.status === 401 && submitError.code === "UNAUTHORIZED") {
+        setFailedAttemptsByEmail((current) => ({
+          ...current,
+          [normalizedEmail]: Math.min(
+            (current[normalizedEmail] ?? 0) + 1,
+            LOGIN_FAILURE_LIMIT,
+          ),
+        }));
+      }
+
       // Clear the password on any failure so a retry starts clean and the value
       // does not linger in the DOM.
       setPassword("");
@@ -111,9 +134,12 @@ export default function Login() {
           </div>
         )}
 
-        <p className="login-lockout-note">
-          Repeated failed attempts will temporarily lock the account.
-        </p>
+        {loginLimitReached && (
+          <p className="login-lockout-note" role="alert">
+            Too many unsuccessful sign-in attempts. Please wait 15 minutes before trying this email
+            again.
+          </p>
+        )}
 
         <div className="signup-section">
           <p className="signup-title">New user? Sign up now!</p>

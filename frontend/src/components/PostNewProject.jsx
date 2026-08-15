@@ -22,7 +22,53 @@ const CAUSES = [
 	{ label: "Others",                           key: "others" },
 ];
 
+const TEXT_LIMITS = Object.freeze({
+  campaignTitle: { label: "Campaign title", max: 200 },
+  location: { label: "Location", max: 200 },
+  description: { label: "Project description", max: 5_000 },
+  itemName: { label: "In-kind item name", max: 100 },
+  unit: { label: "In-kind unit", max: 20 },
+});
 
+const getLengthError = (value, limit) =>
+  value.length > limit.max
+    ? `${limit.label} is too long. Use ${limit.max.toLocaleString()} characters or fewer (currently ${value.length.toLocaleString()}). The project was not published.`
+    : "";
+
+const getFirstLengthError = (form, inKindItems, includeInKind) => {
+  for (const field of ["campaignTitle", "location", "description"]) {
+    const error = getLengthError(form[field], TEXT_LIMITS[field]);
+    if (error) return error;
+  }
+
+  if (includeInKind) {
+    for (const item of inKindItems) {
+      for (const field of ["itemName", "unit"]) {
+        const error = getLengthError(item[field], TEXT_LIMITS[field]);
+        if (error) return error;
+      }
+    }
+  }
+
+  return "";
+};
+
+function CharacterLimitHint({ id, value, limit }) {
+  const overBy = value.length - limit.max;
+
+  return (
+    <p
+      id={id}
+      className={`postProjectLengthHint${overBy > 0 ? " postProjectLengthHintError" : ""}`}
+      role={overBy > 0 ? "alert" : undefined}
+    >
+      {value.length.toLocaleString()} / {limit.max.toLocaleString()} characters
+      {overBy > 0
+        ? ` — reduce by ${overBy.toLocaleString()} character${overBy === 1 ? "" : "s"}.`
+        : ""}
+    </p>
+  );
+}
 
 const newRow = () => ({
   id: Date.now() + Math.random(),
@@ -66,6 +112,17 @@ export default function PostNewProject({ onProjectCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const lengthError = getFirstLengthError(
+      form,
+      inKindItems,
+      supportTypes.inKind,
+    );
+    if (lengthError) {
+      setErrorMsg(lengthError);
+      setStatus("error");
+      return;
+    }
 
     if (!form.campaignTitle.trim() || !form.priority || !form.location.trim()) {
       setErrorMsg("Campaign title, location, and priority are required."); setStatus("error"); return;
@@ -119,7 +176,10 @@ export default function PostNewProject({ onProjectCreated }) {
       setTimeEnabled(false);
       setTimeout(() => navigate("/project-ledger"), 1200);
     } catch (err) {
-      setErrorMsg(err.message || "Failed to create project.");
+      const fieldReason = Array.isArray(err.fields)
+        ? err.fields.find((field) => field?.reason)?.reason
+        : "";
+      setErrorMsg(fieldReason || err.message || "Failed to create project.");
       setStatus("error");
       if (import.meta.env.DEV) console.error(err);
     }
@@ -130,20 +190,50 @@ export default function PostNewProject({ onProjectCreated }) {
       <div className="postProjectCard">
         <h2 className="postProjectHeading">Post New Project</h2>
 
-        {status === "success" && <div className="postProjectAlertSuccess">Project posted successfully! Redirecting...</div>}
-        {status === "error" && <div className="postProjectAlertError">Warning: {errorMsg}</div>}
+        {status === "success" && <div className="postProjectAlertSuccess" role="status">Project posted successfully! Redirecting...</div>}
+        {status === "error" && <div className="postProjectAlertError" role="alert">Warning: {errorMsg}</div>}
 
         <form onSubmit={handleSubmit} className="postProjectForm">
           {/* LEFT COLUMN */}
           <div className="postProjectCol">
             <div>
               <label className="postProjectLabel">Campaign Title <span className="postProjectRequired">*</span></label>
-              <input className="postProjectInput" name="campaignTitle" value={form.campaignTitle} onChange={handleChange} placeholder="e.g., Clean Water Drive 2024" />
+              <input
+                className={`postProjectInput${getLengthError(form.campaignTitle, TEXT_LIMITS.campaignTitle) ? " postProjectInputInvalid" : ""}`}
+                name="campaignTitle"
+                value={form.campaignTitle}
+                onChange={handleChange}
+                placeholder="e.g., Clean Water Drive 2024"
+                aria-invalid={Boolean(
+                  getLengthError(form.campaignTitle, TEXT_LIMITS.campaignTitle),
+                )}
+                aria-describedby="campaign-title-length"
+              />
+              <CharacterLimitHint
+                id="campaign-title-length"
+                value={form.campaignTitle}
+                limit={TEXT_LIMITS.campaignTitle}
+              />
             </div>
 
             <div>
               <label className="postProjectLabel">Location <span className="postProjectRequired">*</span></label>
-              <input className="postProjectInput" name="location" value={form.location} onChange={handleChange} placeholder="Enter Location" />
+              <input
+                className={`postProjectInput${getLengthError(form.location, TEXT_LIMITS.location) ? " postProjectInputInvalid" : ""}`}
+                name="location"
+                value={form.location}
+                onChange={handleChange}
+                placeholder="Enter Location"
+                aria-invalid={Boolean(
+                  getLengthError(form.location, TEXT_LIMITS.location),
+                )}
+                aria-describedby="project-location-length"
+              />
+              <CharacterLimitHint
+                id="project-location-length"
+                value={form.location}
+                limit={TEXT_LIMITS.location}
+              />
             </div>
 
             {/* Cause multi-select with chips */}
@@ -233,7 +323,22 @@ export default function PostNewProject({ onProjectCreated }) {
           <div className="postProjectCol">
             <div>
               <label className="postProjectLabel">Project Description</label>
-              <textarea className="postProjectTextarea" name="description" value={form.description} onChange={handleChange} placeholder="Enter your project description here..." />
+              <textarea
+                className={`postProjectTextarea${getLengthError(form.description, TEXT_LIMITS.description) ? " postProjectInputInvalid" : ""}`}
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                placeholder="Enter your project description here..."
+                aria-invalid={Boolean(
+                  getLengthError(form.description, TEXT_LIMITS.description),
+                )}
+                aria-describedby="project-description-length"
+              />
+              <CharacterLimitHint
+                id="project-description-length"
+                value={form.description}
+                limit={TEXT_LIMITS.description}
+              />
             </div>
 
             {supportTypes.monetary && (
@@ -258,9 +363,56 @@ export default function PostNewProject({ onProjectCreated }) {
                 <div className="postProjectInKindList">
                   {inKindItems.map((item) => (
                     <div key={item.id} className="postProjectInKindRow">
-                      <input className="postProjectInput" placeholder="Enter item" value={item.itemName} onChange={(e) => handleInKindChange(item.id, "itemName", e.target.value)} />
+                      <div className="postProjectInKindField">
+                        <input
+                          className={`postProjectInput${getLengthError(item.itemName, TEXT_LIMITS.itemName) ? " postProjectInputInvalid" : ""}`}
+                          placeholder="Enter item"
+                          value={item.itemName}
+                          onChange={(e) =>
+                            handleInKindChange(
+                              item.id,
+                              "itemName",
+                              e.target.value,
+                            )
+                          }
+                          aria-invalid={Boolean(
+                            getLengthError(
+                              item.itemName,
+                              TEXT_LIMITS.itemName,
+                            ),
+                          )}
+                          aria-describedby={`item-name-${item.id}-length`}
+                        />
+                        <CharacterLimitHint
+                          id={`item-name-${item.id}-length`}
+                          value={item.itemName}
+                          limit={TEXT_LIMITS.itemName}
+                        />
+                      </div>
                       <input className="postProjectInput" type="number" placeholder="Qty" value={item.targetQuantity} onChange={(e) => handleInKindChange(item.id, "targetQuantity", e.target.value)} />
-                      <input className="postProjectInput" placeholder="Unit" value={item.unit} onChange={(e) => handleInKindChange(item.id, "unit", e.target.value)} />
+                      <div className="postProjectInKindField">
+                        <input
+                          className={`postProjectInput${getLengthError(item.unit, TEXT_LIMITS.unit) ? " postProjectInputInvalid" : ""}`}
+                          placeholder="Unit"
+                          value={item.unit}
+                          onChange={(e) =>
+                            handleInKindChange(
+                              item.id,
+                              "unit",
+                              e.target.value,
+                            )
+                          }
+                          aria-invalid={Boolean(
+                            getLengthError(item.unit, TEXT_LIMITS.unit),
+                          )}
+                          aria-describedby={`item-unit-${item.id}-length`}
+                        />
+                        <CharacterLimitHint
+                          id={`item-unit-${item.id}-length`}
+                          value={item.unit}
+                          limit={TEXT_LIMITS.unit}
+                        />
+                      </div>
                       <input className="postProjectInput" type="number" placeholder="PHP" value={item.pricePerUnit} onChange={(e) => handleInKindChange(item.id, "pricePerUnit", e.target.value)} />
                       <button type="button" className="postProjectDeleteRowBtn" onClick={() => setInKindItems((prev) => prev.filter((i) => i.id !== item.id))} title="Remove item" disabled={inKindItems.length === 1}>✕</button>
                     </div>

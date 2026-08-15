@@ -108,13 +108,19 @@
   margin-bottom: 14px;
 }
 
-/* A quiet secondary hint, not a full paragraph — without this it inherits
-   .login-box p's 16px/24px sizing and reads as heavy as the intro subtitle. */
-.login-lockout-note {
-  color: #9ca3af;
-  font-size: 0.78rem;
-  text-align: center;
-  margin: 0.6rem 0 0;
+/* Explain the public lockout policy without confirming whether the submitted
+   email belongs to an account. The extra specificity overrides .login-box p. */
+.login-box .login-lockout-note {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-left: 4px solid #f97316;
+  border-radius: 8px;
+  color: #9a3412;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  margin: 0 0 14px;
+  padding: 0.75rem 0.8rem;
+  text-align: left;
 }
 
 .signup-section {

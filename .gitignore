@@ -5,6 +5,10 @@ node_modules
 .DS_Store
 dist/
 
+# Generated reports, renders, and temporary working files.
+/output/
+/tmp/
+
 # Internal docs (security write-ups, deployment guides, submission drafts).
 # Kept local — SECURITY_DOCUMENTATION.md in particular catalogues exploitable
 # vulnerabilities from earlier versions of this app and should not sit in a

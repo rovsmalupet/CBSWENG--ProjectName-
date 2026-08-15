@@ -190,6 +190,22 @@
   box-shadow: 0 0 0 3px rgba(107, 132, 212, 0.12);
 }
 
+.ac-input.ac-input-invalid,
+.ac-input.ac-input-invalid:focus {
+  border-color: #dc2626;
+  background: #fef2f2;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.ac-input-error {
+  flex-basis: 100%;
+  margin: 2px 0 0 36px;
+  color: #b91c1c;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .ac-input-amount     { width: 170px; }
 .ac-input-donor      { flex: 1; min-width: 150px; }
 .ac-input-pieces     { width: 160px; }
@@ -238,6 +254,18 @@
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 20px;
+}
+
+.ac-validation-summary {
+  margin: 8px 0 20px;
+  padding: 10px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 /* ── Empty / loading ── */
